@@ -206,7 +206,8 @@ function adjustForReadiness(wId, readiness, restingHR, legsScore) {
   // HR penalty: each bpm above baseline (44) reduces effective score by 2pts
   const hrPenalty = Math.max(0, (restingHR - ATHLETE.restingHR) * 2);
   // Legs penalty: scale 1-5 → 0-20pts penalty (1=bad=20pts, 5=great=0pts)
-  const legsPenalty = Math.max(0, (3 - legsScore) * 5);
+  const safeLgs = legsScore>=1&&legsScore<=5?legsScore:3;
+  const legsPenalty = Math.max(0, (3 - safeLgs) * 5);
   const effective = Math.max(0, readiness - hrPenalty - legsPenalty);
 
   const isVO2 = ["VO2_4X4","VO2_5X4"].includes(wId);
@@ -390,7 +391,7 @@ function App(){
   const [ftp,setFtp]=useState(()=>loadState("ww_ftp",220));
   const [readiness,setReadiness]=useState(()=>loadState("ww_readiness",75));
   const [restingHR,setRestingHR]=useState(()=>loadState("ww_rhr",44));
-  const [legsScore,setLegsScore]=useState(()=>loadState("ww_legs",3));
+  const [legsScore,setLegsScore]=useState(()=>{ const v=loadState("ww_legs",3); return (v>=1&&v<=5)?v:3; });
   const [checkinDone,setCheckinDone]=useState(()=>{
     const saved=loadState("ww_checkin_date","");
     const today=new Date().toDateString();
@@ -435,7 +436,8 @@ function App(){
 
   // Composite readiness colour
   const hrPenalty=Math.max(0,(restingHR-ATHLETE.restingHR)*2);
-  const legsPenalty=Math.max(0,(3-legsScore)*5);
+  const safeLegs=legsScore>=1&&legsScore<=5?legsScore:3;
+  const legsPenalty=Math.max(0,(3-safeLegs)*5);
   const effectiveReadiness=Math.max(0,readiness-hrPenalty-legsPenalty);
   const effColor=effectiveReadiness>=80?"#16a34a":effectiveReadiness>=65?"#22c55e":effectiveReadiness>=50?"#ca8a04":effectiveReadiness>=35?"#ea580c":"#dc2626";
   const effLabel=effectiveReadiness>=80?"Peak — full session":effectiveReadiness>=65?"Good — slight reduction":effectiveReadiness>=50?"Moderate — stepped down":effectiveReadiness>=35?"Low — Zone 2 only":"Very low — rest today";
