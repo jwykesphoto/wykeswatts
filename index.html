@@ -184,9 +184,12 @@ const DAY_NAMES = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
 const PLAN_START = new Date(Date.UTC(2026, 8, 7));
 
 function getTodayIndex() {
+  // Use local date to avoid timezone day-boundary issues
   const now = new Date();
-  const todayUTC = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
-  const diffDays = Math.round((todayUTC - PLAN_START.getTime()) / 864e5);
+  const y=now.getFullYear(), m=now.getMonth(), d=now.getDate();
+  const todayMs = Date.UTC(y, m, d);
+  const startMs = Date.UTC(2026, 8, 7); // 7 Sep 2026
+  const diffDays = Math.round((todayMs - startMs) / 864e5);
   return Math.min(Math.max(diffDays, 0), 83);
 }
 function getPlanDate(i) { const d=new Date(PLAN_START); d.setDate(d.getDate()+i); return d; }
@@ -476,7 +479,7 @@ function App(){
     <div style={S.page}>
       <div style={S.hdr}>
         <div>
-          <div style={{fontSize:12,color:"#9ca3af",marginBottom:2}}>WykesWatts · Adaptive Cycling Coach</div>
+          <div style={fontSize:12,color:"#9ca3af",marginBottom:2}>WykesWatts · Adaptive Cycling Coach · <span style={color:"#22c55e"}>Built 28 Sep 2026 09:50</span></div>
           <div style={{fontSize:18,fontWeight:700}}>FTP Block · Autumn/Winter 2026</div>
         </div>
         <div style={{textAlign:"right"}}>
@@ -569,7 +572,25 @@ function App(){
               </div>
             )}
 
-            {entry.workoutId==="FREE"?(
+            {adjId==="REST"&&!isBlockedDay?(
+              <div style={{...S.card,borderColor:"#94a3b8",background:"#f8fafc"}}>
+                <Tag type="REST"/>
+                <div style={{fontSize:20,fontWeight:700,marginTop:8}}>Rest today 🛌</div>
+                <div style={{fontSize:14,color:"#6b7280",marginTop:4,lineHeight:1.6}}>
+                  {rdNote||"Your body needs recovery today. Sleep well, eat well, stay off the bike."}
+                </div>
+                {adjusted&&<div style={{marginTop:10,fontSize:12,color:"#94a3b8"}}>Planned: {plannedWorkout.name}</div>}
+              </div>
+            ):adjId==="RECOVERY"&&entry.workoutId!=="RECOVERY"?(
+              <div style={{...S.card,borderColor:"#64748b",background:"#f8fafc"}}>
+                <Tag type="RECOVERY"/>
+                <div style={{fontSize:20,fontWeight:700,marginTop:8}}>Easy spin only 🚴</div>
+                <div style={{fontSize:14,color:"#6b7280",marginTop:4,lineHeight:1.6}}>
+                  {rdNote||"Readiness is very low. If you must ride, keep it to an easy 20–30 min spin at conversational pace. No ERG mode."}
+                </div>
+                {adjusted&&<div style={{marginTop:10,fontSize:12,color:"#94a3b8"}}>Planned: {plannedWorkout.name}</div>}
+              </div>
+            ):entry.workoutId==="FREE"?(
               <div style={{...S.card,borderColor:"#8b5cf6"}}>
                 <Tag type="FREE"/>
                 <div style={{fontSize:20,fontWeight:700,marginTop:8}}>Weekend — free ride 🚴</div>
