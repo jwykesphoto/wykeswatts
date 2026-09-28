@@ -280,10 +280,18 @@ function downloadZWO(wId, ftp, wName, weekNum, planDayIdx) {
 }
 
 // ─── localStorage persistence ──────────────────────────────────────────────────
+// In-memory fallback when localStorage is unavailable (http:// context)
+const _mem = {};
 function loadState(key, fallback) {
-  try { const v=localStorage.getItem(key); return v?JSON.parse(v):fallback; } catch(e) { return fallback; }
+  try {
+    const v = localStorage.getItem(key);
+    return v ? JSON.parse(v) : (_mem[key] !== undefined ? _mem[key] : fallback);
+  } catch(e) {
+    return _mem[key] !== undefined ? _mem[key] : fallback;
+  }
 }
 function saveState(key, value) {
+  _mem[key] = value;
   try { localStorage.setItem(key, JSON.stringify(value)); } catch(e) {}
 }
 
@@ -404,8 +412,13 @@ function App(){
   useEffect(()=>saveState("ww_legs",legsScore),[legsScore]);
 
   const handleCheckinSave=()=>{
-    saveState("ww_checkin_date",new Date().toDateString());
+    const today = new Date().toDateString();
+    saveState("ww_checkin_date", today);
+    saveState("ww_readiness", readiness);
+    saveState("ww_rhr", restingHR);
+    saveState("ww_legs", legsScore);
     setCheckinDone(true);
+    setTab("today");
   };
 
   const plan=buildPlan(overrides);
