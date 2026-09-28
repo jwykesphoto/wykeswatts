@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cycling Coach — James Wykes</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #f9fafb; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif; }
+  input[type=range] { width: 100%; cursor: pointer; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useCallback } = React;
+
+// ─── Athlete ──────────────────────────────────────────────────────────────────
+const ATHLETE = { ftp: 220, weight: 69, vo2max: 55, restingHR: 44, targetFtp: 280 };
+
+const ZONES = [
+  { id:1, name:"Active Recovery", pct:[0,   55], color:"#94a3b8" },
+  { id:2, name:"Endurance",       pct:[56,  75], color:"#22c55e" },
+  { id:3, name:"Tempo",           pct:[76,  90], color:"#eab308" },
+  { id:4, name:"Threshold",       pct:[91, 105], color:"#f97316" },
+  { id:5, name:"VO2 Max",         pct:[106,120], color:"#ef4444" },
+];
+
+const SESSION_TYPES = {
+  REST:      { label:"Rest",       color:"#94a3b8", bg:"#f1f5f9" },
+  FREE:      { label:"Free ride",  color:"#8b5cf6", bg:"#f5f3ff" },
+  Z2:        { label:"Zone 2",     color:"#16a34a", bg:"#f0fdf4" },
+  SWEETSPOT: { label:"Sweet Spot", color:"#ca8a04", bg:"#fefce8" },
+  THRESHOLD: { label:"Threshold",  color:"#ea580c", bg:"#fff7ed" },
+  VO2:       { label:"VO2 Max",    color:"#dc2626", bg:"#fef2f2" },
+  TEST:      { label:"FTP Test",   color:"#7c3aed", bg:"#f5f3ff" },
+  RECOVERY:  { label:"Easy Spin",  color:"#64748b", bg:"#f8fafc" },
+  HOLIDAY:   { label:"Holiday",    color:"#0ea5e9", bg:"#f0f9ff" },
+  SICK:      { label:"Sick Day",   color:"#be185d", bg:"#fdf2f8" },
+};
+
+const WORKOUTS = {
+  FREE:     { id:"FREE",     name:"Free Ride",          type:"FREE",      tss:0,  duration:0,  description:"Weekend ride — no structure, no targets. Ride for enjoyment. Any distance, any pace.", intervals:[] },
+  REST:     { id:"REST",     name:"Rest Day",            type:"REST",      tss:0,  duration:0,  description:"Full rest. Sleep well, eat well. Recovery is when adaptation happens.", intervals:[] },
+  RECOVERY: { id:"RECOVERY", name:"Easy Spin",           type:"RECOVERY",  tss:20, duration:45, description:"Very easy spinning to flush the legs. Keep HR low, effort minimal.", intervals:[{pct:45,dur:45,label:"Easy spin"}] },
+  Z2_60: {
+    id:"Z2_60", name:"Zone 2 · 60 min", type:"Z2", tss:55, duration:60,
+    description:"Steady aerobic base work. You should be able to hold a full conversation. The most important session of the week.",
+    intervals:[{ramp:[30,65],dur:10,label:"Warm-up"},{pct:65,dur:45,label:"Zone 2 endurance"},{ramp:[65,30],dur:5,label:"Cool-down"}]
+  },
+  Z2_90: {
+    id:"Z2_90", name:"Zone 2 · 90 min", type:"Z2", tss:80, duration:90,
+    description:"Extended aerobic ride. Builds the mitochondrial base that underpins all other training.",
+    intervals:[{ramp:[30,65],dur:15,label:"Warm-up"},{pct:65,dur:65,label:"Zone 2 endurance"},{ramp:[65,30],dur:10,label:"Cool-down"}]
+  },
+  SWEET_SPOT: {
+    id:"SWEET_SPOT", name:"Sweet Spot · 3×20", type:"SWEETSPOT", tss:75, duration:80,
+    description:"High-value work just below threshold. Builds FTP with manageable fatigue. Three 20-minute blocks.",
+    intervals:[{ramp:[30,75],dur:10,label:"Warm-up"},{pct:88,dur:20,label:"Sweet spot"},{pct:55,dur:5,label:"Recovery"},{pct:88,dur:20,label:"Sweet spot"},{pct:55,dur:5,label:"Recovery"},{pct:88,dur:10,label:"Sweet spot"},{ramp:[75,30],dur:10,label:"Cool-down"}]
+  },
+  THRESHOLD_2X20: {
+    id:"THRESHOLD_2X20", name:"Threshold · 2×20", type:"THRESHOLD", tss:90, duration:80,
+    description:"Two 20-minute efforts at 95% FTP. The classic FTP builder. Controlled and steady.",
+    intervals:[{ramp:[30,80],dur:15,label:"Warm-up"},{pct:95,dur:20,label:"Threshold"},{pct:55,dur:5,label:"Recovery"},{pct:95,dur:20,label:"Threshold"},{ramp:[75,30],dur:10,label:"Cool-down"}]
+  },
+  THRESHOLD_3X15: {
+    id:"THRESHOLD_3X15", name:"Threshold · 3×15", type:"THRESHOLD", tss:95, duration:90,
+    description:"Three 15-minute blocks at 97% FTP. Higher volume than 2×20 with shorter individual efforts.",
+    intervals:[{ramp:[30,80],dur:15,label:"Warm-up"},{pct:97,dur:15,label:"Threshold"},{pct:55,dur:5,label:"Recovery"},{pct:97,dur:15,label:"Threshold"},{pct:55,dur:5,label:"Recovery"},{pct:97,dur:15,label:"Threshold"},{ramp:[75,30],dur:10,label:"Cool-down"}]
+  },
+  VO2_4X4: {
+    id:"VO2_4X4", name:"VO2 Max · 4×4", type:"VO2", tss:85, duration:75,
+    description:"The Norwegian 4×4. Four hard 4-minute intervals at 115% FTP. RPE 9/10. The most effective VO2 max session known.",
+    intervals:[{ramp:[30,80],dur:15,label:"Warm-up"},{pct:115,dur:4,label:"VO2 max effort"},{pct:55,dur:4,label:"Recovery"},{pct:115,dur:4,label:"VO2 max effort"},{pct:55,dur:4,label:"Recovery"},{pct:115,dur:4,label:"VO2 max effort"},{pct:55,dur:4,label:"Recovery"},{pct:115,dur:4,label:"VO2 max effort"},{ramp:[75,30],dur:15,label:"Cool-down"}]
+  },
+  VO2_5X4: {
+    id:"VO2_5X4", name:"VO2 Max · 5×4", type:"VO2", tss:95, duration:85,
+    description:"Five intervals at 118% FTP with shorter recovery. Phase 3 progression — harder than 4×4.",
+    intervals:[{ramp:[30,80],dur:15,label:"Warm-up"},{pct:118,dur:4,label:"VO2 max effort"},{pct:55,dur:3,label:"Recovery"},{pct:118,dur:4,label:"VO2 max effort"},{pct:55,dur:3,label:"Recovery"},{pct:118,dur:4,label:"VO2 max effort"},{pct:55,dur:3,label:"Recovery"},{pct:118,dur:4,label:"VO2 max effort"},{pct:55,dur:3,label:"Recovery"},{pct:118,dur:4,label:"VO2 max effort"},{ramp:[75,30],dur:15,label:"Cool-down"}]
+  },
+  FTP_TEST: {
+    id:"FTP_TEST", name:"FTP Test", type:"TEST", tss:80, duration:70,
+    description:"20-minute all-out effort. Pace it evenly — starting too hard is the most common mistake. Take 95% of your average power as your new FTP.",
+    intervals:[{ramp:[30,85],dur:10,label:"Warm-up"},{pct:100,dur:5,label:"Openers"},{pct:45,dur:5,label:"Rest"},{pct:106,dur:20,label:"20-minute all-out effort"},{ramp:[80,30],dur:15,label:"Cool-down"}]
+  },
+};
+
+const BASE_PLAN = [
+  "Z2_60","Z2_60","RECOVERY","Z2_90","Z2_60","FREE","FREE",
+  "Z2_60","SWEET_SPOT","Z2_60","RECOVERY","Z2_90","FREE","FREE",
+  "Z2_90","SWEET_SPOT","Z2_90","Z2_60","Z2_90","FREE","FREE",
+  "RECOVERY","Z2_60","RECOVERY","REST","Z2_60","FREE","FREE",
+  "Z2_60","VO2_4X4","Z2_60","THRESHOLD_2X20","Z2_90","FREE","FREE",
+  "Z2_60","VO2_4X4","Z2_60","THRESHOLD_2X20","Z2_90","FREE","FREE",
+  "Z2_90","VO2_4X4","Z2_90","THRESHOLD_3X15","Z2_90","FREE","FREE",
+  "RECOVERY","Z2_60","RECOVERY","Z2_60","REST","FREE","FREE",
+  "Z2_60","VO2_5X4","Z2_60","THRESHOLD_3X15","Z2_90","FREE","FREE",
+  "Z2_90","VO2_5X4","Z2_90","THRESHOLD_3X15","Z2_90","FREE","FREE",
+  "Z2_90","VO2_5X4","Z2_90","THRESHOLD_3X15","Z2_90","FREE","FREE",
+  "Z2_60","SWEET_SPOT","Z2_60","RECOVERY","FTP_TEST","FREE","FREE",
+];
+
+const PHASE_MAP = [0,0,0,0,1,1,1,1,2,2,2,3];
+const PHASES = [
+  { name:"Base",  weeks:"1–4",  color:"#16a34a", desc:"Build your aerobic engine. Zone 2 is the priority." },
+  { name:"Build", weeks:"5–8",  color:"#ea580c", desc:"Threshold and VO2 max work introduced. FTP gains happen here." },
+  { name:"Peak",  weeks:"9–11", color:"#dc2626", desc:"Maximum load. Longest threshold efforts of the block." },
+  { name:"Test",  weeks:"12",   color:"#7c3aed", desc:"Taper, freshen up, then prove your new FTP." },
+];
+
+const DAY_NAMES = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+
+// Plan anchored to Mon 8 Sep 2026
+const PLAN_START = new Date(Date.UTC(2026, 8, 7));
+
+function getTodayIndex() {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const start = new Date(PLAN_START); start.setHours(0,0,0,0);
+  return Math.min(Math.max(Math.round((today-start)/(864e5)),0),83);
+}
+function getPlanDate(i) { const d=new Date(PLAN_START); d.setDate(d.getDate()+i); return d; }
+function fmtDate(d) { return d.toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"}); }
+function calcW(pct,ftp) { return Math.round(ftp*pct/100); }
+function getZone(pct) { return ZONES.find(z=>pct>=z.pct[0]&&pct<=z.pct[1])||ZONES[0]; }
+function midPct(iv) { return iv.ramp?(iv.ramp[0]+iv.ramp[1])/2:iv.pct; }
+function ivLabel(iv,ftp) { return iv.ramp?`${calcW(iv.ramp[0],ftp)}→${calcW(iv.ramp[1],ftp)}w`:`${calcW(iv.pct,ftp)}w`; }
+
+function adjustForReadiness(wId, r) {
+  if(wId==="REST"||wId==="RECOVERY"||wId==="FREE") return {id:wId,note:null};
+  if(r>=75) return {id:wId,note:null};
+  if(r>=50){const m={VO2_5X4:"VO2_4X4",THRESHOLD_3X15:"THRESHOLD_2X20",SWEET_SPOT:"Z2_90"};const a=m[wId]||wId;return{id:a,note:a!==wId?`Stepped down to ${WORKOUTS[a].name} — readiness moderate.`:"Moderate readiness — proceed carefully."};}
+  if(r>=25){const hard=["VO2_4X4","VO2_5X4","THRESHOLD_2X20","THRESHOLD_3X15","SWEET_SPOT","FTP_TEST"].includes(wId);return{id:hard?"Z2_60":wId,note:hard?"Low readiness — replaced with Zone 2.":"Low readiness — keep effort minimal."};}
+  return {id:"RECOVERY",note:"Very low readiness — easy spin or rest only."};
+}
+
+function buildPlan(overrides) {
+  // Build a list of workout IDs with blocked days removed, then redistribute
+  const result=[];
+  // Collect which plan-days are blocked
+  const blockedDays=new Set(Object.keys(overrides).map(Number));
+  // Build a queue of workouts from the template, skipping blocked slots
+  const queue=[...BASE_PLAN];
+  // For each calendar day, assign blocked or next queued workout
+  let qi=0;
+  for(let d=0;d<84;d++){
+    if(overrides[d]){
+      result.push({workoutId:overrides[d]==="HOLIDAY"?"HOLIDAY":"SICK",overridden:true});
+    } else {
+      result.push({workoutId:BASE_PLAN[d]||"REST",overridden:false});
+    }
+  }
+  return result;
+}
+
+function generateZWO(wId, ftp, zwiftName) {
+  const w=WORKOUTS[wId]; if(!w||!w.intervals.length) return null;
+  const displayName = zwiftName || w.name;
+  const ivs=w.intervals.map(i=>{
+    const s=i.dur*60;
+    if(i.ramp){const f=(i.ramp[0]/100).toFixed(2),t=(i.ramp[1]/100).toFixed(2),tag=i.ramp[1]>=i.ramp[0]?"Warmup":"Cooldown";return`    <${tag} Duration="${s}" PowerLow="${f}" PowerHigh="${t}" pace="0"/>`;}
+    return `    <SteadyState Duration="${s}" Power="${(i.pct/100).toFixed(2)}" pace="0"/>`;
+  }).join("\n");
+  return `<?xml version="1.0" encoding="utf-8"?>\n<workout_file>\n  <author>Adaptive Cycling Coach</author>\n  <name>${displayName}</name>\n  <description>${w.description}</description>\n  <sportType>bike</sportType>\n  <tags/>\n  <workout>\n${ivs}\n  </workout>\n</workout_file>`;
+}
+
+function downloadZWO(wId, ftp, wName, weekNum, planDayIdx) {
+  const wkStr=String(weekNum).padStart(2,"0");
+  const actualDate=getPlanDate(planDayIdx);
+  const dayName=actualDate.toLocaleDateString("en-GB",{weekday:"short"});
+  const zwiftName=`Claude W${wkStr} ${dayName} - ${wName}`;
+  const content=generateZWO(wId,ftp,zwiftName); if(!content) return;
+  const cleanName=wName.replace(/[\s·×]/g,"_").replace(/__+/g,"_");
+  const filename=`Claude_W${wkStr}_${dayName}_${cleanName}.zwo`;
+  const blob=new Blob([content],{type:"application/xml"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a"); a.href=url; a.download=filename;
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url);},100);
+}
+
+// ─── Sub-components ───────────────────────────────────────────────────────────
+
+function Tag({type}){
+  const s=SESSION_TYPES[type]||SESSION_TYPES.REST;
+  return <span style={{display:"inline-block",padding:"3px 10px",borderRadius:20,fontSize:12,fontWeight:600,color:s.color,background:s.bg,border:`1px solid ${s.color}30`}}>{s.label}</span>;
+}
+
+function PowerBar({intervals,ftp}){
+  if(!intervals.length) return null;
+  const total=intervals.reduce((s,i)=>s+i.dur,0);
+  return(
+    <div style={{display:"flex",height:48,borderRadius:6,overflow:"hidden",gap:2,margin:"12px 0",alignItems:"flex-end"}}>
+      {intervals.map((iv,i)=>{
+        const w=(iv.dur/total)*100;
+        if(iv.ramp){
+          const zF=getZone(iv.ramp[0]),zT=getZone(iv.ramp[1]),up=iv.ramp[1]>=iv.ramp[0];
+          const fH=Math.round(iv.ramp[0]/120*100),tH=Math.round(iv.ramp[1]/120*100);
+          return(
+            <div key={i} title={`${iv.label}: ${ivLabel(iv,ftp)} · ${iv.dur}min`} style={{width:`${w}%`,height:"100%",minWidth:3,position:"relative",overflow:"hidden"}}>
+              <div style={{position:"absolute",inset:0,background:`linear-gradient(to ${up?"right":"left"},${zF.color}40,${zT.color}60)`}}/>
+              <div style={{position:"absolute",inset:0,background:`linear-gradient(to ${up?"right":"left"},${zF.color}40,${zT.color}60)`,clipPath:up?`polygon(0 ${100-fH}%,100% ${100-tH}%,100% 100%,0 100%)`:`polygon(0 ${100-fH}%,100% ${100-tH}%,100% 100%,0 100%)`}}/>
+              <div style={{position:"absolute",bottom:0,left:0,right:0,height:3,background:`linear-gradient(to right,${zF.color},${zT.color})`}}/>
+            </div>
+          );
+        }
+        const z=getZone(iv.pct),hP=Math.round(iv.pct/120*100);
+        return(
+          <div key={i} title={`${iv.label}: ${calcW(iv.pct,ftp)}w · ${iv.dur}min`} style={{width:`${w}%`,height:"100%",minWidth:2,display:"flex",alignItems:"flex-end"}}>
+            <div style={{width:"100%",height:`${Math.max(hP,8)}%`,background:z.color+"38",borderTop:`3px solid ${z.color}`}}/>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── Main App ─────────────────────────────────────────────────────────────────
+
+function App(){
+  const [ftp,setFtp]=useState(220);
+  const [readiness,setReadiness]=useState(75);
+  const todayIdx=getTodayIndex();
+  const [currentDay,setCurrentDay]=useState(todayIdx);
+  const [tab,setTab]=useState("today");
+  const [overrides,setOverrides]=useState({});
+  const [blockMode,setBlockMode]=useState(null);
+  const [blockStart,setBlockStart]=useState(null);
+
+  const plan=buildPlan(overrides);
+  const entry=plan[currentDay]||{workoutId:"REST"};
+  const isBlocked=entry.workoutId==="HOLIDAY"||entry.workoutId==="SICK";
+  const {id:adjId,note:rdNote}=isBlocked?{id:entry.workoutId,note:null}:adjustForReadiness(entry.workoutId,readiness);
+  const workout=WORKOUTS[adjId]||WORKOUTS.REST;
+  const weekNum=Math.floor(currentDay/7)+1;
+  const dayOfWeek=currentDay%7;
+  const phase=PHASES[PHASE_MAP[weekNum-1]??3];
+  const rdColor=readiness>=75?"#16a34a":readiness>=50?"#ca8a04":readiness>=25?"#ea580c":"#dc2626";
+  const rdLabel=readiness>=75?"High — full session":readiness>=50?"Moderate — adjusted":readiness>=25?"Low — easy only":"Very low — rest";
+
+  const handleCalendarClick=useCallback((idx)=>{
+    if(blockMode){
+      if(blockStart===null){setBlockStart(idx);}
+      else{
+        const s=Math.min(blockStart,idx),e=Math.max(blockStart,idx);
+        const next={...overrides};
+        for(let d=s;d<=e;d++) next[d]=blockMode;
+        setOverrides(next);setBlockStart(null);setBlockMode(null);
+      }
+    } else {setCurrentDay(idx);setTab("today");}
+  },[blockMode,blockStart,overrides]);
+
+  const clearOverride=(idx)=>{const n={...overrides};delete n[idx];setOverrides(n);};
+
+  const S={
+    page:{minHeight:"100vh",background:"#f9fafb",color:"#111827"},
+    hdr:{background:"#fff",borderBottom:"1px solid #e5e7eb",padding:"16px 20px",display:"flex",justifyContent:"space-between",alignItems:"center"},
+    nav:{background:"#fff",borderBottom:"1px solid #e5e7eb",display:"flex"},
+    navBtn:(a)=>({padding:"12px 20px",background:"none",border:"none",borderBottom:a?"2px solid #111827":"2px solid transparent",cursor:"pointer",fontSize:14,fontWeight:a?600:400,color:a?"#111827":"#6b7280",fontFamily:"inherit"}),
+    body:{maxWidth:660,margin:"0 auto",padding:"24px 16px"},
+    card:{background:"#fff",border:"1px solid #e5e7eb",borderRadius:12,padding:20,marginBottom:16},
+    lbl:{fontSize:12,color:"#6b7280",marginBottom:6,display:"block"},
+    h2:{fontSize:22,fontWeight:700,margin:"0 0 4px",color:"#111827"},
+    h3:{fontSize:16,fontWeight:600,margin:"0 0 8px",color:"#111827"},
+    b2:{fontSize:14,color:"#6b7280",lineHeight:1.6},
+    div:{border:"none",borderTop:"1px solid #f3f4f6",margin:"16px 0"},
+    btn:(c="#374151",bg="#f9fafb")=>({padding:"8px 16px",borderRadius:8,border:"1px solid #e5e7eb",background:bg,color:c,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}),
+    btnP:{padding:"9px 18px",borderRadius:8,border:"none",background:"#111827",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit"},
+  };
+
+  return(
+    <div style={S.page}>
+      <div style={S.hdr}>
+        <div>
+          <div style={{fontSize:12,color:"#9ca3af",marginBottom:2}}>Adaptive Cycling Coach · James Wykes</div>
+          <div style={{fontSize:18,fontWeight:700}}>FTP Block · Autumn/Winter 2026</div>
+        </div>
+        <div style={{textAlign:"right"}}>
+          <div style={{fontSize:12,color:"#9ca3af"}}>FTP / Target</div>
+          <div style={{fontSize:16,fontWeight:700}}>{ftp}w → <span style={{color:"#16a34a"}}>280w</span></div>
+        </div>
+      </div>
+
+      <div style={S.nav}>
+        {[["today","Today"],["plan","Plan"],["zones","Zones"]].map(([v,l])=>(
+          <button key={v} style={S.navBtn(tab===v)} onClick={()=>setTab(v)}>{l}</button>
+        ))}
+      </div>
+
+      <div style={S.body}>
+
+        {/* TODAY */}
+        {tab==="today"&&(
+          <>
+            <div style={S.card}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+                <div>
+                  <div style={{fontSize:13,color:"#6b7280"}}>{fmtDate(getPlanDate(currentDay))} · Week {weekNum}</div>
+                  <div style={{fontSize:16,fontWeight:600,marginTop:2}}><span style={{color:phase.color}}>●</span> {phase.name} phase</div>
+                </div>
+                <div style={{display:"flex",gap:8}}>
+                  {currentDay!==todayIdx&&<button style={S.btn("#16a34a","#f0fdf4")} onClick={()=>setCurrentDay(todayIdx)}>Today</button>}
+                  <button style={S.btn()} onClick={()=>setCurrentDay(Math.max(0,currentDay-1))}>← Prev</button>
+                  <button style={S.btn()} onClick={()=>setCurrentDay(Math.min(83,currentDay+1))}>Next →</button>
+                </div>
+              </div>
+              <input type="range" min={0} max={83} value={currentDay} onChange={e=>setCurrentDay(Number(e.target.value))} style={{accentColor:"#111827"}}/>
+              <div style={{display:"flex",justifyContent:"space-between",fontSize:11,color:"#9ca3af",marginTop:4}}>
+                <span>Week 1 · {fmtDate(getPlanDate(0))}</span>
+                <span>Week 12 · {fmtDate(getPlanDate(83))}</span>
+              </div>
+            </div>
+
+            {isBlocked?(
+              <div style={{...S.card,borderColor:adjId==="HOLIDAY"?"#0ea5e9":"#be185d"}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                  <div>
+                    <Tag type={adjId}/>
+                    <div style={{fontSize:20,fontWeight:700,marginTop:8}}>{adjId==="HOLIDAY"?"You're on holiday":"Sick day"}</div>
+                    <div style={{fontSize:14,color:"#6b7280",marginTop:4}}>{adjId==="HOLIDAY"?"Rest up and enjoy it.":"Take it easy. The plan resumes once you're recovered."}</div>
+                  </div>
+                  <button style={S.btn("#dc2626","#fff")} onClick={()=>clearOverride(currentDay)}>Remove</button>
+                </div>
+              </div>
+            ):(
+              <>
+                <div style={S.card}>
+                  <span style={S.lbl}>Training readiness (from Garmin)</span>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                    <span style={{fontSize:28,fontWeight:800,color:rdColor}}>{readiness}</span>
+                    <span style={{fontSize:13,color:rdColor,fontWeight:600}}>{rdLabel}</span>
+                  </div>
+                  <input type="range" min={0} max={100} value={readiness} onChange={e=>setReadiness(Number(e.target.value))} style={{accentColor:rdColor}}/>
+                  {rdNote&&<div style={{marginTop:12,padding:"10px 14px",background:"#fff7ed",border:"1px solid #fed7aa",borderRadius:8,fontSize:13,color:"#9a3412"}}>{rdNote}</div>}
+                </div>
+
+                <div style={{...S.card,borderColor:(SESSION_TYPES[workout.type]?.color||"#e5e7eb")+"40"}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:12}}>
+                    <div>
+                      <Tag type={workout.type}/>
+                      <h2 style={{...S.h2,marginTop:8}}>{workout.name}</h2>
+                    </div>
+                    {workout.tss>0&&(
+                      <div style={{textAlign:"right",background:"#f9fafb",border:"1px solid #e5e7eb",borderRadius:8,padding:"8px 14px"}}>
+                        <div style={{fontSize:11,color:"#9ca3af"}}>Est. TSS</div>
+                        <div style={{fontSize:22,fontWeight:800}}>{workout.tss}</div>
+                      </div>
+                    )}
+                  </div>
+                  <p style={S.b2}>{workout.description}</p>
+
+                  {workout.intervals.length>0&&(
+                    <>
+                      <PowerBar intervals={workout.intervals} ftp={ftp}/>
+                      <hr style={S.div}/>
+                      <div>
+                        {workout.intervals.map((iv,i)=>{
+                          const z=getZone(midPct(iv));
+                          const isRamp=!!iv.ramp;
+                          const swatch=isRamp?`linear-gradient(to bottom,${getZone(iv.ramp[0]).color},${getZone(iv.ramp[1]).color})`:z.color;
+                          return(
+                            <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 0",borderBottom:i<workout.intervals.length-1?"1px solid #f9fafb":"none"}}>
+                              <div style={{display:"flex",alignItems:"center",gap:10}}>
+                                <div style={{width:3,height:18,borderRadius:2,background:swatch}}/>
+                                <span style={{fontSize:14,color:"#374151"}}>{iv.label}</span>
+                                {isRamp&&<span style={{fontSize:11,color:"#9ca3af",background:"#f3f4f6",padding:"1px 6px",borderRadius:10}}>ramp</span>}
+                              </div>
+                              <div style={{display:"flex",gap:16,alignItems:"center"}}>
+                                <span style={{fontSize:14,fontWeight:600,color:z.color}}>{ivLabel(iv,ftp)}</span>
+                                <span style={{fontSize:13,color:"#9ca3af",width:40,textAlign:"right"}}>{iv.dur} min</span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <hr style={S.div}/>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                        <div style={{fontSize:14,fontWeight:600}}>Export to Zwift</div>
+                        <button style={S.btnP} onClick={()=>downloadZWO(adjId,ftp,workout.name,weekNum,currentDay)}>
+                          Download .zwo
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                <div style={S.card}>
+                  <span style={S.lbl}>FTP — update after each test</span>
+                  <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}>
+                    <span style={{fontSize:20,fontWeight:700}}>{ftp}w</span>
+                    <span style={{fontSize:14,color:"#6b7280"}}>{(ftp/ATHLETE.weight).toFixed(2)} w/kg</span>
+                  </div>
+                  <input type="range" min={180} max={320} value={ftp} onChange={e=>setFtp(Number(e.target.value))} style={{accentColor:"#111827"}}/>
+                </div>
+              </>
+            )}
+          </>
+        )}
+
+        {/* PLAN */}
+        {tab==="plan"&&(
+          <>
+            <div style={S.card}>
+              <h3 style={S.h3}>Mark days off</h3>
+              <p style={{fontSize:13,color:"#6b7280",marginBottom:12}}>
+                {blockMode?(blockStart===null?`Click the first day of your ${blockMode==="HOLIDAY"?"holiday":"sick period"}.`:`Now click the last day.`):"Select type then tap start and end days on the calendar."}
+              </p>
+              <div style={{display:"flex",gap:8}}>
+                <button style={{...S.btn(blockMode==="HOLIDAY"?"#0369a1":"#374151",blockMode==="HOLIDAY"?"#e0f2fe":"#f9fafb"),borderColor:blockMode==="HOLIDAY"?"#7dd3fc":"#e5e7eb"}} onClick={()=>{setBlockMode(blockMode==="HOLIDAY"?null:"HOLIDAY");setBlockStart(null);}}>✈ Holiday</button>
+                <button style={{...S.btn(blockMode==="SICK"?"#9d174d":"#374151",blockMode==="SICK"?"#fce7f3":"#f9fafb"),borderColor:blockMode==="SICK"?"#f9a8d4":"#e5e7eb"}} onClick={()=>{setBlockMode(blockMode==="SICK"?null:"SICK");setBlockStart(null);}}>🤒 Sick day</button>
+                {blockMode&&<button style={S.btn("#6b7280")} onClick={()=>{setBlockMode(null);setBlockStart(null);}}>Cancel</button>}
+              </div>
+            </div>
+
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:16}}>
+              {PHASES.map((p,i)=>(
+                <div key={i} style={{...S.card,marginBottom:0,borderLeft:`3px solid ${p.color}`,padding:"14px 16px"}}>
+                  <div style={{fontSize:12,color:p.color,fontWeight:600,marginBottom:2}}>Weeks {p.weeks}</div>
+                  <div style={{fontSize:15,fontWeight:700}}>{p.name}</div>
+                  <div style={{fontSize:12,color:"#6b7280",marginTop:4,lineHeight:1.5}}>{p.desc}</div>
+                </div>
+              ))}
+            </div>
+
+            {Array.from({length:12},(_,wk)=>{
+              const ph=PHASES[PHASE_MAP[wk]??3];
+              const isRec=[3,7].includes(wk);
+              return(
+                <div key={wk} style={{marginBottom:10}}>
+                  <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
+                    <span style={{fontSize:13,fontWeight:600,color:"#374151"}}>Week {wk+1}</span>
+                    <span style={{fontSize:11,color:ph.color,fontWeight:600}}>{ph.name}</span>
+                    {isRec&&<span style={{fontSize:11,color:"#9ca3af",background:"#f3f4f6",padding:"1px 8px",borderRadius:20}}>recovery</span>}
+                  </div>
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:4}}>
+                    {Array.from({length:7},(_,d)=>{
+                      const idx=wk*7+d;
+                      const e=plan[idx]||{workoutId:"REST"};
+                      const wId=e.workoutId;
+                      const isToday=idx===todayIdx;
+                      const isPast=idx<todayIdx;
+                      const isSel=idx===currentDay&&!isToday;
+                      const isBStart=blockStart===idx;
+                      const type=wId==="HOLIDAY"?"HOLIDAY":wId==="SICK"?"SICK":WORKOUTS[wId]?.type||"REST";
+                      const st=SESSION_TYPES[type]||SESSION_TYPES.REST;
+                      const lbl={REST:"–",RECOVERY:"EZ",Z2_60:"Z2",Z2_90:"Z2+",SWEET_SPOT:"SS",THRESHOLD_2X20:"TH",THRESHOLD_3X15:"TH+",VO2_4X4:"V4",VO2_5X4:"V5",FTP_TEST:"TEST",FREE:"🚴",HOLIDAY:"✈",SICK:"🤒"}[wId]||"?";
+                      const pd=getPlanDate(idx);
+                      return(
+                        <button key={d} onClick={()=>handleCalendarClick(idx)} style={{background:isToday?"#111827":isBStart?"#dbeafe":st.bg,border:isToday?"2px solid #111827":isSel?"2px solid #6b7280":isBStart?"2px solid #3b82f6":`1px solid ${st.color}20`,borderRadius:8,padding:"5px 3px",cursor:blockMode?"crosshair":"pointer",textAlign:"center",opacity:isPast&&!isToday?0.5:1}}>
+                          <div style={{fontSize:9,color:"#9ca3af",marginBottom:1}}>{DAY_NAMES[d]}</div>
+                          <div style={{fontSize:10,fontWeight:700,color:isToday?"#fff":isPast?"#9ca3af":st.color}}>{lbl}</div>
+                          <div style={{fontSize:8,color:isToday?"#6b7280":"#d1d5db",marginTop:1}}>{pd.getDate()}</div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+
+            <div style={{...S.card,marginTop:8}}>
+              <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
+                {Object.entries(SESSION_TYPES).map(([k,v])=>(
+                  <span key={k} style={{fontSize:12,color:v.color,background:v.bg,border:`1px solid ${v.color}30`,padding:"3px 10px",borderRadius:20}}>{v.label}</span>
+                ))}
+              </div>
+              <div style={{marginTop:8,fontSize:11,color:"#9ca3af"}}>Dark = today · Faded = past</div>
+            </div>
+          </>
+        )}
+
+        {/* ZONES */}
+        {tab==="zones"&&(
+          <>
+            <div style={S.card}>
+              <span style={S.lbl}>FTP</span>
+              <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}>
+                <span style={{fontSize:28,fontWeight:800}}>{ftp}w</span>
+                <span style={{fontSize:16,color:"#6b7280",alignSelf:"flex-end"}}>{(ftp/ATHLETE.weight).toFixed(2)} w/kg</span>
+              </div>
+              <input type="range" min={180} max={320} value={ftp} onChange={e=>setFtp(Number(e.target.value))} style={{accentColor:"#111827"}}/>
+            </div>
+            {ZONES.map(z=>(
+              <div key={z.id} style={{...S.card,display:"flex",alignItems:"center",gap:16}}>
+                <div style={{width:4,height:52,borderRadius:2,background:z.color,flexShrink:0}}/>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:12,fontWeight:600,color:z.color,marginBottom:2}}>Zone {z.id}</div>
+                  <div style={{fontSize:17,fontWeight:700}}>{z.name}</div>
+                  <div style={{fontSize:12,color:"#9ca3af",marginTop:2}}>{z.pct[0]}–{z.pct[1]}% FTP</div>
+                </div>
+                <div style={{fontSize:22,fontWeight:800,color:z.color}}>{calcW(z.pct[0],ftp)}–{calcW(z.pct[1],ftp)}w</div>
+              </div>
+            ))}
+            <div style={S.card}>
+              <h3 style={S.h3}>Your numbers</h3>
+              {[["Current FTP",`${ftp}w`],["W/kg",(ftp/ATHLETE.weight).toFixed(2)],["Target FTP","280w"],["Target W/kg",(280/ATHLETE.weight).toFixed(2)],["VO2 Max","55 ml/kg/min"],["Resting HR","44 bpm"],["Weight","69 kg"]].map(([k,v])=>(
+                <div key={k} style={{display:"flex",justifyContent:"space-between",padding:"10px 0",borderBottom:"1px solid #f3f4f6",fontSize:14}}>
+                  <span style={{color:"#6b7280"}}>{k}</span>
+                  <span style={{fontWeight:700}}>{v}</span>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
