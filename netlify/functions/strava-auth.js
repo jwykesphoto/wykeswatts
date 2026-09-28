@@ -1,13 +1,21 @@
 // Netlify function: handles Strava OAuth token exchange
 // Called when Strava redirects back to wykeswatts.com/callback?code=xxx
+// Redirects back to the app with token data in URL fragment
 
 exports.handler = async (event) => {
-  const { code } = event.queryStringParameters || {};
-  
+  const { code, error } = event.queryStringParameters || {};
+
+  if (error) {
+    return {
+      statusCode: 302,
+      headers: { Location: `/?strava_error=${encodeURIComponent(error)}` }
+    };
+  }
+
   if (!code) {
     return {
-      statusCode: 400,
-      body: JSON.stringify({ error: "No code provided" })
+      statusCode: 302,
+      headers: { Location: "/?strava_error=no_code" }
     };
   }
 
@@ -25,32 +33,34 @@ exports.handler = async (event) => {
 
     const data = await response.json();
 
-    if (data.errors) {
+    if (data.errors || !data.access_token) {
       return {
-        statusCode: 400,
-        body: JSON.stringify({ error: "Token exchange failed", details: data })
+        statusCode: 302,
+        headers: { Location: "/?strava_error=token_exchange_failed" }
       };
     }
 
-    // Return tokens to the app
+    // Encode token data and redirect back to app
+    const tokenData = encodeURIComponent(JSON.stringify({
+      access_token: data.access_token,
+      refresh_token: data.refresh_token,
+      expires_at: data.expires_at,
+      athlete: {
+        id: data.athlete.id,
+        firstname: data.athlete.firstname,
+        weight: data.athlete.weight
+      }
+    }));
+
     return {
-      statusCode: 200,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        access_token: data.access_token,
-        refresh_token: data.refresh_token,
-        expires_at: data.expires_at,
-        athlete: {
-          id: data.athlete.id,
-          firstname: data.athlete.firstname,
-          weight: data.athlete.weight
-        }
-      })
+      statusCode: 302,
+      headers: { Location: `/?strava_token=${tokenData}` }
     };
+
   } catch (err) {
     return {
-      statusCode: 500,
-      body: JSON.stringify({ error: err.message })
+      statusCode: 302,
+      headers: { Location: `/?strava_error=${encodeURIComponent(err.message)}` }
     };
   }
 };
