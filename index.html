@@ -15,14 +15,83 @@
 <meta name="theme-color" content="#111827">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: #f9fafb; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif; }
   input[type=range] { width: 100%; cursor: pointer; }
+
+  /* Light mode (default) */
+  :root {
+    --bg-page:   #f9fafb;
+    --bg-card:   #ffffff;
+    --bg-input:  #f9fafb;
+    --border:    #e5e7eb;
+    --border-strong: #d1d5db;
+    --text-primary:   #111827;
+    --text-secondary: #374151;
+    --text-muted:     #6b7280;
+    --text-faint:     #9ca3af;
+    --divider:   #f3f4f6;
+    --nav-bg:    #ffffff;
+    --hdr-bg:    #ffffff;
+  }
+
+  /* Dark mode — system preference */
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg-page:   #0a0a0a;
+      --bg-card:   #141414;
+      --bg-input:  #1a1a1a;
+      --border:    #2a2a2a;
+      --border-strong: #333333;
+      --text-primary:   #f1f5f9;
+      --text-secondary: #cbd5e1;
+      --text-muted:     #94a3b8;
+      --text-faint:     #64748b;
+      --divider:   #1e1e1e;
+      --nav-bg:    #111111;
+      --hdr-bg:    #111111;
+    }
+  }
+
+  /* Dark mode — manual override */
+  [data-theme="dark"] {
+    --bg-page:   #0a0a0a;
+    --bg-card:   #141414;
+    --bg-input:  #1a1a1a;
+    --border:    #2a2a2a;
+    --border-strong: #333333;
+    --text-primary:   #f1f5f9;
+    --text-secondary: #cbd5e1;
+    --text-muted:     #94a3b8;
+    --text-faint:     #64748b;
+    --divider:   #1e1e1e;
+    --nav-bg:    #111111;
+    --hdr-bg:    #111111;
+  }
+
+  [data-theme="light"] {
+    --bg-page:   #f9fafb;
+    --bg-card:   #ffffff;
+    --bg-input:  #f9fafb;
+    --border:    #e5e7eb;
+    --border-strong: #d1d5db;
+    --text-primary:   #111827;
+    --text-secondary: #374151;
+    --text-muted:     #6b7280;
+    --text-faint:     #9ca3af;
+    --divider:   #f3f4f6;
+    --nav-bg:    #ffffff;
+    --hdr-bg:    #ffffff;
+  }
+
+  body { background: var(--bg-page); color: var(--text-primary); }
 </style>
 </head>
 <body>
 <div id="root"></div>
 <script type="text/babel">
 const { useState, useCallback, useEffect } = React;
+
+
 
 const ATHLETE = { ftp: 220, weight: 69, vo2max: 55, restingHR: 44, targetFtp: 280 };
 
@@ -202,12 +271,33 @@ function ivLabel(iv,ftp) { return iv.ramp?`${calcW(iv.ramp[0],ftp)}→${calcW(iv
 // ─── Granular readiness adjustment ────────────────────────────────────────────
 // Bands: 80–100 full, 65–79 intensity -3-5%, 50–64 step down type,
 //        35–49 Z2 only, 0–34 recovery/rest
-function adjustForReadiness(wId, readiness, restingHR, legsScore) {
+function adjustForReadiness(wId, readiness, restingHR, legsScore, tsb) {
   // Even rest/recovery days get overridden if readiness is dangerously low
   const hrPen = Math.max(0, (restingHR - ATHLETE.restingHR) * 2);
   const safeLg = legsScore>=1&&legsScore<=5?legsScore:3;
   const legPen = Math.max(0, (3 - safeLg) * 5);
-  const eff = Math.max(0, readiness - hrPen - legPen);
+  // TSB as sanity check on TR — not an additional penalty (avoids double-counting)
+  // Garmin TR already accounts for training load, so TSB only intervenes
+  // when TR appears inconsistent with actual riding stress
+  let tsbAdj = 0;
+  let tsbNote = null;
+  if(tsb !== null && tsb !== undefined) {
+    // Case 1: TR looks high but Strava shows heavy fatigue — TR may be lagging
+    if(readiness >= 70 && tsb < -20) {
+      tsbAdj = -15;
+      tsbNote = `TSB ${tsb} suggests more fatigue than TR indicates — session softened as a precaution.`;
+    } else if(readiness >= 60 && tsb < -30) {
+      tsbAdj = -20;
+      tsbNote = `TSB ${tsb} is very negative despite reasonable TR — Strava data overrides.`;
+    }
+    // Case 2: TR is low but TSB is positive — confirm it's safe to train
+    else if(readiness < 50 && tsb > 10) {
+      tsbAdj = 5;
+      tsbNote = `TSB ${tsb} suggests good form — slight readiness boost applied.`;
+    }
+    // Case 3: Both agree — no adjustment needed, TR is accurate
+  }
+  const eff = Math.max(0, readiness - hrPen - legPen - tsbAdj);
   if(wId==="FREE") return {id:wId, note:null, adjusted:false};
   if(eff < 20) return {id:"REST", note:"Readiness is critically low — full rest today. No riding.", adjusted:true};
   if(eff < 35 && (wId==="REST"||wId==="RECOVERY")) return {id:"REST", note:"Readiness very low — rest instead of easy spin.", adjusted:true};
@@ -227,7 +317,7 @@ function adjustForReadiness(wId, readiness, restingHR, legsScore) {
   const isHard = isVO2 || isThreshold || isSweetSpot;
 
   if(effective >= 80) {
-    return {id:wId, note:null, adjusted:false};
+    return {id:wId, note:tsbNote, adjusted:false};
   }
   if(effective >= 65) {
     // Reduce intensity by 3–5% — use dedicated reduced variants
@@ -265,8 +355,8 @@ function buildPlan(overrides) {
   return result;
 }
 
-function generateZWO(wId, ftp, zwiftName) {
-  const w=WORKOUTS[wId]; if(!w||!w.intervals.length) return null;
+function generateZWO(wId, ftp, zwiftName, workoutOverride) {
+  const w=workoutOverride||WORKOUTS[wId]; if(!w||!w.intervals.length) return null;
   const displayName = zwiftName || w.name;
   const ivs=w.intervals.map(i=>{
     const s=i.dur*60;
@@ -276,12 +366,12 @@ function generateZWO(wId, ftp, zwiftName) {
   return `<?xml version="1.0" encoding="utf-8"?>\n<workout_file>\n  <author>WykesWatts</author>\n  <name>${displayName}</name>\n  <description>${w.description}</description>\n  <sportType>bike</sportType>\n  <tags/>\n  <workout>\n${ivs}\n  </workout>\n</workout_file>`;
 }
 
-function downloadZWO(wId, ftp, wName, weekNum, planDayIdx) {
+function downloadZWO(wId, ftp, wName, weekNum, planDayIdx, workoutOverride) {
   const wkStr=String(weekNum).padStart(2,"0");
   const actualDate=getPlanDate(planDayIdx);
   const dayName=actualDate.toLocaleDateString("en-GB",{weekday:"short"});
   const zwiftName=`Claude W${wkStr} ${dayName} - ${wName}`;
-  const content=generateZWO(wId,ftp,zwiftName); if(!content) return;
+  const content=generateZWO(wId,ftp,zwiftName,workoutOverride); if(!content) return;
   const cleanName=wName.replace(/[\s·×]/g,"_").replace(/__+/g,"_");
   const filename=`Claude_W${wkStr}_${dayName}_${cleanName}.zwo`;
   const blob=new Blob([content],{type:"application/xml"});
@@ -407,20 +497,20 @@ function MorningCheckin({readiness, setReadiness, restingHR, setRestingHR, legsS
     <div>
       <div style={{marginBottom:20}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-          <span style={{fontSize:13,fontWeight:600,color:"#374151"}}>Training Readiness</span>
+          <span style={{fontSize:13,fontWeight:600,color:"var(--text-secondary)"}}>Training Readiness</span>
           <span style={{fontSize:22,fontWeight:800,color:rdColor}}>{readiness}</span>
         </div>
         <input type="range" min={0} max={100} value={readiness} onChange={e=>setReadiness(Number(e.target.value))} style={{accentColor:rdColor}}/>
-        <div style={{fontSize:11,color:"#9ca3af",marginTop:4}}>From your Garmin Connect app</div>
+        <div style={{fontSize:11,color:"var(--text-faint)",marginTop:4}}>From your Garmin Connect app</div>
       </div>
 
       <div style={{marginBottom:20}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-          <span style={{fontSize:13,fontWeight:600,color:"#374151"}}>Resting Heart Rate</span>
+          <span style={{fontSize:13,fontWeight:600,color:"var(--text-secondary)"}}>Resting Heart Rate</span>
           <span style={{fontSize:22,fontWeight:800,color:hrColor}}>{restingHR} <span style={{fontSize:13,fontWeight:400}}>bpm</span></span>
         </div>
         <input type="range" min={30} max={80} value={restingHR} onChange={e=>setRestingHR(Number(e.target.value))} style={{accentColor:hrColor}}/>
-        <div style={{display:"flex",justifyContent:"space-between",fontSize:11,color:"#9ca3af",marginTop:4}}>
+        <div style={{display:"flex",justifyContent:"space-between",fontSize:11,color:"var(--text-faint)",marginTop:4}}>
           <span>Baseline: {ATHLETE.restingHR}bpm</span>
           <span>{restingHR > ATHLETE.restingHR+4?`⚠ ${restingHR-ATHLETE.restingHR}bpm above baseline`:restingHR > ATHLETE.restingHR+2?`↑ ${restingHR-ATHLETE.restingHR}bpm above baseline`:"✓ Normal range"}</span>
         </div>
@@ -428,7 +518,7 @@ function MorningCheckin({readiness, setReadiness, restingHR, setRestingHR, legsS
 
       <div style={{marginBottom:20}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-          <span style={{fontSize:13,fontWeight:600,color:"#374151"}}>How do your legs feel?</span>
+          <span style={{fontSize:13,fontWeight:600,color:"var(--text-secondary)"}}>How do your legs feel?</span>
           <span style={{fontSize:14,fontWeight:700,color:legsColor}}>{legsLabels[legsScore]}</span>
         </div>
         <div style={{display:"flex",gap:8}}>
@@ -438,7 +528,7 @@ function MorningCheckin({readiness, setReadiness, restingHR, setRestingHR, legsS
             </button>
           ))}
         </div>
-        <div style={{display:"flex",justifyContent:"space-between",fontSize:11,color:"#9ca3af",marginTop:6}}>
+        <div style={{display:"flex",justifyContent:"space-between",fontSize:11,color:"var(--text-faint)",marginTop:6}}>
           <span>Very heavy</span><span>Fresh</span>
         </div>
       </div>
@@ -450,6 +540,223 @@ function MorningCheckin({readiness, setReadiness, restingHR, setRestingHR, legsS
   );
 }
 
+// ─── Yesterday Analysis ───────────────────────────────────────────────────────
+function YesterdayAnalysis({ data, plannedId, ftp, loading }) {
+  if (loading) {
+    return <div style={{fontSize:13,color:"var(--text-muted)",padding:"12px 0"}}>Checking Strava...</div>;
+  }
+
+  if (!data) {
+    return <div style={{fontSize:13,color:"var(--text-muted)",padding:"12px 0"}}>No data yet — will check automatically.</div>;
+  }
+
+  if (!data.found) {
+    const planned = WORKOUTS[plannedId];
+    return (
+      <div style={{padding:"12px 14px",background:"var(--bg-input)",border:"1px solid var(--border)",borderRadius:8}}>
+        <div style={{fontSize:13,color:"var(--text-muted)"}}>
+          No ride recorded yesterday.
+          {planned && <span style={{color:"var(--text-secondary)"}}> Planned session was <strong>{planned.name}</strong> — skipped or rest taken.</span>}
+        </div>
+      </div>
+    );
+  }
+
+  const ride = data.ride;
+  const planned = WORKOUTS[plannedId];
+
+  // Determine assessment
+  let assessment = null;
+  let assessColor = "#16a34a";
+  let assessIcon = "✅";
+
+  if (planned && planned.type !== "FREE" && planned.type !== "REST" && planned.type !== "RECOVERY") {
+    // Was a structured session planned?
+    if (!ride.likelyStructured && planned.intervals.length > 0) {
+      assessment = `Free ride instead of ${planned.name}. TSS: ${ride.tss} (planned ~${planned.tss}).`;
+      assessColor = "#ca8a04"; assessIcon = "🔄";
+    } else if (ride.hrAssessment === "elevated") {
+      assessment = `HR was elevated for the power output — possible residual fatigue. Factor into today's readiness.`;
+      assessColor = "#ea580c"; assessIcon = "⚠️";
+    } else if (ride.powerZoneId <= 2 && (planned.type === "Z2" || planned.type === "RECOVERY")) {
+      assessment = `Zone 2 well executed. Power in the right range, HR appropriate.`;
+      assessColor = "#16a34a"; assessIcon = "✅";
+    } else if (ride.powerZoneId >= 4 && planned.type === "THRESHOLD") {
+      assessment = `Threshold session completed. Good effort.`;
+      assessColor = "#16a34a"; assessIcon = "✅";
+    } else if (ride.powerZoneId >= 5 && planned.type === "VO2") {
+      assessment = `VO2 session completed. Hard work done.`;
+      assessColor = "#16a34a"; assessIcon = "✅";
+    } else {
+      assessment = `${ride.powerZoneId > 3 ? "Higher" : "Lower"} intensity than planned (${planned.name}). Adjust readiness if needed.`;
+      assessColor = "#ca8a04"; assessIcon = "🔄";
+    }
+  } else {
+    // Free ride or rest was planned
+    assessment = ride.isVirtual ? "Zwift session — structured indoor ride." : `Outdoor ride — ${ride.distance}km, ${ride.elevGain}m climbing.`;
+    assessIcon = "🚴";
+  }
+
+  return (
+    <div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:6,marginBottom:10}}>
+        {[
+          { label:"Duration", value:`${ride.duration}min` },
+          { label:"Avg power", value: ride.avgPower ? `${ride.avgPower}w` : "–" },
+          { label:"Avg HR", value: ride.avgHR ? `${Math.round(ride.avgHR)}bpm` : "–" },
+          { label:"TSS", value:`${ride.tss}` },
+          { label:"Distance", value:`${ride.distance}km` },
+          { label:"Zone", value: ride.powerZone || "–" },
+        ].map(({label,value})=>(
+          <div key={label} style={{background:"var(--bg-input)",border:"1px solid var(--border)",borderRadius:6,padding:"6px 8px",textAlign:"center"}}>
+            <div style={{fontSize:9,color:"var(--text-faint)",marginBottom:2}}>{label}</div>
+            <div style={{fontSize:13,fontWeight:700,color:"var(--text-primary)"}}>{value}</div>
+          </div>
+        ))}
+      </div>
+      {assessment && (
+        <div style={{padding:"8px 12px",background:assessColor+"12",border:`1px solid ${assessColor}30`,borderRadius:8,fontSize:13,color:assessColor}}>
+          {assessIcon} {assessment}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Progress Tab ─────────────────────────────────────────────────────────────
+function ProgressTab({ ftp, stravaData, planStart, todayIdx }) {
+  const weekNum = Math.floor(todayIdx / 7) + 1;
+
+  // Build weekly TSS data from stravaData if available
+  const last7 = stravaData ? stravaData.last7 : [];
+
+  // Weekly TSS bars — show last 8 weeks from plan start
+  const weeks = Array.from({ length: Math.min(weekNum, 12) }, (_, i) => {
+    const wkStart = new Date(planStart);
+    wkStart.setDate(wkStart.getDate() + i * 7);
+    const wkEnd = new Date(wkStart);
+    wkEnd.setDate(wkStart.getDate() + 6);
+    return {
+      label: `W${i + 1}`,
+      start: wkStart,
+      end: wkEnd,
+      isCurrent: i + 1 === weekNum,
+    };
+  });
+
+  // Calculate TSS for current week from stravaData
+  const currentWeekTSS = stravaData ? stravaData.weeklyTSS : 0;
+
+  const S2 = {
+    card: { background:"var(--bg-card)", border:"1px solid var(--border)", borderRadius:12, padding:20, marginBottom:16 },
+    h3: { fontSize:16, fontWeight:600, margin:"0 0 12px", color:"var(--text-primary)" },
+    label: { fontSize:12, color:"var(--text-muted)", marginBottom:6, display:"block" },
+  };
+
+  return (
+    <div>
+      {/* Fitness snapshot */}
+      <div style={S2.card}>
+        <h3 style={S2.h3}>Fitness snapshot</h3>
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:10, marginBottom:16 }}>
+          {[
+            { label:"Current FTP", value:`${ftp}w`, sub:"Last tested", color:"#111827" },
+            { label:"Target FTP", value:"280w", sub:"Week 12 goal", color:"#16a34a" },
+            { label:"Progress", value:`${Math.round((ftp-220)/(280-220)*100)}%`, sub:"Towards target", color:"#ea580c" },
+          ].map(({ label, value, sub, color }) => (
+            <div key={label} style={{ background:"var(--bg-input)", border:"1px solid var(--border)", borderRadius:10, padding:"12px 10px", textAlign:"center" }}>
+              <div style={{ fontSize:11, color:"var(--text-faint)", marginBottom:4 }}>{label}</div>
+              <div style={{ fontSize:22, fontWeight:800, color }}>{value}</div>
+              <div style={{ fontSize:10, color:"var(--text-faint)", marginTop:2 }}>{sub}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* FTP progress bar */}
+        <div style={{ marginBottom:6, display:"flex", justifyContent:"space-between", fontSize:12, color:"var(--text-muted)" }}>
+          <span>220w (start)</span><span>280w (target)</span>
+        </div>
+        <div style={{ height:10, background:"var(--bg-input)", borderRadius:5, overflow:"hidden", border:"1px solid var(--border)" }}>
+          <div style={{ height:"100%", width:`${Math.min(100,Math.max(0,(ftp-220)/(280-220)*100))}%`, background:"#16a34a", borderRadius:5, transition:"width 0.5s" }}/>
+        </div>
+        <div style={{ fontSize:11, color:"var(--text-faint)", marginTop:6, textAlign:"center" }}>
+          Update FTP in the Zones tab after each test
+        </div>
+      </div>
+
+      {/* Strava fitness metrics */}
+      {stravaData ? (
+        <div style={S2.card}>
+          <h3 style={S2.h3}>Training load (from Strava)</h3>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:10, marginBottom:16 }}>
+            {[
+              { label:"CTL", value:stravaData.ctl, sub:"Fitness base", color:"#16a34a" },
+              { label:"ATL", value:stravaData.atl, sub:"Current fatigue", color:"#ea580c" },
+              { label:"TSB", value:stravaData.tsb, sub:"Form", color:stravaData.tsb>=0?"#16a34a":"#dc2626" },
+            ].map(({ label, value, sub, color }) => (
+              <div key={label} style={{ background:"var(--bg-input)", border:"1px solid var(--border)", borderRadius:10, padding:"12px 10px", textAlign:"center" }}>
+                <div style={{ fontSize:11, color:"var(--text-faint)", marginBottom:4 }}>{sub}</div>
+                <div style={{ fontSize:22, fontWeight:800, color }}>{value}</div>
+                <div style={{ fontSize:11, fontWeight:600, color:"var(--text-secondary)", marginTop:2 }}>{label}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* TSB visual gauge */}
+          <div style={{ marginBottom:6, display:"flex", justifyContent:"space-between", fontSize:11, color:"var(--text-faint)" }}>
+            <span>Very fatigued (-30)</span><span>Fresh (+20)</span>
+          </div>
+          <div style={{ height:10, background:"var(--bg-input)", borderRadius:5, overflow:"hidden", border:"1px solid var(--border)", position:"relative" }}>
+            {/* Zero line */}
+            <div style={{ position:"absolute", left:"60%", top:0, bottom:0, width:2, background:"var(--border-strong)" }}/>
+            {/* TSB bar */}
+            <div style={{
+              height:"100%",
+              width:`${Math.min(100,Math.max(0,((stravaData.tsb+30)/50)*100))}%`,
+              background: stravaData.tsb >= 0 ? "#16a34a" : "#dc2626",
+              borderRadius:5,
+              transition:"width 0.5s"
+            }}/>
+          </div>
+          <div style={{ fontSize:12, color:"var(--text-muted)", marginTop:10, padding:"8px 12px", background:"var(--bg-input)", borderRadius:8, border:"1px solid var(--border)" }}>
+            {stravaData.form} · {stravaData.ridesLast7} rides last 7 days · {stravaData.weeklyTSS} TSS this week
+          </div>
+        </div>
+      ) : (
+        <div style={{ ...S2.card, textAlign:"center", padding:32 }}>
+          <div style={{ fontSize:32, marginBottom:12 }}>📊</div>
+          <div style={{ fontSize:15, fontWeight:600, color:"var(--text-primary)", marginBottom:6 }}>No Strava data yet</div>
+          <div style={{ fontSize:13, color:"var(--text-muted)" }}>Connect Strava in the Check-in tab to see your training load chart.</div>
+        </div>
+      )}
+
+      {/* Plan progress */}
+      <div style={S2.card}>
+        <h3 style={S2.h3}>Block progress</h3>
+        <div style={{ display:"flex", justifyContent:"space-between", fontSize:12, color:"var(--text-muted)", marginBottom:8 }}>
+          <span>Week 1</span><span>Week {weekNum} of 12</span><span>Week 12</span>
+        </div>
+        <div style={{ height:10, background:"var(--bg-input)", borderRadius:5, overflow:"hidden", border:"1px solid var(--border)" }}>
+          <div style={{ height:"100%", width:`${(weekNum/12)*100}%`, background:"linear-gradient(to right,#16a34a,#ea580c)", borderRadius:5, transition:"width 0.5s" }}/>
+        </div>
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:6, marginTop:14 }}>
+          {[
+            { name:"Base", weeks:"1–4", color:"#16a34a", done: weekNum > 4 },
+            { name:"Build", weeks:"5–8", color:"#ea580c", done: weekNum > 8 },
+            { name:"Peak", weeks:"9–11", color:"#dc2626", done: weekNum > 11 },
+            { name:"Test", weeks:"12", color:"#7c3aed", done: weekNum >= 12 },
+          ].map(p => (
+            <div key={p.name} style={{ background:"var(--bg-input)", border:`1px solid ${p.done?"#16a34a":p.color}40`, borderRadius:8, padding:"8px 6px", textAlign:"center" }}>
+              <div style={{ fontSize:10, color:p.done?"#16a34a":p.color, fontWeight:600 }}>{p.done?"✓ ":""}{p.name}</div>
+              <div style={{ fontSize:9, color:"var(--text-faint)", marginTop:2 }}>Wk {p.weeks}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main App ─────────────────────────────────────────────────────────────────
 function App(){
   const [ftp,setFtp]=useState(()=>loadState("ww_ftp",220));
@@ -457,6 +764,10 @@ function App(){
   const [restingHR,setRestingHR]=useState(()=>loadState("ww_rhr",44));
   const [legsScore,setLegsScore]=useState(()=>{ const v=loadState("ww_legs",3); return (v>=1&&v<=5)?v:3; });
   const [stravaTokens,setStravaTokens]=useState(()=>loadState("ww_strava_tokens",null));
+  const [yesterdayData,setYesterdayData]=useState(()=>loadState("ww_yesterday",null));
+  const [showInstallPrompt,setShowInstallPrompt]=useState(()=>!loadState("ww_install_dismissed",false));
+  const [isStandalone]=useState(()=>window.matchMedia("(display-mode: standalone)").matches||window.navigator.standalone===true);
+  const [yesterdayLoading,setYesterdayLoading]=useState(false);
   const [stravaData,setStravaData]=useState(()=>loadState("ww_strava_data",null));
   const [stravaSyncing,setStravaSyncing]=useState(false);
   const [stravaError,setStravaError]=useState(null);
@@ -480,6 +791,13 @@ function App(){
   useEffect(()=>saveState("ww_readiness",readiness),[readiness]);
   useEffect(()=>saveState("ww_rhr",restingHR),[restingHR]);
   useEffect(()=>saveState("ww_legs",legsScore),[legsScore]);
+
+  // Auto-fetch yesterday's ride on first load if tokens available
+  useEffect(() => {
+    if (stravaTokens && !yesterdayData && !yesterdayLoading) {
+      fetchYesterday(stravaTokens);
+    }
+  }, [stravaTokens]);
 
   const handleCheckinSave=()=>{
     const today = new Date().toDateString();
@@ -527,6 +845,31 @@ function App(){
     }
   }, []);
 
+  const fetchYesterday = async (tokens) => {
+    const t = tokens || stravaTokens;
+    if (!t) return;
+    setYesterdayLoading(true);
+    try {
+      const res = await fetch("/.netlify/functions/strava-yesterday", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...t, ftp })
+      });
+      const data = await res.json();
+      if (!data.error) {
+        setYesterdayData(data);
+        saveState("ww_yesterday", data);
+        // Update tokens if refreshed
+        if (data.access_token && data.access_token !== t.access_token) {
+          const newTokens = { ...t, access_token: data.access_token, refresh_token: data.refresh_token, expires_at: data.expires_at };
+          setStravaTokens(newTokens);
+          saveState("ww_strava_tokens", newTokens);
+        }
+      }
+    } catch(e) {}
+    setYesterdayLoading(false);
+  };
+
   const doStravaSync = async (tokens) => {
     const t = tokens || stravaTokens;
     if (!t) return;
@@ -558,9 +901,10 @@ function App(){
   const plan=buildPlan(overrides);
   const entry=plan[currentDay]||{workoutId:"REST"};
   const isBlockedDay=entry.workoutId==="HOLIDAY"||entry.workoutId==="SICK"||entry.workoutId==="FREE";
+  const tsb = stravaData ? stravaData.tsb : null;
   const {id:adjId, note:rdNote, adjusted} = isBlockedDay
     ? {id:entry.workoutId, note:null, adjusted:false}
-    : adjustForReadiness(entry.workoutId, readiness, restingHR, legsScore);
+    : adjustForReadiness(entry.workoutId, readiness, restingHR, legsScore, tsb);
   const baseWorkout=WORKOUTS[adjId]||WORKOUTS.REST;
   const workout=shortenPct?shortenWorkout(baseWorkout,shortenPct):baseWorkout;
   const plannedWorkout=WORKOUTS[entry.workoutId]||WORKOUTS.REST;
@@ -573,7 +917,13 @@ function App(){
   const hrPenalty=Math.max(0,(restingHR-ATHLETE.restingHR)*2);
   const safeLegs=legsScore>=1&&legsScore<=5?legsScore:3;
   const legsPenalty=Math.max(0,(3-safeLegs)*5);
-  const effectiveReadiness=Math.max(0,readiness-hrPenalty-legsPenalty);
+  // Mirror the sanity-check logic for display
+  const tsbPenalty = (tsb===null||tsb===undefined) ? 0
+    : (readiness>=70&&tsb<-20) ? 15
+    : (readiness>=60&&tsb<-30) ? 20
+    : (readiness<50&&tsb>10) ? -5
+    : 0;
+  const effectiveReadiness=Math.max(0,readiness-hrPenalty-legsPenalty+tsbPenalty);
   const effColor=effectiveReadiness>=80?"#16a34a":effectiveReadiness>=65?"#22c55e":effectiveReadiness>=50?"#ca8a04":effectiveReadiness>=35?"#ea580c":"#dc2626";
   const effLabel=effectiveReadiness>=80?"Peak — full session":effectiveReadiness>=65?"Good — slight reduction":effectiveReadiness>=50?"Moderate — stepped down":effectiveReadiness>=35?"Low — Zone 2 only":"Very low — rest today";
 
@@ -592,18 +942,18 @@ function App(){
   const clearOverride=(idx)=>{const n={...overrides};delete n[idx];setOverrides(n);};
 
   const S={
-    page:{minHeight:"100vh",background:"#f9fafb",color:"#111827"},
-    hdr:{background:"#fff",borderBottom:"1px solid #e5e7eb",padding:"16px 20px",display:"flex",justifyContent:"space-between",alignItems:"center"},
-    nav:{background:"#fff",borderBottom:"1px solid #e5e7eb",display:"flex"},
-    navBtn:(a)=>({padding:"12px 16px",background:"none",border:"none",borderBottom:a?"2px solid #111827":"2px solid transparent",cursor:"pointer",fontSize:13,fontWeight:a?600:400,color:a?"#111827":"#6b7280",fontFamily:"inherit"}),
+    page:{minHeight:"100vh",background:"var(--bg-page)",color:"var(--text-primary)"},
+    hdr:{background:"var(--hdr-bg)",borderBottom:"1px solid var(--border)",padding:"16px 20px",display:"flex",justifyContent:"space-between",alignItems:"center"},
+    nav:{background:"var(--hdr-bg)",borderBottom:"1px solid var(--border)",display:"flex"},
+    navBtn:(a)=>({padding:"12px 16px",background:"none",border:"none",borderBottom:a?"2px solid #111827":"2px solid transparent",cursor:"pointer",fontSize:13,fontWeight:a?600:400,color:a?"var(--text-primary)":"var(--text-muted)",fontFamily:"inherit"}),
     body:{maxWidth:660,margin:"0 auto",padding:"20px 16px"},
-    card:{background:"#fff",border:"1px solid #e5e7eb",borderRadius:12,padding:20,marginBottom:16},
-    lbl:{fontSize:12,color:"#6b7280",marginBottom:6,display:"block"},
-    h2:{fontSize:22,fontWeight:700,margin:"0 0 4px",color:"#111827"},
-    h3:{fontSize:16,fontWeight:600,margin:"0 0 8px",color:"#111827"},
-    b2:{fontSize:14,color:"#6b7280",lineHeight:1.6},
-    divider:{border:"none",borderTop:"1px solid #f3f4f6",margin:"16px 0"},
-    btn:(c="#374151",bg="#f9fafb")=>({padding:"8px 16px",borderRadius:8,border:"1px solid #e5e7eb",background:bg,color:c,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}),
+    card:{background:"var(--bg-card)",border:"1px solid var(--border)",borderRadius:12,padding:20,marginBottom:16},
+    lbl:{fontSize:12,color:"var(--text-muted)",marginBottom:6,display:"block"},
+    h2:{fontSize:22,fontWeight:700,margin:"0 0 4px",color:"var(--text-primary)"},
+    h3:{fontSize:16,fontWeight:600,margin:"0 0 8px",color:"var(--text-primary)"},
+    b2:{fontSize:14,color:"var(--text-muted)",lineHeight:1.6},
+    divider:{border:"none",borderTop:"1px solid var(--divider)",margin:"16px 0"},
+    btn:(c="#374151",bg="#f9fafb")=>({padding:"8px 16px",borderRadius:8,border:"1px solid var(--border)",background:bg,color:c,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}),
     btnP:{padding:"9px 18px",borderRadius:8,border:"none",background:"#111827",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit"},
   };
 
@@ -611,17 +961,17 @@ function App(){
     <div style={S.page}>
       <div style={S.hdr}>
         <div>
-          <div style={{fontSize:12,color:"#9ca3af",marginBottom:2}}>WykesWatts · Adaptive Cycling Coach · <span style={{color:"#22c55e"}}>Built 28 Sep 2026 11:26</span></div>
+          <div style={{fontSize:12,color:"var(--text-faint)",marginBottom:2}}>WykesWatts · Adaptive Cycling Coach · <span style={{color:"#22c55e"}}>Built 28 Sep 2026 12:27</span></div>
           <div style={{fontSize:18,fontWeight:700}}>FTP Block · Autumn/Winter 2026</div>
         </div>
         <div style={{textAlign:"right"}}>
-          <div style={{fontSize:12,color:"#9ca3af"}}>FTP / Target</div>
+          <div style={{fontSize:12,color:"var(--text-faint)"}}>FTP / Target</div>
           <div style={{fontSize:16,fontWeight:700}}>{ftp}w → <span style={{color:"#16a34a"}}>280w</span></div>
         </div>
       </div>
 
       <div style={S.nav}>
-        {[["today","Today"],["checkin","Check-in"],["plan","Plan"],["zones","Zones"]].map(([v,l])=>(
+        {[["today","Today"],["checkin","Check-in"],["plan","Plan"],["progress","Progress"],["zones","Zones"]].map(([v,l])=>(
           <button key={v} style={S.navBtn(tab===v)} onClick={()=>setTab(v)}>
             {l}{v==="checkin"&&!checkinDone?<span style={{marginLeft:4,width:7,height:7,borderRadius:4,background:"#ef4444",display:"inline-block",verticalAlign:"middle"}}/>:null}
           </button>
@@ -635,12 +985,26 @@ function App(){
           <div style={S.card}>
             <h3 style={{...S.h3,marginBottom:4}}>Morning check-in</h3>
             <p style={{...S.b2,marginBottom:20}}>{checkinDone?"Today's check-in saved. Update any values if needed.":"Takes 30 seconds. Tells the system how hard to push today."}</p>
+            {/* Yesterday's ride analysis */}
+            {stravaTokens && (
+              <div style={{marginBottom:20,paddingBottom:20,borderBottom:"1px solid var(--border)"}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+                  <div style={{fontSize:14,fontWeight:600,color:"var(--text-primary)"}}>Yesterday's ride</div>
+                  <button onClick={()=>fetchYesterday(stravaTokens)} disabled={yesterdayLoading}
+                    style={{background:"none",border:"none",fontSize:12,color:"var(--text-muted)",cursor:"pointer",fontFamily:"inherit",padding:0}}>
+                    {yesterdayLoading?"checking...":"refresh"}
+                  </button>
+                </div>
+                <YesterdayAnalysis data={yesterdayData} plannedId={BASE_PLAN[Math.max(0,todayIdx-1)]} ftp={ftp} loading={yesterdayLoading}/>
+              </div>
+            )}
+
             {/* Strava sync */}
-            <div style={{marginBottom:20,paddingBottom:20,borderBottom:"1px solid #f3f4f6"}}>
+            <div style={{marginBottom:20,paddingBottom:20,borderBottom:"1px solid var(--divider)"}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
                 <div>
-                  <div style={{fontSize:14,fontWeight:600,color:"#374151"}}>Strava sync</div>
-                  <div style={{fontSize:12,color:"#9ca3af",marginTop:2}}>
+                  <div style={{fontSize:14,fontWeight:600,color:"var(--text-secondary)"}}>Strava sync</div>
+                  <div style={{fontSize:12,color:"var(--text-faint)",marginTop:2}}>
                     {stravaData ? `Last synced: ${loadState("ww_strava_sync_date","never")}` : "Connect to pull ATL/CTL/TSB"}
                   </div>
                 </div>
@@ -664,16 +1028,16 @@ function App(){
                     ["ATL", stravaData.atl, "Fatigue", "#ea580c"],
                     ["TSB", stravaData.tsb, "Form", stravaData.tsb>=0?"#16a34a":"#dc2626"],
                   ].map(([key,val,label,color])=>(
-                    <div key={key} style={{background:"#f9fafb",border:"1px solid #e5e7eb",borderRadius:8,padding:"10px 12px",textAlign:"center"}}>
-                      <div style={{fontSize:11,color:"#9ca3af"}}>{label}</div>
+                    <div key={key} style={{background:"var(--bg-input)",border:"1px solid var(--border)",borderRadius:8,padding:"10px 12px",textAlign:"center"}}>
+                      <div style={{fontSize:11,color:"var(--text-faint)"}}>{label}</div>
                       <div style={{fontSize:24,fontWeight:800,color}}>{val}</div>
-                      <div style={{fontSize:11,fontWeight:600,color:"#374151"}}>{key}</div>
+                      <div style={{fontSize:11,fontWeight:600,color:"var(--text-secondary)"}}>{key}</div>
                     </div>
                   ))}
                 </div>
               )}
               {stravaData && (
-                <div style={{marginTop:10,padding:"8px 12px",background:"#f9fafb",border:"1px solid #e5e7eb",borderRadius:8,fontSize:13,color:"#374151"}}>
+                <div style={{marginTop:10,padding:"8px 12px",background:"var(--bg-input)",border:"1px solid var(--border)",borderRadius:8,fontSize:13,color:"var(--text-secondary)"}}>
                   {stravaData.form} · {stravaData.ridesLast7} rides last 7 days · {stravaData.weeklyTSS} TSS
                 </div>
               )}
@@ -691,6 +1055,26 @@ function App(){
         {/* TODAY TAB */}
         {tab==="today"&&(
           <>
+            {/* PWA install prompt — only show in browser, not when already installed */}
+            {showInstallPrompt && !isStandalone && (
+              <div style={{...S.card,borderColor:"#8b5cf6",background:"var(--bg-card)",marginBottom:16}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:14,fontWeight:600,color:"var(--text-primary)",marginBottom:4}}>📱 Add to Home Screen</div>
+                    <div style={{fontSize:13,color:"var(--text-muted)",lineHeight:1.6,marginBottom:10}}>
+                      Install WykesWatts as an app for quick access every morning.
+                    </div>
+                    <div style={{fontSize:13,color:"var(--text-secondary)",lineHeight:1.8}}>
+                      <strong>iPhone/iPad:</strong> Tap <strong>Share ↑</strong> → <strong>Add to Home Screen</strong><br/>
+                      <strong>Mac (Safari):</strong> Click <strong>Share ↑</strong> → <strong>Add to Dock</strong>
+                    </div>
+                  </div>
+                  <button onClick={()=>{setShowInstallPrompt(false);saveState("ww_install_dismissed",true);}}
+                    style={{background:"none",border:"none",fontSize:18,cursor:"pointer",color:"var(--text-faint)",padding:"0 0 0 12px",lineHeight:1}}>×</button>
+                </div>
+              </div>
+            )}
+
             {!checkinDone&&(
               <div style={{...S.card,borderColor:"#f97316",background:"#fff7ed",cursor:"pointer"}} onClick={()=>setTab("checkin")}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
@@ -706,7 +1090,7 @@ function App(){
             <div style={S.card}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
                 <div>
-                  <div style={{fontSize:13,color:"#6b7280"}}>{fmtDate(getPlanDate(currentDay))} · Week {weekNum}</div>
+                  <div style={{fontSize:13,color:"var(--text-muted)"}}>{fmtDate(getPlanDate(currentDay))} · Week {weekNum}</div>
                   <div style={{fontSize:16,fontWeight:600,marginTop:2}}><span style={{color:phase.color}}>●</span> {phase.name} phase</div>
                 </div>
                 <div style={{display:"flex",gap:6,flexWrap:"wrap",justifyContent:"flex-end"}}>
@@ -716,7 +1100,7 @@ function App(){
                 </div>
               </div>
               <input type="range" min={0} max={83} value={currentDay} onChange={e=>setCurrentDay(Number(e.target.value))} style={{accentColor:"#111827"}}/>
-              <div style={{display:"flex",justifyContent:"space-between",fontSize:11,color:"#9ca3af",marginTop:4}}>
+              <div style={{display:"flex",justifyContent:"space-between",fontSize:11,color:"var(--text-faint)",marginTop:4}}>
                 <span>Wk 1 · {fmtDate(getPlanDate(0))}</span>
                 <span>Wk 12 · {fmtDate(getPlanDate(83))}</span>
               </div>
@@ -727,12 +1111,12 @@ function App(){
               <div style={{...S.card,borderColor:effColor+"40",padding:"14px 20px"}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                   <div>
-                    <div style={{fontSize:12,color:"#6b7280"}}>Effective readiness</div>
+                    <div style={{fontSize:12,color:"var(--text-muted)"}}>Effective readiness</div>
                     <div style={{fontSize:14,fontWeight:600,color:effColor,marginTop:2}}>{effLabel}</div>
                   </div>
                   <div style={{textAlign:"right"}}>
                     <div style={{fontSize:32,fontWeight:800,color:effColor}}>{effectiveReadiness}</div>
-                    <div style={{fontSize:11,color:"#9ca3af"}}>TR {readiness} · HR {restingHR}bpm · Legs {legsScore}/5</div>
+                    <div style={{fontSize:11,color:"var(--text-faint)"}}>TR {readiness} · HR {restingHR}bpm · Legs {legsScore}/5{tsb!==null?` · TSB ${tsb}`:""}</div>
                   </div>
                 </div>
                 {adjusted&&rdNote&&(
@@ -741,7 +1125,7 @@ function App(){
                   </div>
                 )}
                 {adjusted&&(
-                  <div style={{marginTop:8,fontSize:12,color:"#9ca3af"}}>
+                  <div style={{marginTop:8,fontSize:12,color:"var(--text-faint)"}}>
                     Planned: {plannedWorkout.name}
                   </div>
                 )}
@@ -752,7 +1136,7 @@ function App(){
               <div style={{...S.card,borderColor:"#94a3b8",background:"#f8fafc"}}>
                 <Tag type="REST"/>
                 <div style={{fontSize:20,fontWeight:700,marginTop:8}}>Rest today 🛌</div>
-                <div style={{fontSize:14,color:"#6b7280",marginTop:4,lineHeight:1.6}}>
+                <div style={{fontSize:14,color:"var(--text-muted)",marginTop:4,lineHeight:1.6}}>
                   {rdNote||"Your body needs recovery today. Sleep well, eat well, stay off the bike."}
                 </div>
                 {adjusted&&<div style={{marginTop:10,fontSize:12,color:"#94a3b8"}}>Planned: {plannedWorkout.name}</div>}
@@ -761,7 +1145,7 @@ function App(){
               <div style={{...S.card,borderColor:"#64748b",background:"#f8fafc"}}>
                 <Tag type="RECOVERY"/>
                 <div style={{fontSize:20,fontWeight:700,marginTop:8}}>Easy spin only 🚴</div>
-                <div style={{fontSize:14,color:"#6b7280",marginTop:4,lineHeight:1.6}}>
+                <div style={{fontSize:14,color:"var(--text-muted)",marginTop:4,lineHeight:1.6}}>
                   {rdNote||"Readiness is very low. If you must ride, keep it to an easy 20–30 min spin at conversational pace. No ERG mode."}
                 </div>
                 {adjusted&&<div style={{marginTop:10,fontSize:12,color:"#94a3b8"}}>Planned: {plannedWorkout.name}</div>}
@@ -770,7 +1154,7 @@ function App(){
               <div style={{...S.card,borderColor:"#8b5cf6"}}>
                 <Tag type="FREE"/>
                 <div style={{fontSize:20,fontWeight:700,marginTop:8}}>Weekend — free ride 🚴</div>
-                <div style={{fontSize:14,color:"#6b7280",marginTop:4}}>No structure today. Ride wherever you like, at whatever pace feels good.</div>
+                <div style={{fontSize:14,color:"var(--text-muted)",marginTop:4}}>No structure today. Ride wherever you like, at whatever pace feels good.</div>
               </div>
             ):entry.workoutId==="HOLIDAY"||entry.workoutId==="SICK"?(
               <div style={{...S.card,borderColor:entry.workoutId==="HOLIDAY"?"#0ea5e9":"#be185d"}}>
@@ -778,7 +1162,7 @@ function App(){
                   <div>
                     <Tag type={entry.workoutId}/>
                     <div style={{fontSize:20,fontWeight:700,marginTop:8}}>{entry.workoutId==="HOLIDAY"?"You're on holiday":"Sick day"}</div>
-                    <div style={{fontSize:14,color:"#6b7280",marginTop:4}}>{entry.workoutId==="HOLIDAY"?"Rest up and enjoy it.":"Take it easy. The plan resumes once you're recovered."}</div>
+                    <div style={{fontSize:14,color:"var(--text-muted)",marginTop:4}}>{entry.workoutId==="HOLIDAY"?"Rest up and enjoy it.":"Take it easy. The plan resumes once you're recovered."}</div>
                   </div>
                   <button style={S.btn("#dc2626","#fff")} onClick={()=>clearOverride(currentDay)}>Remove</button>
                 </div>
@@ -792,8 +1176,8 @@ function App(){
                       <h2 style={{...S.h2,marginTop:8}}>{workout.name}</h2>
                     </div>
                     {workout.tss>0&&(
-                      <div style={{textAlign:"right",background:"#f9fafb",border:"1px solid #e5e7eb",borderRadius:8,padding:"8px 14px",flexShrink:0}}>
-                        <div style={{fontSize:11,color:"#9ca3af"}}>Est. TSS</div>
+                      <div style={{textAlign:"right",background:"var(--bg-input)",border:"1px solid var(--border)",borderRadius:8,padding:"8px 14px",flexShrink:0}}>
+                        <div style={{fontSize:11,color:"var(--text-faint)"}}>Est. TSS</div>
                         <div style={{fontSize:22,fontWeight:800}}>{workout.tss}</div>
                       </div>
                     )}
@@ -813,12 +1197,12 @@ function App(){
                             <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 0",borderBottom:i<workout.intervals.length-1?"1px solid #f9fafb":"none"}}>
                               <div style={{display:"flex",alignItems:"center",gap:10}}>
                                 <div style={{width:3,height:18,borderRadius:2,background:swatch}}/>
-                                <span style={{fontSize:14,color:"#374151"}}>{iv.label}</span>
-                                {isRamp&&<span style={{fontSize:10,color:"#9ca3af",background:"#f3f4f6",padding:"1px 6px",borderRadius:10}}>ramp</span>}
+                                <span style={{fontSize:14,color:"var(--text-secondary)"}}>{iv.label}</span>
+                                {isRamp&&<span style={{fontSize:10,color:"var(--text-faint)",background:"#f3f4f6",padding:"1px 6px",borderRadius:10}}>ramp</span>}
                               </div>
                               <div style={{display:"flex",gap:16,alignItems:"center"}}>
                                 <span style={{fontSize:14,fontWeight:600,color:z.color}}>{ivLabel(iv,ftp)}</span>
-                                <span style={{fontSize:13,color:"#9ca3af",width:36,textAlign:"right"}}>{iv.dur}m</span>
+                                <span style={{fontSize:13,color:"var(--text-faint)",width:36,textAlign:"right"}}>{iv.dur}m</span>
                               </div>
                             </div>
                           );
@@ -826,7 +1210,7 @@ function App(){
                       </div>
                       <hr style={S.divider}/>
                       <div style={{marginBottom:14}}>
-                        <div style={{fontSize:13,fontWeight:600,color:"#374151",marginBottom:8}}>Short on time?</div>
+                        <div style={{fontSize:13,fontWeight:600,color:"var(--text-secondary)",marginBottom:8}}>Short on time?</div>
                         <div style={{display:"flex",gap:6}}>
                           {[null,0.75,0.5,0.25].map(p=>{
                             const dur = p===null ? baseWorkout.duration : shortenWorkout(baseWorkout,p).duration;
@@ -847,7 +1231,7 @@ function App(){
                       </div>
                       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                         <div style={{fontSize:14,fontWeight:600}}>Export to Zwift</div>
-                        <button style={S.btnP} onClick={()=>downloadZWO(adjId,ftp,workout.name,weekNum,currentDay)}>
+                        <button style={S.btnP} onClick={()=>downloadZWO(adjId,ftp,workout.name,weekNum,currentDay,shortenPct?workout:null)}>
                           Download .zwo
                         </button>
                       </div>
@@ -859,7 +1243,7 @@ function App(){
                   <span style={S.lbl}>FTP — update after each test</span>
                   <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}>
                     <span style={{fontSize:20,fontWeight:700}}>{ftp}w</span>
-                    <span style={{fontSize:14,color:"#6b7280"}}>{(ftp/ATHLETE.weight).toFixed(2)} w/kg</span>
+                    <span style={{fontSize:14,color:"var(--text-muted)"}}>{(ftp/ATHLETE.weight).toFixed(2)} w/kg</span>
                   </div>
                   <input type="range" min={180} max={320} value={ftp} onChange={e=>setFtp(Number(e.target.value))} style={{accentColor:"#111827"}}/>
                 </div>
@@ -873,7 +1257,7 @@ function App(){
           <>
             <div style={S.card}>
               <h3 style={S.h3}>Mark days off</h3>
-              <p style={{fontSize:13,color:"#6b7280",marginBottom:12}}>
+              <p style={{fontSize:13,color:"var(--text-muted)",marginBottom:12}}>
                 {blockMode?(blockStart===null?`Click the first day of your ${blockMode==="HOLIDAY"?"holiday":"sick period"}.`:`Now click the last day.`):"Select type then tap start and end days on the calendar."}
               </p>
               <div style={{display:"flex",gap:8}}>
@@ -888,7 +1272,7 @@ function App(){
                 <div key={i} style={{...S.card,marginBottom:0,borderLeft:`3px solid ${p.color}`,padding:"12px 16px"}}>
                   <div style={{fontSize:11,color:p.color,fontWeight:600,marginBottom:2}}>Weeks {p.weeks}</div>
                   <div style={{fontSize:14,fontWeight:700}}>{p.name}</div>
-                  <div style={{fontSize:11,color:"#6b7280",marginTop:4,lineHeight:1.5}}>{p.desc}</div>
+                  <div style={{fontSize:11,color:"var(--text-muted)",marginTop:4,lineHeight:1.5}}>{p.desc}</div>
                 </div>
               ))}
             </div>
@@ -899,9 +1283,9 @@ function App(){
               return(
                 <div key={wk} style={{marginBottom:10}}>
                   <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
-                    <span style={{fontSize:13,fontWeight:600,color:"#374151"}}>Week {wk+1}</span>
+                    <span style={{fontSize:13,fontWeight:600,color:"var(--text-secondary)"}}>Week {wk+1}</span>
                     <span style={{fontSize:11,color:ph.color,fontWeight:600}}>{ph.name}</span>
-                    {isRec&&<span style={{fontSize:11,color:"#9ca3af",background:"#f3f4f6",padding:"1px 8px",borderRadius:20}}>recovery</span>}
+                    {isRec&&<span style={{fontSize:11,color:"var(--text-faint)",background:"#f3f4f6",padding:"1px 8px",borderRadius:20}}>recovery</span>}
                   </div>
                   <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:3}}>
                     {Array.from({length:7},(_,d)=>{
@@ -936,9 +1320,14 @@ function App(){
                   <span key={k} style={{fontSize:11,color:v.color,background:v.bg,border:`1px solid ${v.color}30`,padding:"2px 8px",borderRadius:20}}>{v.label}</span>
                 ))}
               </div>
-              <div style={{marginTop:8,fontSize:11,color:"#9ca3af"}}>Dark = today · Faded = past · Holidays & sick days saved automatically</div>
+              <div style={{marginTop:8,fontSize:11,color:"var(--text-faint)"}}>Dark = today · Faded = past · Holidays & sick days saved automatically</div>
             </div>
           </>
+        )}
+
+        {/* PROGRESS TAB */}
+        {tab==="progress"&&(
+          <ProgressTab ftp={ftp} stravaData={stravaData} planStart={PLAN_START} todayIdx={todayIdx}/>
         )}
 
         {/* ZONES TAB */}
@@ -948,7 +1337,7 @@ function App(){
               <span style={S.lbl}>FTP</span>
               <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}>
                 <span style={{fontSize:28,fontWeight:800}}>{ftp}w</span>
-                <span style={{fontSize:16,color:"#6b7280",alignSelf:"flex-end"}}>{(ftp/ATHLETE.weight).toFixed(2)} w/kg</span>
+                <span style={{fontSize:16,color:"var(--text-muted)",alignSelf:"flex-end"}}>{(ftp/ATHLETE.weight).toFixed(2)} w/kg</span>
               </div>
               <input type="range" min={180} max={320} value={ftp} onChange={e=>setFtp(Number(e.target.value))} style={{accentColor:"#111827"}}/>
             </div>
@@ -958,7 +1347,7 @@ function App(){
                 <div style={{flex:1}}>
                   <div style={{fontSize:12,fontWeight:600,color:z.color,marginBottom:2}}>Zone {z.id}</div>
                   <div style={{fontSize:17,fontWeight:700}}>{z.name}</div>
-                  <div style={{fontSize:12,color:"#9ca3af",marginTop:2}}>{z.pct[0]}–{z.pct[1]}% FTP</div>
+                  <div style={{fontSize:12,color:"var(--text-faint)",marginTop:2}}>{z.pct[0]}–{z.pct[1]}% FTP</div>
                 </div>
                 <div style={{fontSize:22,fontWeight:800,color:z.color}}>{calcW(z.pct[0],ftp)}–{calcW(z.pct[1],ftp)}w</div>
               </div>
@@ -966,8 +1355,8 @@ function App(){
             <div style={S.card}>
               <h3 style={S.h3}>Your numbers</h3>
               {[["Current FTP",`${ftp}w`],["W/kg",(ftp/ATHLETE.weight).toFixed(2)],["Target FTP","280w"],["Target W/kg",(280/ATHLETE.weight).toFixed(2)],["VO2 Max","55 ml/kg/min"],["Baseline HR",`${ATHLETE.restingHR} bpm`],["Weight","69 kg"]].map(([k,v])=>(
-                <div key={k} style={{display:"flex",justifyContent:"space-between",padding:"10px 0",borderBottom:"1px solid #f3f4f6",fontSize:14}}>
-                  <span style={{color:"#6b7280"}}>{k}</span>
+                <div key={k} style={{display:"flex",justifyContent:"space-between",padding:"10px 0",borderBottom:"1px solid var(--divider)",fontSize:14}}>
+                  <span style={{color:"var(--text-muted)"}}>{k}</span>
                   <span style={{fontWeight:700}}>{v}</span>
                 </div>
               ))}
