@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cycling Coach — James Wykes</title>
+<title>WykesWatts — Cycling Coach</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
@@ -22,9 +22,8 @@
 <body>
 <div id="root"></div>
 <script type="text/babel">
-const { useState, useCallback } = React;
+const { useState, useCallback, useEffect } = React;
 
-// ─── Athlete ──────────────────────────────────────────────────────────────────
 const ATHLETE = { ftp: 220, weight: 69, vo2max: 55, restingHR: 44, targetFtp: 280 };
 
 const ZONES = [
@@ -48,84 +47,147 @@ const SESSION_TYPES = {
   SICK:      { label:"Sick Day",   color:"#be185d", bg:"#fdf2f8" },
 };
 
-const WORKOUTS = {
-  FREE:     { id:"FREE",     name:"Free Ride",          type:"FREE",      tss:0,  duration:0,  description:"Weekend ride — no structure, no targets. Ride for enjoyment. Any distance, any pace.", intervals:[] },
-  REST:     { id:"REST",     name:"Rest Day",            type:"REST",      tss:0,  duration:0,  description:"Full rest. Sleep well, eat well. Recovery is when adaptation happens.", intervals:[] },
-  RECOVERY: { id:"RECOVERY", name:"Easy Spin",           type:"RECOVERY",  tss:20, duration:45, description:"Very easy spinning to flush the legs. Keep HR low, effort minimal.", intervals:[{pct:45,dur:45,label:"Easy spin"}] },
-  Z2_60: {
-    id:"Z2_60", name:"Zone 2 · 60 min", type:"Z2", tss:55, duration:60,
-    description:"Steady aerobic base work. You should be able to hold a full conversation. The most important session of the week.",
-    intervals:[{ramp:[30,65],dur:10,label:"Warm-up"},{pct:65,dur:45,label:"Zone 2 endurance"},{ramp:[65,30],dur:5,label:"Cool-down"}]
+// ─── Z2 Variants ──────────────────────────────────────────────────────────────
+// 6 distinct Zone 2 workout variants that rotate through the plan
+const Z2_VARIANTS = [
+  {
+    id:"Z2_STEADY_60", name:"Zone 2 Steady · 60 min", type:"Z2", tss:55, duration:60,
+    description:"Classic steady aerobic ride. Conversational pace throughout. Foundation of the training block.",
+    intervals:[{ramp:[30,65],dur:10,label:"Warm-up"},{pct:65,dur:45,label:"Zone 2 steady"},{ramp:[65,30],dur:5,label:"Cool-down"}]
   },
-  Z2_90: {
-    id:"Z2_90", name:"Zone 2 · 90 min", type:"Z2", tss:80, duration:90,
+  {
+    id:"Z2_CADENCE_60", name:"Zone 2 Cadence · 60 min", type:"Z2", tss:55, duration:60,
+    description:"Zone 2 with high-cadence blocks. Aim for 95–100rpm during cadence efforts. Builds pedalling efficiency.",
+    intervals:[{ramp:[30,65],dur:10,label:"Warm-up"},{pct:65,dur:12,label:"Zone 2"},{pct:63,dur:5,label:"High cadence (95–100rpm)"},{pct:65,dur:8,label:"Zone 2"},{pct:63,dur:5,label:"High cadence (95–100rpm)"},{pct:65,dur:8,label:"Zone 2"},{pct:63,dur:5,label:"High cadence (95–100rpm)"},{pct:65,dur:2,label:"Zone 2"},{ramp:[65,30],dur:5,label:"Cool-down"}]
+  },
+  {
+    id:"Z2_PROGRESSIVE_60", name:"Zone 2 Progressive · 60 min", type:"Z2", tss:58, duration:60,
+    description:"Start at the bottom of Zone 2 and drift up to the top by the end. Teaches you to manage effort over time.",
+    intervals:[{ramp:[30,57],dur:10,label:"Warm-up"},{pct:57,dur:15,label:"Zone 2 low (57%)"},{pct:63,dur:15,label:"Zone 2 mid (63%)"},{pct:70,dur:15,label:"Zone 2 high (70%)"},{ramp:[70,30],dur:5,label:"Cool-down"}]
+  },
+  {
+    id:"Z2_TEMPO_BURSTS_60", name:"Zone 2 with Tempo Bursts · 60 min", type:"Z2", tss:65, duration:60,
+    description:"Zone 2 base with short tempo efforts embedded. Keeps the aerobic stimulus while adding variety.",
+    intervals:[{ramp:[30,65],dur:10,label:"Warm-up"},{pct:65,dur:10,label:"Zone 2"},{pct:83,dur:3,label:"Tempo burst"},{pct:65,dur:9,label:"Zone 2"},{pct:83,dur:3,label:"Tempo burst"},{pct:65,dur:9,label:"Zone 2"},{pct:83,dur:3,label:"Tempo burst"},{pct:65,dur:8,label:"Zone 2"},{ramp:[65,30],dur:5,label:"Cool-down"}]
+  },
+  {
+    id:"Z2_STEADY_90", name:"Zone 2 Steady · 90 min", type:"Z2", tss:80, duration:90,
     description:"Extended aerobic ride. Builds the mitochondrial base that underpins all other training.",
-    intervals:[{ramp:[30,65],dur:15,label:"Warm-up"},{pct:65,dur:65,label:"Zone 2 endurance"},{ramp:[65,30],dur:10,label:"Cool-down"}]
+    intervals:[{ramp:[30,65],dur:15,label:"Warm-up"},{pct:65,dur:65,label:"Zone 2 steady"},{ramp:[65,30],dur:10,label:"Cool-down"}]
   },
+  {
+    id:"Z2_PYRAMID_90", name:"Zone 2 Pyramid · 90 min", type:"Z2", tss:82, duration:90,
+    description:"Build up through the zone and back down. Gives the session a natural shape and keeps focus.",
+    intervals:[{ramp:[30,60],dur:15,label:"Warm-up"},{pct:60,dur:10,label:"Zone 2 base (60%)"},{pct:65,dur:10,label:"Zone 2 mid (65%)"},{pct:70,dur:15,label:"Zone 2 top (70%)"},{pct:65,dur:10,label:"Zone 2 mid (65%)"},{pct:60,dur:10,label:"Zone 2 base (60%)"},{pct:65,dur:10,label:"Zone 2 steady"},{ramp:[65,30],dur:10,label:"Cool-down"}]
+  },
+];
+
+// ─── Workouts ─────────────────────────────────────────────────────────────────
+const WORKOUTS = {
+  FREE:     { id:"FREE",     name:"Free Ride",    type:"FREE",      tss:0,  duration:0,  description:"Weekend ride — no structure, no targets. Ride for enjoyment.", intervals:[] },
+  REST:     { id:"REST",     name:"Rest Day",      type:"REST",      tss:0,  duration:0,  description:"Full rest. Sleep well, eat well. Recovery is when adaptation happens.", intervals:[] },
+  RECOVERY: { id:"RECOVERY", name:"Easy Spin",     type:"RECOVERY",  tss:20, duration:45, description:"Very easy spinning to flush the legs. Keep HR low, effort minimal.", intervals:[{pct:45,dur:45,label:"Easy spin"}] },
   SWEET_SPOT: {
     id:"SWEET_SPOT", name:"Sweet Spot · 3×20", type:"SWEETSPOT", tss:75, duration:80,
-    description:"High-value work just below threshold. Builds FTP with manageable fatigue. Three 20-minute blocks.",
+    description:"High-value work just below threshold. Builds FTP with manageable fatigue.",
     intervals:[{ramp:[30,75],dur:10,label:"Warm-up"},{pct:88,dur:20,label:"Sweet spot"},{pct:55,dur:5,label:"Recovery"},{pct:88,dur:20,label:"Sweet spot"},{pct:55,dur:5,label:"Recovery"},{pct:88,dur:10,label:"Sweet spot"},{ramp:[75,30],dur:10,label:"Cool-down"}]
   },
   THRESHOLD_2X20: {
     id:"THRESHOLD_2X20", name:"Threshold · 2×20", type:"THRESHOLD", tss:90, duration:80,
-    description:"Two 20-minute efforts at 95% FTP. The classic FTP builder. Controlled and steady.",
+    description:"Two 20-minute efforts at 95% FTP. The classic FTP builder.",
     intervals:[{ramp:[30,80],dur:15,label:"Warm-up"},{pct:95,dur:20,label:"Threshold"},{pct:55,dur:5,label:"Recovery"},{pct:95,dur:20,label:"Threshold"},{ramp:[75,30],dur:10,label:"Cool-down"}]
   },
   THRESHOLD_3X15: {
     id:"THRESHOLD_3X15", name:"Threshold · 3×15", type:"THRESHOLD", tss:95, duration:90,
-    description:"Three 15-minute blocks at 97% FTP. Higher volume than 2×20 with shorter individual efforts.",
+    description:"Three 15-minute blocks at 97% FTP.",
     intervals:[{ramp:[30,80],dur:15,label:"Warm-up"},{pct:97,dur:15,label:"Threshold"},{pct:55,dur:5,label:"Recovery"},{pct:97,dur:15,label:"Threshold"},{pct:55,dur:5,label:"Recovery"},{pct:97,dur:15,label:"Threshold"},{ramp:[75,30],dur:10,label:"Cool-down"}]
+  },
+  THRESHOLD_2X20_92: {
+    id:"THRESHOLD_2X20_92", name:"Threshold · 2×20 (−3%)", type:"THRESHOLD", tss:84, duration:80,
+    description:"Threshold session at 92% FTP — slightly reduced intensity for moderate readiness days.",
+    intervals:[{ramp:[30,78],dur:15,label:"Warm-up"},{pct:92,dur:20,label:"Threshold (reduced)"},{pct:55,dur:5,label:"Recovery"},{pct:92,dur:20,label:"Threshold (reduced)"},{ramp:[72,30],dur:10,label:"Cool-down"}]
+  },
+  THRESHOLD_3X15_93: {
+    id:"THRESHOLD_3X15_93", name:"Threshold · 3×15 (−4%)", type:"THRESHOLD", tss:87, duration:90,
+    description:"Threshold session at 93% FTP — slightly reduced intensity for moderate readiness days.",
+    intervals:[{ramp:[30,78],dur:15,label:"Warm-up"},{pct:93,dur:15,label:"Threshold (reduced)"},{pct:55,dur:5,label:"Recovery"},{pct:93,dur:15,label:"Threshold (reduced)"},{pct:55,dur:5,label:"Recovery"},{pct:93,dur:15,label:"Threshold (reduced)"},{ramp:[72,30],dur:10,label:"Cool-down"}]
   },
   VO2_4X4: {
     id:"VO2_4X4", name:"VO2 Max · 4×4", type:"VO2", tss:85, duration:75,
-    description:"The Norwegian 4×4. Four hard 4-minute intervals at 115% FTP. RPE 9/10. The most effective VO2 max session known.",
-    intervals:[{ramp:[30,80],dur:15,label:"Warm-up"},{pct:115,dur:4,label:"VO2 max effort"},{pct:55,dur:4,label:"Recovery"},{pct:115,dur:4,label:"VO2 max effort"},{pct:55,dur:4,label:"Recovery"},{pct:115,dur:4,label:"VO2 max effort"},{pct:55,dur:4,label:"Recovery"},{pct:115,dur:4,label:"VO2 max effort"},{ramp:[75,30],dur:15,label:"Cool-down"}]
+    description:"The Norwegian 4×4. Four hard 4-minute intervals at 115% FTP. RPE 9/10.",
+    intervals:[{ramp:[30,80],dur:15,label:"Warm-up"},{pct:115,dur:4,label:"VO2 effort"},{pct:55,dur:4,label:"Recovery"},{pct:115,dur:4,label:"VO2 effort"},{pct:55,dur:4,label:"Recovery"},{pct:115,dur:4,label:"VO2 effort"},{pct:55,dur:4,label:"Recovery"},{pct:115,dur:4,label:"VO2 effort"},{ramp:[75,30],dur:15,label:"Cool-down"}]
+  },
+  VO2_4X4_110: {
+    id:"VO2_4X4_110", name:"VO2 Max · 4×4 (−5%)", type:"VO2", tss:78, duration:75,
+    description:"VO2 session at 110% FTP — reduced intensity for moderate readiness. Still hard, just not maximum.",
+    intervals:[{ramp:[30,78],dur:15,label:"Warm-up"},{pct:110,dur:4,label:"VO2 effort (reduced)"},{pct:55,dur:4,label:"Recovery"},{pct:110,dur:4,label:"VO2 effort (reduced)"},{pct:55,dur:4,label:"Recovery"},{pct:110,dur:4,label:"VO2 effort (reduced)"},{pct:55,dur:4,label:"Recovery"},{pct:110,dur:4,label:"VO2 effort (reduced)"},{ramp:[72,30],dur:15,label:"Cool-down"}]
   },
   VO2_5X4: {
     id:"VO2_5X4", name:"VO2 Max · 5×4", type:"VO2", tss:95, duration:85,
-    description:"Five intervals at 118% FTP with shorter recovery. Phase 3 progression — harder than 4×4.",
-    intervals:[{ramp:[30,80],dur:15,label:"Warm-up"},{pct:118,dur:4,label:"VO2 max effort"},{pct:55,dur:3,label:"Recovery"},{pct:118,dur:4,label:"VO2 max effort"},{pct:55,dur:3,label:"Recovery"},{pct:118,dur:4,label:"VO2 max effort"},{pct:55,dur:3,label:"Recovery"},{pct:118,dur:4,label:"VO2 max effort"},{pct:55,dur:3,label:"Recovery"},{pct:118,dur:4,label:"VO2 max effort"},{ramp:[75,30],dur:15,label:"Cool-down"}]
+    description:"Five intervals at 118% FTP with shorter recovery. Phase 3 progression.",
+    intervals:[{ramp:[30,80],dur:15,label:"Warm-up"},{pct:118,dur:4,label:"VO2 effort"},{pct:55,dur:3,label:"Recovery"},{pct:118,dur:4,label:"VO2 effort"},{pct:55,dur:3,label:"Recovery"},{pct:118,dur:4,label:"VO2 effort"},{pct:55,dur:3,label:"Recovery"},{pct:118,dur:4,label:"VO2 effort"},{pct:55,dur:3,label:"Recovery"},{pct:118,dur:4,label:"VO2 effort"},{ramp:[75,30],dur:15,label:"Cool-down"}]
+  },
+  VO2_5X4_112: {
+    id:"VO2_5X4_112", name:"VO2 Max · 5×4 (−6%)", type:"VO2", tss:85, duration:85,
+    description:"5×4 session at 112% FTP — reduced intensity for moderate readiness.",
+    intervals:[{ramp:[30,78],dur:15,label:"Warm-up"},{pct:112,dur:4,label:"VO2 effort (reduced)"},{pct:55,dur:3,label:"Recovery"},{pct:112,dur:4,label:"VO2 effort (reduced)"},{pct:55,dur:3,label:"Recovery"},{pct:112,dur:4,label:"VO2 effort (reduced)"},{pct:55,dur:3,label:"Recovery"},{pct:112,dur:4,label:"VO2 effort (reduced)"},{pct:55,dur:3,label:"Recovery"},{pct:112,dur:4,label:"VO2 effort (reduced)"},{ramp:[72,30],dur:15,label:"Cool-down"}]
   },
   FTP_TEST: {
     id:"FTP_TEST", name:"FTP Test", type:"TEST", tss:80, duration:70,
-    description:"20-minute all-out effort. Pace it evenly — starting too hard is the most common mistake. Take 95% of your average power as your new FTP.",
-    intervals:[{ramp:[30,85],dur:10,label:"Warm-up"},{pct:100,dur:5,label:"Openers"},{pct:45,dur:5,label:"Rest"},{pct:106,dur:20,label:"20-minute all-out effort"},{ramp:[80,30],dur:15,label:"Cool-down"}]
+    description:"20-minute all-out effort. Pace it evenly. Take 95% of average power as your new FTP.",
+    intervals:[{ramp:[30,85],dur:10,label:"Warm-up"},{pct:100,dur:5,label:"Openers"},{pct:45,dur:5,label:"Rest"},{pct:106,dur:20,label:"20-min all-out effort"},{ramp:[80,30],dur:15,label:"Cool-down"}]
   },
 };
 
-const BASE_PLAN = [
-  "Z2_60","Z2_60","RECOVERY","Z2_90","Z2_60","FREE","FREE",
-  "Z2_60","SWEET_SPOT","Z2_60","RECOVERY","Z2_90","FREE","FREE",
-  "Z2_90","SWEET_SPOT","Z2_90","Z2_60","Z2_90","FREE","FREE",
-  "RECOVERY","Z2_60","RECOVERY","REST","Z2_60","FREE","FREE",
-  "Z2_60","VO2_4X4","Z2_60","THRESHOLD_2X20","Z2_90","FREE","FREE",
-  "Z2_60","VO2_4X4","Z2_60","THRESHOLD_2X20","Z2_90","FREE","FREE",
-  "Z2_90","VO2_4X4","Z2_90","THRESHOLD_3X15","Z2_90","FREE","FREE",
-  "RECOVERY","Z2_60","RECOVERY","Z2_60","REST","FREE","FREE",
-  "Z2_60","VO2_5X4","Z2_60","THRESHOLD_3X15","Z2_90","FREE","FREE",
-  "Z2_90","VO2_5X4","Z2_90","THRESHOLD_3X15","Z2_90","FREE","FREE",
-  "Z2_90","VO2_5X4","Z2_90","THRESHOLD_3X15","Z2_90","FREE","FREE",
-  "Z2_60","SWEET_SPOT","Z2_60","RECOVERY","FTP_TEST","FREE","FREE",
-];
+// Add Z2 variants to WORKOUTS
+Z2_VARIANTS.forEach(v => { WORKOUTS[v.id] = v; });
+
+// Base plan — Z2 slots rotate through 6 variants
+const Z2_60_IDS = ["Z2_STEADY_60","Z2_CADENCE_60","Z2_PROGRESSIVE_60","Z2_TEMPO_BURSTS_60"];
+const Z2_90_IDS = ["Z2_STEADY_90","Z2_PYRAMID_90"];
+
+// Pre-assign Z2 variants so each occurrence gets the next in the rotation
+function buildBasePlan() {
+  const template = [
+    "Z2","Z2","RECOVERY","Z2_90","Z2","FREE","FREE",
+    "Z2","SWEET_SPOT","Z2","RECOVERY","Z2_90","FREE","FREE",
+    "Z2_90","SWEET_SPOT","Z2_90","Z2","Z2_90","FREE","FREE",
+    "RECOVERY","Z2","RECOVERY","REST","Z2","FREE","FREE",
+    "Z2","VO2_4X4","Z2","THRESHOLD_2X20","Z2_90","FREE","FREE",
+    "Z2","VO2_4X4","Z2","THRESHOLD_2X20","Z2_90","FREE","FREE",
+    "Z2_90","VO2_4X4","Z2_90","THRESHOLD_3X15","Z2_90","FREE","FREE",
+    "RECOVERY","Z2","RECOVERY","Z2","REST","FREE","FREE",
+    "Z2","VO2_5X4","Z2","THRESHOLD_3X15","Z2_90","FREE","FREE",
+    "Z2_90","VO2_5X4","Z2_90","THRESHOLD_3X15","Z2_90","FREE","FREE",
+    "Z2_90","VO2_5X4","Z2_90","THRESHOLD_3X15","Z2_90","FREE","FREE",
+    "Z2","SWEET_SPOT","Z2","RECOVERY","FTP_TEST","FREE","FREE",
+  ];
+  let z2Idx=0, z90Idx=0;
+  return template.map(id => {
+    if(id==="Z2") return Z2_60_IDS[z2Idx++ % Z2_60_IDS.length];
+    if(id==="Z2_90") return Z2_90_IDS[z90Idx++ % Z2_90_IDS.length];
+    return id;
+  });
+}
+
+const BASE_PLAN = buildBasePlan();
 
 const PHASE_MAP = [0,0,0,0,1,1,1,1,2,2,2,3];
 const PHASES = [
   { name:"Base",  weeks:"1–4",  color:"#16a34a", desc:"Build your aerobic engine. Zone 2 is the priority." },
-  { name:"Build", weeks:"5–8",  color:"#ea580c", desc:"Threshold and VO2 max work introduced. FTP gains happen here." },
+  { name:"Build", weeks:"5–8",  color:"#ea580c", desc:"Threshold and VO2 max work introduced." },
   { name:"Peak",  weeks:"9–11", color:"#dc2626", desc:"Maximum load. Longest threshold efforts of the block." },
   { name:"Test",  weeks:"12",   color:"#7c3aed", desc:"Taper, freshen up, then prove your new FTP." },
 ];
 
 const DAY_NAMES = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
-
-// Plan anchored to Mon 8 Sep 2026
 const PLAN_START = new Date(Date.UTC(2026, 8, 7));
 
 function getTodayIndex() {
-  const today = new Date(); today.setHours(0,0,0,0);
-  const start = new Date(PLAN_START); start.setHours(0,0,0,0);
-  return Math.min(Math.max(Math.round((today-start)/(864e5)),0),83);
+  const now = new Date();
+  const todayUTC = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+  const diffDays = Math.round((todayUTC - PLAN_START.getTime()) / 864e5);
+  return Math.min(Math.max(diffDays, 0), 83);
 }
 function getPlanDate(i) { const d=new Date(PLAN_START); d.setDate(d.getDate()+i); return d; }
 function fmtDate(d) { return d.toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"}); }
@@ -134,29 +196,59 @@ function getZone(pct) { return ZONES.find(z=>pct>=z.pct[0]&&pct<=z.pct[1])||ZONE
 function midPct(iv) { return iv.ramp?(iv.ramp[0]+iv.ramp[1])/2:iv.pct; }
 function ivLabel(iv,ftp) { return iv.ramp?`${calcW(iv.ramp[0],ftp)}→${calcW(iv.ramp[1],ftp)}w`:`${calcW(iv.pct,ftp)}w`; }
 
-function adjustForReadiness(wId, r) {
-  if(wId==="REST"||wId==="RECOVERY"||wId==="FREE") return {id:wId,note:null};
-  if(r>=75) return {id:wId,note:null};
-  if(r>=50){const m={VO2_5X4:"VO2_4X4",THRESHOLD_3X15:"THRESHOLD_2X20",SWEET_SPOT:"Z2_90"};const a=m[wId]||wId;return{id:a,note:a!==wId?`Stepped down to ${WORKOUTS[a].name} — readiness moderate.`:"Moderate readiness — proceed carefully."};}
-  if(r>=25){const hard=["VO2_4X4","VO2_5X4","THRESHOLD_2X20","THRESHOLD_3X15","SWEET_SPOT","FTP_TEST"].includes(wId);return{id:hard?"Z2_60":wId,note:hard?"Low readiness — replaced with Zone 2.":"Low readiness — keep effort minimal."};}
-  return {id:"RECOVERY",note:"Very low readiness — easy spin or rest only."};
+// ─── Granular readiness adjustment ────────────────────────────────────────────
+// Bands: 80–100 full, 65–79 intensity -3-5%, 50–64 step down type,
+//        35–49 Z2 only, 0–34 recovery/rest
+function adjustForReadiness(wId, readiness, restingHR, legsScore) {
+  if(wId==="REST"||wId==="RECOVERY"||wId==="FREE") return {id:wId, note:null, adjusted:false};
+
+  // Composite score: weight readiness 60%, resting HR 20%, legs 20%
+  // HR penalty: each bpm above baseline (44) reduces effective score by 2pts
+  const hrPenalty = Math.max(0, (restingHR - ATHLETE.restingHR) * 2);
+  // Legs penalty: scale 1-5 → 0-20pts penalty (1=bad=20pts, 5=great=0pts)
+  const legsPenalty = Math.max(0, (3 - legsScore) * 5);
+  const effective = Math.max(0, readiness - hrPenalty - legsPenalty);
+
+  const isVO2 = ["VO2_4X4","VO2_5X4"].includes(wId);
+  const isThreshold = ["THRESHOLD_2X20","THRESHOLD_3X15"].includes(wId);
+  const isSweetSpot = wId === "SWEET_SPOT";
+  const isHard = isVO2 || isThreshold || isSweetSpot;
+
+  if(effective >= 80) {
+    return {id:wId, note:null, adjusted:false};
+  }
+  if(effective >= 65) {
+    // Reduce intensity by 3–5% — use dedicated reduced variants
+    if(wId==="VO2_5X4") return {id:"VO2_5X4_112", note:"Readiness good but not peak — intensity reduced 6%.", adjusted:true};
+    if(wId==="VO2_4X4") return {id:"VO2_4X4_110", note:"Readiness good but not peak — intensity reduced 5%.", adjusted:true};
+    if(wId==="THRESHOLD_3X15") return {id:"THRESHOLD_3X15_93", note:"Readiness good but not peak — intensity reduced 4%.", adjusted:true};
+    if(wId==="THRESHOLD_2X20") return {id:"THRESHOLD_2X20_92", note:"Readiness good but not peak — intensity reduced 3%.", adjusted:true};
+    return {id:wId, note:"Readiness good — proceed, but back off if you feel flat.", adjusted:false};
+  }
+  if(effective >= 50) {
+    // Step down session type
+    if(wId==="VO2_5X4") return {id:"VO2_4X4", note:"Readiness moderate — stepped down from 5×4 to 4×4.", adjusted:true};
+    if(wId==="VO2_4X4") return {id:"THRESHOLD_2X20", note:"Readiness moderate — stepped down from VO2 to threshold.", adjusted:true};
+    if(wId==="THRESHOLD_3X15") return {id:"THRESHOLD_2X20", note:"Readiness moderate — stepped down to 2×20.", adjusted:true};
+    if(wId==="THRESHOLD_2X20") return {id:"SWEET_SPOT", note:"Readiness moderate — stepped down to sweet spot.", adjusted:true};
+    if(wId==="SWEET_SPOT") return {id:"Z2_STEADY_60", note:"Readiness moderate — replaced sweet spot with Zone 2.", adjusted:true};
+    return {id:wId, note:"Readiness moderate — listen to your body.", adjusted:false};
+  }
+  if(effective >= 35) {
+    // Zone 2 only
+    if(isHard) return {id:"Z2_STEADY_60", note:"Readiness low — all intensity replaced with Zone 2.", adjusted:true};
+    return {id:wId, note:"Readiness low — keep effort minimal.", adjusted:false};
+  }
+  // Very low — recovery or rest
+  if(effective < 20) return {id:"REST", note:"Readiness very low — full rest today. Don't ride.", adjusted:true};
+  return {id:"RECOVERY", note:"Readiness very low — easy spin only if you must move.", adjusted:true};
 }
 
 function buildPlan(overrides) {
-  // Build a list of workout IDs with blocked days removed, then redistribute
   const result=[];
-  // Collect which plan-days are blocked
-  const blockedDays=new Set(Object.keys(overrides).map(Number));
-  // Build a queue of workouts from the template, skipping blocked slots
-  const queue=[...BASE_PLAN];
-  // For each calendar day, assign blocked or next queued workout
-  let qi=0;
   for(let d=0;d<84;d++){
-    if(overrides[d]){
-      result.push({workoutId:overrides[d]==="HOLIDAY"?"HOLIDAY":"SICK",overridden:true});
-    } else {
-      result.push({workoutId:BASE_PLAN[d]||"REST",overridden:false});
-    }
+    if(overrides[d]) result.push({workoutId:overrides[d]==="HOLIDAY"?"HOLIDAY":"SICK",overridden:true});
+    else result.push({workoutId:BASE_PLAN[d]||"REST",overridden:false});
   }
   return result;
 }
@@ -169,7 +261,7 @@ function generateZWO(wId, ftp, zwiftName) {
     if(i.ramp){const f=(i.ramp[0]/100).toFixed(2),t=(i.ramp[1]/100).toFixed(2),tag=i.ramp[1]>=i.ramp[0]?"Warmup":"Cooldown";return`    <${tag} Duration="${s}" PowerLow="${f}" PowerHigh="${t}" pace="0"/>`;}
     return `    <SteadyState Duration="${s}" Power="${(i.pct/100).toFixed(2)}" pace="0"/>`;
   }).join("\n");
-  return `<?xml version="1.0" encoding="utf-8"?>\n<workout_file>\n  <author>Adaptive Cycling Coach</author>\n  <name>${displayName}</name>\n  <description>${w.description}</description>\n  <sportType>bike</sportType>\n  <tags/>\n  <workout>\n${ivs}\n  </workout>\n</workout_file>`;
+  return `<?xml version="1.0" encoding="utf-8"?>\n<workout_file>\n  <author>WykesWatts</author>\n  <name>${displayName}</name>\n  <description>${w.description}</description>\n  <sportType>bike</sportType>\n  <tags/>\n  <workout>\n${ivs}\n  </workout>\n</workout_file>`;
 }
 
 function downloadZWO(wId, ftp, wName, weekNum, planDayIdx) {
@@ -187,6 +279,14 @@ function downloadZWO(wId, ftp, wName, weekNum, planDayIdx) {
   setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url);},100);
 }
 
+// ─── localStorage persistence ──────────────────────────────────────────────────
+function loadState(key, fallback) {
+  try { const v=localStorage.getItem(key); return v?JSON.parse(v):fallback; } catch(e) { return fallback; }
+}
+function saveState(key, value) {
+  try { localStorage.setItem(key, JSON.stringify(value)); } catch(e) {}
+}
+
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 function Tag({type}){
@@ -195,7 +295,7 @@ function Tag({type}){
 }
 
 function PowerBar({intervals,ftp}){
-  if(!intervals.length) return null;
+  if(!intervals||!intervals.length) return null;
   const total=intervals.reduce((s,i)=>s+i.dur,0);
   return(
     <div style={{display:"flex",height:48,borderRadius:6,overflow:"hidden",gap:2,margin:"12px 0",alignItems:"flex-end"}}>
@@ -207,7 +307,7 @@ function PowerBar({intervals,ftp}){
           return(
             <div key={i} title={`${iv.label}: ${ivLabel(iv,ftp)} · ${iv.dur}min`} style={{width:`${w}%`,height:"100%",minWidth:3,position:"relative",overflow:"hidden"}}>
               <div style={{position:"absolute",inset:0,background:`linear-gradient(to ${up?"right":"left"},${zF.color}40,${zT.color}60)`}}/>
-              <div style={{position:"absolute",inset:0,background:`linear-gradient(to ${up?"right":"left"},${zF.color}40,${zT.color}60)`,clipPath:up?`polygon(0 ${100-fH}%,100% ${100-tH}%,100% 100%,0 100%)`:`polygon(0 ${100-fH}%,100% ${100-tH}%,100% 100%,0 100%)`}}/>
+              <div style={{position:"absolute",inset:0,background:`linear-gradient(to ${up?"right":"left"},${zF.color}40,${zT.color}60)`,clipPath:`polygon(0 ${100-fH}%,100% ${100-tH}%,100% 100%,0 100%)`}}/>
               <div style={{position:"absolute",bottom:0,left:0,right:0,height:3,background:`linear-gradient(to right,${zF.color},${zT.color})`}}/>
             </div>
           );
@@ -223,28 +323,109 @@ function PowerBar({intervals,ftp}){
   );
 }
 
-// ─── Main App ─────────────────────────────────────────────────────────────────
+// ─── Morning Check-in ──────────────────────────────────────────────────────────
+function MorningCheckin({readiness, setReadiness, restingHR, setRestingHR, legsScore, setLegsScore, onSave}){
+  const rdColor = readiness>=80?"#16a34a":readiness>=65?"#22c55e":readiness>=50?"#ca8a04":readiness>=35?"#ea580c":"#dc2626";
+  const hrColor = restingHR <= 44?"#16a34a":restingHR<=48?"#ca8a04":"#dc2626";
+  const legsColor = legsScore>=4?"#16a34a":legsScore===3?"#ca8a04":"#ea580c";
+  const legsLabels = ["","Very heavy","Heavy","OK","Good","Fresh"];
 
+  return(
+    <div>
+      <div style={{marginBottom:20}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+          <span style={{fontSize:13,fontWeight:600,color:"#374151"}}>Training Readiness</span>
+          <span style={{fontSize:22,fontWeight:800,color:rdColor}}>{readiness}</span>
+        </div>
+        <input type="range" min={0} max={100} value={readiness} onChange={e=>setReadiness(Number(e.target.value))} style={{accentColor:rdColor}}/>
+        <div style={{fontSize:11,color:"#9ca3af",marginTop:4}}>From your Garmin Connect app</div>
+      </div>
+
+      <div style={{marginBottom:20}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+          <span style={{fontSize:13,fontWeight:600,color:"#374151"}}>Resting Heart Rate</span>
+          <span style={{fontSize:22,fontWeight:800,color:hrColor}}>{restingHR} <span style={{fontSize:13,fontWeight:400}}>bpm</span></span>
+        </div>
+        <input type="range" min={30} max={80} value={restingHR} onChange={e=>setRestingHR(Number(e.target.value))} style={{accentColor:hrColor}}/>
+        <div style={{display:"flex",justifyContent:"space-between",fontSize:11,color:"#9ca3af",marginTop:4}}>
+          <span>Baseline: {ATHLETE.restingHR}bpm</span>
+          <span>{restingHR > ATHLETE.restingHR+4?`⚠ ${restingHR-ATHLETE.restingHR}bpm above baseline`:restingHR > ATHLETE.restingHR+2?`↑ ${restingHR-ATHLETE.restingHR}bpm above baseline`:"✓ Normal range"}</span>
+        </div>
+      </div>
+
+      <div style={{marginBottom:20}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+          <span style={{fontSize:13,fontWeight:600,color:"#374151"}}>How do your legs feel?</span>
+          <span style={{fontSize:14,fontWeight:700,color:legsColor}}>{legsLabels[legsScore]}</span>
+        </div>
+        <div style={{display:"flex",gap:8}}>
+          {[1,2,3,4,5].map(n=>(
+            <button key={n} onClick={()=>setLegsScore(n)} style={{flex:1,padding:"10px 0",borderRadius:8,border:legsScore===n?`2px solid ${legsColor}`:"1px solid #e5e7eb",background:legsScore===n?legsColor+"18":"#f9fafb",color:legsScore===n?legsColor:"#9ca3af",fontSize:18,cursor:"pointer",fontFamily:"inherit"}}>
+              {n}
+            </button>
+          ))}
+        </div>
+        <div style={{display:"flex",justifyContent:"space-between",fontSize:11,color:"#9ca3af",marginTop:6}}>
+          <span>Very heavy</span><span>Fresh</span>
+        </div>
+      </div>
+
+      <button onClick={onSave} style={{width:"100%",padding:"12px",borderRadius:8,border:"none",background:"#111827",color:"#fff",fontSize:14,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>
+        Save check-in & see today's session
+      </button>
+    </div>
+  );
+}
+
+// ─── Main App ─────────────────────────────────────────────────────────────────
 function App(){
-  const [ftp,setFtp]=useState(220);
-  const [readiness,setReadiness]=useState(75);
+  const [ftp,setFtp]=useState(()=>loadState("ww_ftp",220));
+  const [readiness,setReadiness]=useState(()=>loadState("ww_readiness",75));
+  const [restingHR,setRestingHR]=useState(()=>loadState("ww_rhr",44));
+  const [legsScore,setLegsScore]=useState(()=>loadState("ww_legs",3));
+  const [checkinDone,setCheckinDone]=useState(()=>{
+    const saved=loadState("ww_checkin_date","");
+    const today=new Date().toDateString();
+    return saved===today;
+  });
+
   const todayIdx=getTodayIndex();
   const [currentDay,setCurrentDay]=useState(todayIdx);
   const [tab,setTab]=useState("today");
-  const [overrides,setOverrides]=useState({});
+  const [overrides,setOverrides]=useState(()=>loadState("ww_overrides",{}));
   const [blockMode,setBlockMode]=useState(null);
   const [blockStart,setBlockStart]=useState(null);
 
+  // Persist state
+  useEffect(()=>saveState("ww_ftp",ftp),[ftp]);
+  useEffect(()=>saveState("ww_overrides",overrides),[overrides]);
+  useEffect(()=>saveState("ww_readiness",readiness),[readiness]);
+  useEffect(()=>saveState("ww_rhr",restingHR),[restingHR]);
+  useEffect(()=>saveState("ww_legs",legsScore),[legsScore]);
+
+  const handleCheckinSave=()=>{
+    saveState("ww_checkin_date",new Date().toDateString());
+    setCheckinDone(true);
+  };
+
   const plan=buildPlan(overrides);
   const entry=plan[currentDay]||{workoutId:"REST"};
-  const isBlocked=entry.workoutId==="HOLIDAY"||entry.workoutId==="SICK";
-  const {id:adjId,note:rdNote}=isBlocked?{id:entry.workoutId,note:null}:adjustForReadiness(entry.workoutId,readiness);
+  const isBlockedDay=entry.workoutId==="HOLIDAY"||entry.workoutId==="SICK"||entry.workoutId==="FREE";
+  const {id:adjId, note:rdNote, adjusted} = isBlockedDay
+    ? {id:entry.workoutId, note:null, adjusted:false}
+    : adjustForReadiness(entry.workoutId, readiness, restingHR, legsScore);
   const workout=WORKOUTS[adjId]||WORKOUTS.REST;
+  const plannedWorkout=WORKOUTS[entry.workoutId]||WORKOUTS.REST;
+
   const weekNum=Math.floor(currentDay/7)+1;
-  const dayOfWeek=currentDay%7;
   const phase=PHASES[PHASE_MAP[weekNum-1]??3];
-  const rdColor=readiness>=75?"#16a34a":readiness>=50?"#ca8a04":readiness>=25?"#ea580c":"#dc2626";
-  const rdLabel=readiness>=75?"High — full session":readiness>=50?"Moderate — adjusted":readiness>=25?"Low — easy only":"Very low — rest";
+
+  // Composite readiness colour
+  const hrPenalty=Math.max(0,(restingHR-ATHLETE.restingHR)*2);
+  const legsPenalty=Math.max(0,(3-legsScore)*5);
+  const effectiveReadiness=Math.max(0,readiness-hrPenalty-legsPenalty);
+  const effColor=effectiveReadiness>=80?"#16a34a":effectiveReadiness>=65?"#22c55e":effectiveReadiness>=50?"#ca8a04":effectiveReadiness>=35?"#ea580c":"#dc2626";
+  const effLabel=effectiveReadiness>=80?"Peak — full session":effectiveReadiness>=65?"Good — slight reduction":effectiveReadiness>=50?"Moderate — stepped down":effectiveReadiness>=35?"Low — Zone 2 only":"Very low — rest today";
 
   const handleCalendarClick=useCallback((idx)=>{
     if(blockMode){
@@ -264,14 +445,14 @@ function App(){
     page:{minHeight:"100vh",background:"#f9fafb",color:"#111827"},
     hdr:{background:"#fff",borderBottom:"1px solid #e5e7eb",padding:"16px 20px",display:"flex",justifyContent:"space-between",alignItems:"center"},
     nav:{background:"#fff",borderBottom:"1px solid #e5e7eb",display:"flex"},
-    navBtn:(a)=>({padding:"12px 20px",background:"none",border:"none",borderBottom:a?"2px solid #111827":"2px solid transparent",cursor:"pointer",fontSize:14,fontWeight:a?600:400,color:a?"#111827":"#6b7280",fontFamily:"inherit"}),
-    body:{maxWidth:660,margin:"0 auto",padding:"24px 16px"},
+    navBtn:(a)=>({padding:"12px 16px",background:"none",border:"none",borderBottom:a?"2px solid #111827":"2px solid transparent",cursor:"pointer",fontSize:13,fontWeight:a?600:400,color:a?"#111827":"#6b7280",fontFamily:"inherit"}),
+    body:{maxWidth:660,margin:"0 auto",padding:"20px 16px"},
     card:{background:"#fff",border:"1px solid #e5e7eb",borderRadius:12,padding:20,marginBottom:16},
     lbl:{fontSize:12,color:"#6b7280",marginBottom:6,display:"block"},
     h2:{fontSize:22,fontWeight:700,margin:"0 0 4px",color:"#111827"},
     h3:{fontSize:16,fontWeight:600,margin:"0 0 8px",color:"#111827"},
     b2:{fontSize:14,color:"#6b7280",lineHeight:1.6},
-    div:{border:"none",borderTop:"1px solid #f3f4f6",margin:"16px 0"},
+    divider:{border:"none",borderTop:"1px solid #f3f4f6",margin:"16px 0"},
     btn:(c="#374151",bg="#f9fafb")=>({padding:"8px 16px",borderRadius:8,border:"1px solid #e5e7eb",background:bg,color:c,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}),
     btnP:{padding:"9px 18px",borderRadius:8,border:"none",background:"#111827",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit"},
   };
@@ -280,7 +461,7 @@ function App(){
     <div style={S.page}>
       <div style={S.hdr}>
         <div>
-          <div style={{fontSize:12,color:"#9ca3af",marginBottom:2}}>Adaptive Cycling Coach · James Wykes</div>
+          <div style={{fontSize:12,color:"#9ca3af",marginBottom:2}}>WykesWatts · Adaptive Cycling Coach</div>
           <div style={{fontSize:18,fontWeight:700}}>FTP Block · Autumn/Winter 2026</div>
         </div>
         <div style={{textAlign:"right"}}>
@@ -290,58 +471,108 @@ function App(){
       </div>
 
       <div style={S.nav}>
-        {[["today","Today"],["plan","Plan"],["zones","Zones"]].map(([v,l])=>(
-          <button key={v} style={S.navBtn(tab===v)} onClick={()=>setTab(v)}>{l}</button>
+        {[["today","Today"],["checkin","Check-in"],["plan","Plan"],["zones","Zones"]].map(([v,l])=>(
+          <button key={v} style={S.navBtn(tab===v)} onClick={()=>setTab(v)}>
+            {l}{v==="checkin"&&!checkinDone?<span style={{marginLeft:4,width:7,height:7,borderRadius:4,background:"#ef4444",display:"inline-block",verticalAlign:"middle"}}/>:null}
+          </button>
         ))}
       </div>
 
       <div style={S.body}>
 
-        {/* TODAY */}
+        {/* CHECK-IN TAB */}
+        {tab==="checkin"&&(
+          <div style={S.card}>
+            <h3 style={{...S.h3,marginBottom:4}}>Morning check-in</h3>
+            <p style={{...S.b2,marginBottom:20}}>{checkinDone?"Today's check-in saved. Update any values if needed.":"Takes 30 seconds. Tells the system how hard to push today."}</p>
+            <MorningCheckin
+              readiness={readiness} setReadiness={setReadiness}
+              restingHR={restingHR} setRestingHR={setRestingHR}
+              legsScore={legsScore} setLegsScore={setLegsScore}
+              onSave={handleCheckinSave}
+            />
+          </div>
+        )}
+
+        {/* TODAY TAB */}
         {tab==="today"&&(
           <>
+            {!checkinDone&&(
+              <div style={{...S.card,borderColor:"#f97316",background:"#fff7ed",cursor:"pointer"}} onClick={()=>setTab("checkin")}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                  <div>
+                    <div style={{fontSize:14,fontWeight:600,color:"#9a3412"}}>Morning check-in not done yet</div>
+                    <div style={{fontSize:13,color:"#c2410c",marginTop:2}}>Tap to complete — 30 seconds</div>
+                  </div>
+                  <span style={{fontSize:20}}>→</span>
+                </div>
+              </div>
+            )}
+
             <div style={S.card}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
                 <div>
                   <div style={{fontSize:13,color:"#6b7280"}}>{fmtDate(getPlanDate(currentDay))} · Week {weekNum}</div>
                   <div style={{fontSize:16,fontWeight:600,marginTop:2}}><span style={{color:phase.color}}>●</span> {phase.name} phase</div>
                 </div>
-                <div style={{display:"flex",gap:8}}>
+                <div style={{display:"flex",gap:6,flexWrap:"wrap",justifyContent:"flex-end"}}>
                   {currentDay!==todayIdx&&<button style={S.btn("#16a34a","#f0fdf4")} onClick={()=>setCurrentDay(todayIdx)}>Today</button>}
-                  <button style={S.btn()} onClick={()=>setCurrentDay(Math.max(0,currentDay-1))}>← Prev</button>
-                  <button style={S.btn()} onClick={()=>setCurrentDay(Math.min(83,currentDay+1))}>Next →</button>
+                  <button style={S.btn()} onClick={()=>setCurrentDay(Math.max(0,currentDay-1))}>←</button>
+                  <button style={S.btn()} onClick={()=>setCurrentDay(Math.min(83,currentDay+1))}>→</button>
                 </div>
               </div>
               <input type="range" min={0} max={83} value={currentDay} onChange={e=>setCurrentDay(Number(e.target.value))} style={{accentColor:"#111827"}}/>
               <div style={{display:"flex",justifyContent:"space-between",fontSize:11,color:"#9ca3af",marginTop:4}}>
-                <span>Week 1 · {fmtDate(getPlanDate(0))}</span>
-                <span>Week 12 · {fmtDate(getPlanDate(83))}</span>
+                <span>Wk 1 · {fmtDate(getPlanDate(0))}</span>
+                <span>Wk 12 · {fmtDate(getPlanDate(83))}</span>
               </div>
             </div>
 
-            {isBlocked?(
-              <div style={{...S.card,borderColor:adjId==="HOLIDAY"?"#0ea5e9":"#be185d"}}>
+            {/* Effective readiness summary */}
+            {!isBlockedDay&&checkinDone&&(
+              <div style={{...S.card,borderColor:effColor+"40",padding:"14px 20px"}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                   <div>
-                    <Tag type={adjId}/>
-                    <div style={{fontSize:20,fontWeight:700,marginTop:8}}>{adjId==="HOLIDAY"?"You're on holiday":"Sick day"}</div>
-                    <div style={{fontSize:14,color:"#6b7280",marginTop:4}}>{adjId==="HOLIDAY"?"Rest up and enjoy it.":"Take it easy. The plan resumes once you're recovered."}</div>
+                    <div style={{fontSize:12,color:"#6b7280"}}>Effective readiness</div>
+                    <div style={{fontSize:14,fontWeight:600,color:effColor,marginTop:2}}>{effLabel}</div>
+                  </div>
+                  <div style={{textAlign:"right"}}>
+                    <div style={{fontSize:32,fontWeight:800,color:effColor}}>{effectiveReadiness}</div>
+                    <div style={{fontSize:11,color:"#9ca3af"}}>TR {readiness} · HR {restingHR}bpm · Legs {legsScore}/5</div>
+                  </div>
+                </div>
+                {adjusted&&rdNote&&(
+                  <div style={{marginTop:10,padding:"8px 12px",background:effColor+"12",border:`1px solid ${effColor}30`,borderRadius:8,fontSize:13,color:effColor}}>
+                    {rdNote}
+                  </div>
+                )}
+                {adjusted&&(
+                  <div style={{marginTop:8,fontSize:12,color:"#9ca3af"}}>
+                    Planned: {plannedWorkout.name}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {entry.workoutId==="FREE"?(
+              <div style={{...S.card,borderColor:"#8b5cf6"}}>
+                <Tag type="FREE"/>
+                <div style={{fontSize:20,fontWeight:700,marginTop:8}}>Weekend — free ride 🚴</div>
+                <div style={{fontSize:14,color:"#6b7280",marginTop:4}}>No structure today. Ride wherever you like, at whatever pace feels good.</div>
+              </div>
+            ):entry.workoutId==="HOLIDAY"||entry.workoutId==="SICK"?(
+              <div style={{...S.card,borderColor:entry.workoutId==="HOLIDAY"?"#0ea5e9":"#be185d"}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                  <div>
+                    <Tag type={entry.workoutId}/>
+                    <div style={{fontSize:20,fontWeight:700,marginTop:8}}>{entry.workoutId==="HOLIDAY"?"You're on holiday":"Sick day"}</div>
+                    <div style={{fontSize:14,color:"#6b7280",marginTop:4}}>{entry.workoutId==="HOLIDAY"?"Rest up and enjoy it.":"Take it easy. The plan resumes once you're recovered."}</div>
                   </div>
                   <button style={S.btn("#dc2626","#fff")} onClick={()=>clearOverride(currentDay)}>Remove</button>
                 </div>
               </div>
             ):(
               <>
-                <div style={S.card}>
-                  <span style={S.lbl}>Training readiness (from Garmin)</span>
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-                    <span style={{fontSize:28,fontWeight:800,color:rdColor}}>{readiness}</span>
-                    <span style={{fontSize:13,color:rdColor,fontWeight:600}}>{rdLabel}</span>
-                  </div>
-                  <input type="range" min={0} max={100} value={readiness} onChange={e=>setReadiness(Number(e.target.value))} style={{accentColor:rdColor}}/>
-                  {rdNote&&<div style={{marginTop:12,padding:"10px 14px",background:"#fff7ed",border:"1px solid #fed7aa",borderRadius:8,fontSize:13,color:"#9a3412"}}>{rdNote}</div>}
-                </div>
-
                 <div style={{...S.card,borderColor:(SESSION_TYPES[workout.type]?.color||"#e5e7eb")+"40"}}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:12}}>
                     <div>
@@ -349,7 +580,7 @@ function App(){
                       <h2 style={{...S.h2,marginTop:8}}>{workout.name}</h2>
                     </div>
                     {workout.tss>0&&(
-                      <div style={{textAlign:"right",background:"#f9fafb",border:"1px solid #e5e7eb",borderRadius:8,padding:"8px 14px"}}>
+                      <div style={{textAlign:"right",background:"#f9fafb",border:"1px solid #e5e7eb",borderRadius:8,padding:"8px 14px",flexShrink:0}}>
                         <div style={{fontSize:11,color:"#9ca3af"}}>Est. TSS</div>
                         <div style={{fontSize:22,fontWeight:800}}>{workout.tss}</div>
                       </div>
@@ -360,7 +591,7 @@ function App(){
                   {workout.intervals.length>0&&(
                     <>
                       <PowerBar intervals={workout.intervals} ftp={ftp}/>
-                      <hr style={S.div}/>
+                      <hr style={S.divider}/>
                       <div>
                         {workout.intervals.map((iv,i)=>{
                           const z=getZone(midPct(iv));
@@ -371,17 +602,17 @@ function App(){
                               <div style={{display:"flex",alignItems:"center",gap:10}}>
                                 <div style={{width:3,height:18,borderRadius:2,background:swatch}}/>
                                 <span style={{fontSize:14,color:"#374151"}}>{iv.label}</span>
-                                {isRamp&&<span style={{fontSize:11,color:"#9ca3af",background:"#f3f4f6",padding:"1px 6px",borderRadius:10}}>ramp</span>}
+                                {isRamp&&<span style={{fontSize:10,color:"#9ca3af",background:"#f3f4f6",padding:"1px 6px",borderRadius:10}}>ramp</span>}
                               </div>
                               <div style={{display:"flex",gap:16,alignItems:"center"}}>
                                 <span style={{fontSize:14,fontWeight:600,color:z.color}}>{ivLabel(iv,ftp)}</span>
-                                <span style={{fontSize:13,color:"#9ca3af",width:40,textAlign:"right"}}>{iv.dur} min</span>
+                                <span style={{fontSize:13,color:"#9ca3af",width:36,textAlign:"right"}}>{iv.dur}m</span>
                               </div>
                             </div>
                           );
                         })}
                       </div>
-                      <hr style={S.div}/>
+                      <hr style={S.divider}/>
                       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                         <div style={{fontSize:14,fontWeight:600}}>Export to Zwift</div>
                         <button style={S.btnP} onClick={()=>downloadZWO(adjId,ftp,workout.name,weekNum,currentDay)}>
@@ -405,7 +636,7 @@ function App(){
           </>
         )}
 
-        {/* PLAN */}
+        {/* PLAN TAB */}
         {tab==="plan"&&(
           <>
             <div style={S.card}>
@@ -415,17 +646,17 @@ function App(){
               </p>
               <div style={{display:"flex",gap:8}}>
                 <button style={{...S.btn(blockMode==="HOLIDAY"?"#0369a1":"#374151",blockMode==="HOLIDAY"?"#e0f2fe":"#f9fafb"),borderColor:blockMode==="HOLIDAY"?"#7dd3fc":"#e5e7eb"}} onClick={()=>{setBlockMode(blockMode==="HOLIDAY"?null:"HOLIDAY");setBlockStart(null);}}>✈ Holiday</button>
-                <button style={{...S.btn(blockMode==="SICK"?"#9d174d":"#374151",blockMode==="SICK"?"#fce7f3":"#f9fafb"),borderColor:blockMode==="SICK"?"#f9a8d4":"#e5e7eb"}} onClick={()=>{setBlockMode(blockMode==="SICK"?null:"SICK");setBlockStart(null);}}>🤒 Sick day</button>
+                <button style={{...S.btn(blockMode==="SICK"?"#9d174d":"#374151",blockMode==="SICK"?"#fce7f3":"#f9fafb"),borderColor:blockMode==="SICK"?"#f9a8d4":"#e5e7eb"}} onClick={()=>{setBlockMode(blockMode==="SICK"?null:"SICK");setBlockStart(null);}}>🤒 Sick</button>
                 {blockMode&&<button style={S.btn("#6b7280")} onClick={()=>{setBlockMode(null);setBlockStart(null);}}>Cancel</button>}
               </div>
             </div>
 
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:16}}>
               {PHASES.map((p,i)=>(
-                <div key={i} style={{...S.card,marginBottom:0,borderLeft:`3px solid ${p.color}`,padding:"14px 16px"}}>
-                  <div style={{fontSize:12,color:p.color,fontWeight:600,marginBottom:2}}>Weeks {p.weeks}</div>
-                  <div style={{fontSize:15,fontWeight:700}}>{p.name}</div>
-                  <div style={{fontSize:12,color:"#6b7280",marginTop:4,lineHeight:1.5}}>{p.desc}</div>
+                <div key={i} style={{...S.card,marginBottom:0,borderLeft:`3px solid ${p.color}`,padding:"12px 16px"}}>
+                  <div style={{fontSize:11,color:p.color,fontWeight:600,marginBottom:2}}>Weeks {p.weeks}</div>
+                  <div style={{fontSize:14,fontWeight:700}}>{p.name}</div>
+                  <div style={{fontSize:11,color:"#6b7280",marginTop:4,lineHeight:1.5}}>{p.desc}</div>
                 </div>
               ))}
             </div>
@@ -440,7 +671,7 @@ function App(){
                     <span style={{fontSize:11,color:ph.color,fontWeight:600}}>{ph.name}</span>
                     {isRec&&<span style={{fontSize:11,color:"#9ca3af",background:"#f3f4f6",padding:"1px 8px",borderRadius:20}}>recovery</span>}
                   </div>
-                  <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:4}}>
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:3}}>
                     {Array.from({length:7},(_,d)=>{
                       const idx=wk*7+d;
                       const e=plan[idx]||{workoutId:"REST"};
@@ -449,15 +680,16 @@ function App(){
                       const isPast=idx<todayIdx;
                       const isSel=idx===currentDay&&!isToday;
                       const isBStart=blockStart===idx;
-                      const type=wId==="HOLIDAY"?"HOLIDAY":wId==="SICK"?"SICK":WORKOUTS[wId]?.type||"REST";
+                      const w=WORKOUTS[wId];
+                      const type=wId==="HOLIDAY"?"HOLIDAY":wId==="SICK"?"SICK":w?.type||"REST";
                       const st=SESSION_TYPES[type]||SESSION_TYPES.REST;
-                      const lbl={REST:"–",RECOVERY:"EZ",Z2_60:"Z2",Z2_90:"Z2+",SWEET_SPOT:"SS",THRESHOLD_2X20:"TH",THRESHOLD_3X15:"TH+",VO2_4X4:"V4",VO2_5X4:"V5",FTP_TEST:"TEST",FREE:"🚴",HOLIDAY:"✈",SICK:"🤒"}[wId]||"?";
+                      const lbl=wId==="REST"?"–":wId==="RECOVERY"?"EZ":wId==="FREE"?"🚴":wId==="HOLIDAY"?"✈":wId==="SICK"?"🤒":wId.startsWith("Z2")||wId.startsWith("Z2_")?wId.includes("90")||wId.includes("PYRAMID")?"Z2+":"Z2":wId.startsWith("THRESHOLD")?"TH":wId.startsWith("VO2")?"V5":wId==="SWEET_SPOT"?"SS":wId==="FTP_TEST"?"TEST":"?";
                       const pd=getPlanDate(idx);
                       return(
-                        <button key={d} onClick={()=>handleCalendarClick(idx)} style={{background:isToday?"#111827":isBStart?"#dbeafe":st.bg,border:isToday?"2px solid #111827":isSel?"2px solid #6b7280":isBStart?"2px solid #3b82f6":`1px solid ${st.color}20`,borderRadius:8,padding:"5px 3px",cursor:blockMode?"crosshair":"pointer",textAlign:"center",opacity:isPast&&!isToday?0.5:1}}>
-                          <div style={{fontSize:9,color:"#9ca3af",marginBottom:1}}>{DAY_NAMES[d]}</div>
-                          <div style={{fontSize:10,fontWeight:700,color:isToday?"#fff":isPast?"#9ca3af":st.color}}>{lbl}</div>
-                          <div style={{fontSize:8,color:isToday?"#6b7280":"#d1d5db",marginTop:1}}>{pd.getDate()}</div>
+                        <button key={d} onClick={()=>handleCalendarClick(idx)} style={{background:isToday?"#111827":isBStart?"#dbeafe":st.bg,border:isToday?"2px solid #111827":isSel?"2px solid #6b7280":isBStart?"2px solid #3b82f6":`1px solid ${st.color}20`,borderRadius:6,padding:"5px 2px",cursor:blockMode?"crosshair":"pointer",textAlign:"center",opacity:isPast&&!isToday?0.5:1}}>
+                          <div style={{fontSize:8,color:isToday?"#9ca3af":"#9ca3af",marginBottom:1}}>{DAY_NAMES[d]}</div>
+                          <div style={{fontSize:9,fontWeight:700,color:isToday?"#fff":isPast?"#9ca3af":st.color}}>{lbl}</div>
+                          <div style={{fontSize:7,color:isToday?"#6b7280":"#d1d5db",marginTop:1}}>{pd.getDate()}</div>
                         </button>
                       );
                     })}
@@ -467,17 +699,17 @@ function App(){
             })}
 
             <div style={{...S.card,marginTop:8}}>
-              <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
+              <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
                 {Object.entries(SESSION_TYPES).map(([k,v])=>(
-                  <span key={k} style={{fontSize:12,color:v.color,background:v.bg,border:`1px solid ${v.color}30`,padding:"3px 10px",borderRadius:20}}>{v.label}</span>
+                  <span key={k} style={{fontSize:11,color:v.color,background:v.bg,border:`1px solid ${v.color}30`,padding:"2px 8px",borderRadius:20}}>{v.label}</span>
                 ))}
               </div>
-              <div style={{marginTop:8,fontSize:11,color:"#9ca3af"}}>Dark = today · Faded = past</div>
+              <div style={{marginTop:8,fontSize:11,color:"#9ca3af"}}>Dark = today · Faded = past · Holidays & sick days saved automatically</div>
             </div>
           </>
         )}
 
-        {/* ZONES */}
+        {/* ZONES TAB */}
         {tab==="zones"&&(
           <>
             <div style={S.card}>
@@ -501,7 +733,7 @@ function App(){
             ))}
             <div style={S.card}>
               <h3 style={S.h3}>Your numbers</h3>
-              {[["Current FTP",`${ftp}w`],["W/kg",(ftp/ATHLETE.weight).toFixed(2)],["Target FTP","280w"],["Target W/kg",(280/ATHLETE.weight).toFixed(2)],["VO2 Max","55 ml/kg/min"],["Resting HR","44 bpm"],["Weight","69 kg"]].map(([k,v])=>(
+              {[["Current FTP",`${ftp}w`],["W/kg",(ftp/ATHLETE.weight).toFixed(2)],["Target FTP","280w"],["Target W/kg",(280/ATHLETE.weight).toFixed(2)],["VO2 Max","55 ml/kg/min"],["Baseline HR",`${ATHLETE.restingHR} bpm`],["Weight","69 kg"]].map(([k,v])=>(
                 <div key={k} style={{display:"flex",justifyContent:"space-between",padding:"10px 0",borderBottom:"1px solid #f3f4f6",fontSize:14}}>
                   <span style={{color:"#6b7280"}}>{k}</span>
                   <span style={{fontWeight:700}}>{v}</span>
@@ -517,13 +749,10 @@ function App(){
 
 ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 </script>
-
 <script>
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
-      .then(r => console.log('SW registered'))
-      .catch(e => console.log('SW failed:', e));
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('/sw.js').catch(()=>{});
   });
 }
 </script>
