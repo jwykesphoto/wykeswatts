@@ -1,484 +1,410 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>WykesWatts — Cycling Coach</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
-<link rel="manifest" href="/manifest.json">
-<link rel="apple-touch-icon" href="/icon-192.png">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="WykesWatts">
-<meta name="theme-color" content="#111827">
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>WykesWatts</title>
+<meta name="description" content="Adaptive cycling training coach"/>
+<link rel="manifest" href="/manifest.json"/>
+<meta name="theme-color" content="#0f172a"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="WykesWatts"/>
+<link rel="apple-touch-icon" href="/icons/icon-192.png"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif; }
-  input[type=range] { width: 100%; cursor: pointer; }
-
-  /* Light mode (default) */
-  :root {
-    --bg-page:   #f9fafb;
-    --bg-card:   #ffffff;
-    --bg-input:  #f9fafb;
-    --border:    #e5e7eb;
-    --border-strong: #d1d5db;
-    --text-primary:   #111827;
-    --text-secondary: #374151;
-    --text-muted:     #6b7280;
-    --text-faint:     #9ca3af;
-    --divider:   #f3f4f6;
-    --nav-bg:    #ffffff;
-    --hdr-bg:    #ffffff;
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --font: 'Inter', system-ui, -apple-system, sans-serif;
+    --bg-page: #f8fafc;
+    --bg-card: #ffffff;
+    --bg-input: #f1f5f9;
+    --bg-elevated: #ffffff;
+    --border: #e2e8f0;
+    --border-strong: #cbd5e1;
+    --divider: #f1f5f9;
+    --text-primary: #0f172a;
+    --text-secondary: #334155;
+    --text-muted: #64748b;
+    --text-faint: #94a3b8;
+    --hdr-bg: #0f172a;
+    --hdr-border: #1e293b;
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --radius: 12px;
+    --radius-sm: 8px;
+    --accent: #3b82f6;
+    --accent-green: #16a34a;
+    --accent-orange: #ea580c;
+    --accent-red: #dc2626;
   }
-
-  /* Dark mode — system preference */
   @media (prefers-color-scheme: dark) {
-    :root {
-      --bg-page:   #0a0a0a;
-      --bg-card:   #141414;
-      --bg-input:  #1a1a1a;
-      --border:    #2a2a2a;
-      --border-strong: #333333;
-      --text-primary:   #f1f5f9;
-      --text-secondary: #cbd5e1;
-      --text-muted:     #94a3b8;
-      --text-faint:     #64748b;
-      --divider:   #1e1e1e;
-      --nav-bg:    #111111;
-      --hdr-bg:    #111111;
+    :root:not([data-theme="light"]) {
+      --bg-page: #0f172a;
+      --bg-card: #1e293b;
+      --bg-input: #0f172a;
+      --bg-elevated: #1e293b;
+      --border: #334155;
+      --border-strong: #475569;
+      --divider: #1e293b;
+      --text-primary: #f8fafc;
+      --text-secondary: #e2e8f0;
+      --text-muted: #94a3b8;
+      --text-faint: #64748b;
+      --hdr-bg: #020617;
+      --hdr-border: #1e293b;
     }
   }
-
-  /* Dark mode — manual override */
-  [data-theme="dark"] {
-    --bg-page:   #0a0a0a;
-    --bg-card:   #141414;
-    --bg-input:  #1a1a1a;
-    --border:    #2a2a2a;
-    --border-strong: #333333;
-    --text-primary:   #f1f5f9;
-    --text-secondary: #cbd5e1;
-    --text-muted:     #94a3b8;
-    --text-faint:     #64748b;
-    --divider:   #1e1e1e;
-    --nav-bg:    #111111;
-    --hdr-bg:    #111111;
+  :root[data-theme="dark"] {
+    --bg-page: #0f172a;
+    --bg-card: #1e293b;
+    --bg-input: #0f172a;
+    --bg-elevated: #1e293b;
+    --border: #334155;
+    --border-strong: #475569;
+    --divider: #1e293b;
+    --text-primary: #f8fafc;
+    --text-secondary: #e2e8f0;
+    --text-muted: #94a3b8;
+    --text-faint: #64748b;
+    --hdr-bg: #020617;
+    --hdr-border: #1e293b;
   }
-
-  [data-theme="light"] {
-    --bg-page:   #f9fafb;
-    --bg-card:   #ffffff;
-    --bg-input:  #f9fafb;
-    --border:    #e5e7eb;
-    --border-strong: #d1d5db;
-    --text-primary:   #111827;
-    --text-secondary: #374151;
-    --text-muted:     #6b7280;
-    --text-faint:     #9ca3af;
-    --divider:   #f3f4f6;
-    --nav-bg:    #ffffff;
-    --hdr-bg:    #ffffff;
-  }
-
-  body { background: var(--bg-page); color: var(--text-primary); }
+  html,body{height:100%;font-family:var(--font);background:var(--bg-page);color:var(--text-primary);-webkit-font-smoothing:antialiased}
+  input[type=range]{width:100%;height:4px;border-radius:4px;appearance:none;-webkit-appearance:none;background:#e2e8f0;outline:none}
+  input[type=range]::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:#0f172a;cursor:pointer;box-shadow:0 2px 4px rgb(0 0 0/0.2)}
+  button{font-family:var(--font);cursor:pointer}
+  ::-webkit-scrollbar{width:4px}
+  ::-webkit-scrollbar-track{background:transparent}
+  ::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:4px}
 </style>
 </head>
 <body>
 <div id="root"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
 <script type="text/babel">
-const { useState, useCallback, useEffect } = React;
+const {useState,useEffect,useCallback,useRef,useMemo}=React;
 
+// ─── Athlete & Constants ──────────────────────────────────────────────────────
+const ATHLETE={ftp:220,weight:69,vo2max:55,restingHR:44,targetFtp:280};
+const PLAN_START=new Date(Date.UTC(2026,8,7)); // Mon 7 Sep 2026
+const DAY_NAMES=["M","T","W","T","F","S","S"];
 
-
-const ATHLETE = { ftp: 220, weight: 69, vo2max: 55, restingHR: 44, targetFtp: 280 };
-
-const ZONES = [
-  { id:1, name:"Active Recovery", pct:[0,   55], color:"#94a3b8" },
-  { id:2, name:"Endurance",       pct:[56,  75], color:"#22c55e" },
-  { id:3, name:"Tempo",           pct:[76,  90], color:"#eab308" },
-  { id:4, name:"Threshold",       pct:[91, 105], color:"#f97316" },
-  { id:5, name:"VO2 Max",         pct:[106,120], color:"#ef4444" },
+// ─── Zones ────────────────────────────────────────────────────────────────────
+const ZONES=[
+  {id:1,name:"Active Recovery",pct:[0,54],color:"#64748b",bg:"#f8fafc"},
+  {id:2,name:"Endurance",pct:[55,74],color:"#22c55e",bg:"#f0fdf4"},
+  {id:3,name:"Tempo",pct:[75,89],color:"#f59e0b",bg:"#fffbeb"},
+  {id:4,name:"Threshold",pct:[90,104],color:"#f97316",bg:"#fff7ed"},
+  {id:5,name:"VO2 Max",pct:[105,120],color:"#ef4444",bg:"#fef2f2"},
 ];
+const calcW=(pct,ftp)=>Math.round(ftp*pct/100);
+const getZone=(pct)=>ZONES.find(z=>pct>=z.pct[0]&&pct<=z.pct[1])||ZONES[4];
+const midPct=(iv)=>iv.ramp?((iv.ramp[0]+iv.ramp[1])/2):iv.pct;
+const ivLabel=(iv,ftp)=>iv.ramp?`${calcW(iv.ramp[0],ftp)}–${calcW(iv.ramp[1],ftp)}w`:iv.pct?`${calcW(iv.pct,ftp)}w`:"";
 
-const SESSION_TYPES = {
-  REST:      { label:"Rest",       color:"#94a3b8", bg:"#f1f5f9" },
-  FREE:      { label:"Free ride",  color:"#8b5cf6", bg:"#f5f3ff" },
-  Z2:        { label:"Zone 2",     color:"#16a34a", bg:"#f0fdf4" },
-  SWEETSPOT: { label:"Sweet Spot", color:"#ca8a04", bg:"#fefce8" },
-  THRESHOLD: { label:"Threshold",  color:"#ea580c", bg:"#fff7ed" },
-  VO2:       { label:"VO2 Max",    color:"#dc2626", bg:"#fef2f2" },
-  TEST:      { label:"FTP Test",   color:"#7c3aed", bg:"#f5f3ff" },
-  RECOVERY:  { label:"Easy Spin",  color:"#64748b", bg:"#f8fafc" },
-  HOLIDAY:   { label:"Holiday",    color:"#0ea5e9", bg:"#f0f9ff" },
-  SICK:      { label:"Sick Day",   color:"#be185d", bg:"#fdf2f8" },
+// ─── Session Types ────────────────────────────────────────────────────────────
+const SESSION_TYPES={
+  Z2:     {label:"Zone 2",color:"#22c55e",bg:"#f0fdf4"},
+  STRENGTH:{label:"Strength",color:"#8b5cf6",bg:"#f5f3ff"},
+  RECOVERY:{label:"Recovery",color:"#64748b",bg:"#f8fafc"},
+  REST:   {label:"Rest",color:"#94a3b8",bg:"#f8fafc"},
+  FREE:   {label:"Free ride",color:"#6366f1",bg:"#eef2ff"},
+  HOLIDAY:{label:"Holiday",color:"#0ea5e9",bg:"#f0f9ff"},
+  SICK:   {label:"Sick",color:"#be185d",bg:"#fdf2f8"},
+  TEST:   {label:"Test",color:"#7c3aed",bg:"#faf5ff"},
 };
 
-// ─── Z2 Variants ──────────────────────────────────────────────────────────────
-// 6 distinct Zone 2 workout variants that rotate through the plan
-const Z2_VARIANTS = [
-  {
-    id:"Z2_STEADY_60", name:"Zone 2 Steady · 60 min", type:"Z2", tss:55, duration:60,
-    description:"Classic steady aerobic ride. Conversational pace throughout. Foundation of the training block.",
-    intervals:[{ramp:[30,65],dur:10,label:"Warm-up"},{pct:65,dur:45,label:"Zone 2 steady"},{ramp:[65,30],dur:5,label:"Cool-down"}]
-  },
-  {
-    id:"Z2_CADENCE_60", name:"Zone 2 Cadence · 60 min", type:"Z2", tss:55, duration:60,
-    description:"Zone 2 with high-cadence blocks. Aim for 95–100rpm during cadence efforts. Builds pedalling efficiency.",
-    intervals:[{ramp:[30,65],dur:10,label:"Warm-up"},{pct:65,dur:12,label:"Zone 2"},{pct:63,dur:5,label:"High cadence (95–100rpm)"},{pct:65,dur:8,label:"Zone 2"},{pct:63,dur:5,label:"High cadence (95–100rpm)"},{pct:65,dur:8,label:"Zone 2"},{pct:63,dur:5,label:"High cadence (95–100rpm)"},{pct:65,dur:2,label:"Zone 2"},{ramp:[65,30],dur:5,label:"Cool-down"}]
-  },
-  {
-    id:"Z2_PROGRESSIVE_60", name:"Zone 2 Progressive · 60 min", type:"Z2", tss:58, duration:60,
-    description:"Start at the bottom of Zone 2 and drift up to the top by the end. Teaches you to manage effort over time.",
-    intervals:[{ramp:[30,57],dur:10,label:"Warm-up"},{pct:57,dur:15,label:"Zone 2 low (57%)"},{pct:63,dur:15,label:"Zone 2 mid (63%)"},{pct:70,dur:15,label:"Zone 2 high (70%)"},{ramp:[70,30],dur:5,label:"Cool-down"}]
-  },
-  {
-    id:"Z2_TEMPO_BURSTS_60", name:"Zone 2 with Tempo Bursts · 60 min", type:"Z2", tss:65, duration:60,
-    description:"Zone 2 base with short tempo efforts embedded. Keeps the aerobic stimulus while adding variety.",
-    intervals:[{ramp:[30,65],dur:10,label:"Warm-up"},{pct:65,dur:10,label:"Zone 2"},{pct:83,dur:3,label:"Tempo burst"},{pct:65,dur:9,label:"Zone 2"},{pct:83,dur:3,label:"Tempo burst"},{pct:65,dur:9,label:"Zone 2"},{pct:83,dur:3,label:"Tempo burst"},{pct:65,dur:8,label:"Zone 2"},{ramp:[65,30],dur:5,label:"Cool-down"}]
-  },
-  {
-    id:"Z2_STEADY_90", name:"Zone 2 Steady · 90 min", type:"Z2", tss:80, duration:90,
-    description:"Extended aerobic ride. Builds the mitochondrial base that underpins all other training.",
-    intervals:[{ramp:[30,65],dur:15,label:"Warm-up"},{pct:65,dur:65,label:"Zone 2 steady"},{ramp:[65,30],dur:10,label:"Cool-down"}]
-  },
-  {
-    id:"Z2_PYRAMID_90", name:"Zone 2 Pyramid · 90 min", type:"Z2", tss:82, duration:90,
-    description:"Build up through the zone and back down. Gives the session a natural shape and keeps focus.",
-    intervals:[{ramp:[30,60],dur:15,label:"Warm-up"},{pct:60,dur:10,label:"Zone 2 base (60%)"},{pct:65,dur:10,label:"Zone 2 mid (65%)"},{pct:70,dur:15,label:"Zone 2 top (70%)"},{pct:65,dur:10,label:"Zone 2 mid (65%)"},{pct:60,dur:10,label:"Zone 2 base (60%)"},{pct:65,dur:10,label:"Zone 2 steady"},{ramp:[65,30],dur:10,label:"Cool-down"}]
-  },
-];
+// ─── State helpers ────────────────────────────────────────────────────────────
+const _mem={};
+function loadState(k,fb){try{const v=localStorage.getItem(k);return v!==null?JSON.parse(v):fb;}catch{return _mem[k]!==undefined?_mem[k]:fb;}}
+function saveState(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch{_mem[k]=v;}}
 
-// ─── Workouts ─────────────────────────────────────────────────────────────────
-const WORKOUTS = {
-  FREE:     { id:"FREE",     name:"Free Ride",    type:"FREE",      tss:0,  duration:0,  description:"Weekend ride — no structure, no targets. Ride for enjoyment.", intervals:[] },
-  REST:     { id:"REST",     name:"Rest Day",      type:"REST",      tss:0,  duration:0,  description:"Full rest. Sleep well, eat well. Recovery is when adaptation happens.", intervals:[] },
-  RECOVERY: { id:"RECOVERY", name:"Easy Spin",     type:"RECOVERY",  tss:20, duration:45, description:"Very easy spinning to flush the legs. Keep HR low, effort minimal.", intervals:[{pct:45,dur:45,label:"Easy spin"}] },
-  SWEET_SPOT: {
-    id:"SWEET_SPOT", name:"Sweet Spot · 3×20", type:"SWEETSPOT", tss:75, duration:80,
-    description:"High-value work just below threshold. Builds FTP with manageable fatigue.",
-    intervals:[{ramp:[30,75],dur:10,label:"Warm-up"},{pct:88,dur:20,label:"Sweet spot"},{pct:55,dur:5,label:"Recovery"},{pct:88,dur:20,label:"Sweet spot"},{pct:55,dur:5,label:"Recovery"},{pct:88,dur:10,label:"Sweet spot"},{ramp:[75,30],dur:10,label:"Cool-down"}]
+// ─── Date helpers ─────────────────────────────────────────────────────────────
+function getPlanDate(idx){const d=new Date(PLAN_START);d.setDate(d.getDate()+idx);return d;}
+function fmtDate(d){return d.toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"});}
+function getTodayIndex(){
+  const now=new Date();
+  const utcNow=Date.UTC(now.getFullYear(),now.getMonth(),now.getDate());
+  const diff=Math.round((utcNow-PLAN_START.getTime())/86400000);
+  return Math.max(0,Math.min(83,diff));
+}
+
+// ─── Zone 2 Variants ──────────────────────────────────────────────────────────
+const Z2_VARIANTS={
+  Z2_STEADY_60:{
+    id:"Z2_STEADY_60",name:"Zone 2 — Steady 60",type:"Z2",duration:60,tss:52,
+    description:"Steady aerobic foundation. Power stays solidly in Zone 2 throughout. Focus on nasal breathing — if you need to open your mouth, ease off. Cadence 85–95rpm.",
+    intervals:[{label:"Warm-up",ramp:[30,65],dur:10},{label:"Zone 2 steady",pct:65,dur:45},{label:"Cool-down",ramp:[65,40],dur:5}]
   },
-  THRESHOLD_2X20: {
-    id:"THRESHOLD_2X20", name:"Threshold · 2×20", type:"THRESHOLD", tss:90, duration:80,
-    description:"Two 20-minute efforts at 95% FTP. The classic FTP builder.",
-    intervals:[{ramp:[30,80],dur:15,label:"Warm-up"},{pct:95,dur:20,label:"Threshold"},{pct:55,dur:5,label:"Recovery"},{pct:95,dur:20,label:"Threshold"},{ramp:[75,30],dur:10,label:"Cool-down"}]
+  Z2_CADENCE_60:{
+    id:"Z2_CADENCE_60",name:"Zone 2 — Cadence 60",type:"Z2",duration:60,tss:52,
+    description:"Zone 2 with cadence focus. Alternate between 95–100rpm and 75–80rpm every 10 minutes. Same power band — cadence work without raising intensity.",
+    intervals:[{label:"Warm-up",ramp:[30,65],dur:10},{label:"High cadence 95–100rpm",pct:63,dur:10},{label:"Low cadence 75–80rpm",pct:67,dur:10},{label:"High cadence",pct:63,dur:10},{label:"Low cadence",pct:67,dur:10},{label:"Cool-down",ramp:[65,40],dur:10}]
   },
-  THRESHOLD_3X15: {
-    id:"THRESHOLD_3X15", name:"Threshold · 3×15", type:"THRESHOLD", tss:95, duration:90,
-    description:"Three 15-minute blocks at 97% FTP.",
-    intervals:[{ramp:[30,80],dur:15,label:"Warm-up"},{pct:97,dur:15,label:"Threshold"},{pct:55,dur:5,label:"Recovery"},{pct:97,dur:15,label:"Threshold"},{pct:55,dur:5,label:"Recovery"},{pct:97,dur:15,label:"Threshold"},{ramp:[75,30],dur:10,label:"Cool-down"}]
+  Z2_PROGRESSIVE_60:{
+    id:"Z2_PROGRESSIVE_60",name:"Zone 2 — Progressive 60",type:"Z2",duration:60,tss:54,
+    description:"Start at the bottom of Zone 2 and drift toward the top over 45 minutes. Tests your ability to stay aerobic as fatigue builds. Cool down easy.",
+    intervals:[{label:"Warm-up",ramp:[30,60],dur:10},{label:"Zone 2 build",ramp:[60,72],dur:45},{label:"Cool-down",ramp:[65,40],dur:5}]
   },
-  THRESHOLD_2X20_92: {
-    id:"THRESHOLD_2X20_92", name:"Threshold · 2×20 (−3%)", type:"THRESHOLD", tss:84, duration:80,
-    description:"Threshold session at 92% FTP — slightly reduced intensity for moderate readiness days.",
-    intervals:[{ramp:[30,78],dur:15,label:"Warm-up"},{pct:92,dur:20,label:"Threshold (reduced)"},{pct:55,dur:5,label:"Recovery"},{pct:92,dur:20,label:"Threshold (reduced)"},{ramp:[72,30],dur:10,label:"Cool-down"}]
+  Z2_TEMPO_BURSTS_60:{
+    id:"Z2_TEMPO_BURSTS_60",name:"Zone 2 — Tempo Bursts 60",type:"Z2",duration:60,tss:58,
+    description:"Mostly Zone 2 with three short Tempo bursts to stimulate type IIa fibres. Bursts are aerobic, not lactate — don't push into threshold.",
+    intervals:[{label:"Warm-up",ramp:[30,65],dur:10},{label:"Zone 2",pct:65,dur:10},{label:"Tempo burst",pct:80,dur:5},{label:"Zone 2",pct:65,dur:10},{label:"Tempo burst",pct:80,dur:5},{label:"Zone 2",pct:65,dur:10},{label:"Cool-down",ramp:[65,40],dur:10}]
   },
-  THRESHOLD_3X15_93: {
-    id:"THRESHOLD_3X15_93", name:"Threshold · 3×15 (−4%)", type:"THRESHOLD", tss:87, duration:90,
-    description:"Threshold session at 93% FTP — slightly reduced intensity for moderate readiness days.",
-    intervals:[{ramp:[30,78],dur:15,label:"Warm-up"},{pct:93,dur:15,label:"Threshold (reduced)"},{pct:55,dur:5,label:"Recovery"},{pct:93,dur:15,label:"Threshold (reduced)"},{pct:55,dur:5,label:"Recovery"},{pct:93,dur:15,label:"Threshold (reduced)"},{ramp:[72,30],dur:10,label:"Cool-down"}]
+  Z2_STEADY_90:{
+    id:"Z2_STEADY_90",name:"Zone 2 — Steady 90",type:"Z2",duration:90,tss:75,
+    description:"Long aerobic block. This is the cornerstone of base building — extended duration drives mitochondrial adaptation. Keep it genuinely easy. 90–95rpm target.",
+    intervals:[{label:"Warm-up",ramp:[30,65],dur:15},{label:"Zone 2 steady",pct:65,dur:65},{label:"Cool-down",ramp:[65,40],dur:10}]
   },
-  VO2_4X4: {
-    id:"VO2_4X4", name:"VO2 Max · 4×4", type:"VO2", tss:85, duration:75,
-    description:"The Norwegian 4×4. Four hard 4-minute intervals at 115% FTP. RPE 9/10.",
-    intervals:[{ramp:[30,80],dur:15,label:"Warm-up"},{pct:115,dur:4,label:"VO2 effort"},{pct:55,dur:4,label:"Recovery"},{pct:115,dur:4,label:"VO2 effort"},{pct:55,dur:4,label:"Recovery"},{pct:115,dur:4,label:"VO2 effort"},{pct:55,dur:4,label:"Recovery"},{pct:115,dur:4,label:"VO2 effort"},{ramp:[75,30],dur:15,label:"Cool-down"}]
+  Z2_PYRAMID_90:{
+    id:"Z2_PYRAMID_90",name:"Zone 2 — Pyramid 90",type:"Z2",duration:90,tss:78,
+    description:"Pyramid structure with Z2 base and a single extended block at the top of the zone. No threshold work — the peak is still fully aerobic.",
+    intervals:[{label:"Warm-up",ramp:[30,60],dur:15},{label:"Low Z2",pct:60,dur:15},{label:"Mid Z2",pct:65,dur:15},{label:"Upper Z2",pct:72,dur:20},{label:"Mid Z2",pct:65,dur:15},{label:"Cool-down",ramp:[63,40],dur:10}]
   },
-  VO2_4X4_110: {
-    id:"VO2_4X4_110", name:"VO2 Max · 4×4 (−5%)", type:"VO2", tss:78, duration:75,
-    description:"VO2 session at 110% FTP — reduced intensity for moderate readiness. Still hard, just not maximum.",
-    intervals:[{ramp:[30,78],dur:15,label:"Warm-up"},{pct:110,dur:4,label:"VO2 effort (reduced)"},{pct:55,dur:4,label:"Recovery"},{pct:110,dur:4,label:"VO2 effort (reduced)"},{pct:55,dur:4,label:"Recovery"},{pct:110,dur:4,label:"VO2 effort (reduced)"},{pct:55,dur:4,label:"Recovery"},{pct:110,dur:4,label:"VO2 effort (reduced)"},{ramp:[72,30],dur:15,label:"Cool-down"}]
+};
+const Z2_60_IDS=["Z2_STEADY_60","Z2_CADENCE_60","Z2_PROGRESSIVE_60","Z2_TEMPO_BURSTS_60"];
+const Z2_90_IDS=["Z2_STEADY_90","Z2_PYRAMID_90"];
+
+// ─── Strength Sessions — 12-week progressive programme ────────────────────────
+// Mon & Thu, cycling-specific, beginner, RPE-based, up to 60 min
+const STRENGTH_SESSIONS={
+  // Weeks 1–3: Foundation — movement patterns, bodyweight focus
+  STR_FOUNDATION:{
+    id:"STR_FOUNDATION",name:"Strength — Foundation",type:"STRENGTH",duration:45,tss:25,
+    description:"Learn the movement patterns. Light load or bodyweight only. Focus entirely on form — these are the same movements you'll load progressively over 12 weeks.",
+    phase:"Foundation",weeks:"1–3",
+    exercises:[
+      {name:"Goblet squat",sets:"3×10",rpe:"RPE 4–5",cue:"Chest tall, knees track over toes, hips below parallel. Pause 2 sec at bottom."},
+      {name:"Single-leg Romanian deadlift",sets:"3×8/leg",rpe:"RPE 4–5",cue:"Hinge from the hip, flat back. Opposite leg trails back. Feel hamstring tension before returning."},
+      {name:"Hip bridge",sets:"3×12",rpe:"RPE 4",cue:"Drive through heels, squeeze glutes at top. 2-sec hold. Pelvis neutral — no arching the back."},
+      {name:"Side-lying clamshell",sets:"3×15/side",rpe:"RPE 4",cue:"Feet together, rotate top knee up without rolling the pelvis. Fires glute med — critical for pedalling stability."},
+      {name:"Dead bug",sets:"3×8/side",rpe:"RPE 4",cue:"Lower back pressed to floor throughout. Slow extension of opposite arm/leg. Stop if you feel your back lift."},
+      {name:"Plank",sets:"3×30s",rpe:"RPE 4",cue:"Straight line from ears to ankles. Don't let hips sag or pike. Breathe normally."},
+    ]
   },
-  VO2_5X4: {
-    id:"VO2_5X4", name:"VO2 Max · 5×4", type:"VO2", tss:95, duration:85,
-    description:"Five intervals at 118% FTP with shorter recovery. Phase 3 progression.",
-    intervals:[{ramp:[30,80],dur:15,label:"Warm-up"},{pct:118,dur:4,label:"VO2 effort"},{pct:55,dur:3,label:"Recovery"},{pct:118,dur:4,label:"VO2 effort"},{pct:55,dur:3,label:"Recovery"},{pct:118,dur:4,label:"VO2 effort"},{pct:55,dur:3,label:"Recovery"},{pct:118,dur:4,label:"VO2 effort"},{pct:55,dur:3,label:"Recovery"},{pct:118,dur:4,label:"VO2 effort"},{ramp:[75,30],dur:15,label:"Cool-down"}]
+  // Weeks 4–6: Load introduction — add weight, single-leg emphasis
+  STR_LOAD:{
+    id:"STR_LOAD",name:"Strength — Load Introduction",type:"STRENGTH",duration:50,tss:30,
+    description:"Add load to the patterns you've built. Single-leg work is the priority — cycling is entirely single-leg. Use a weight where form holds for every rep.",
+    phase:"Load",weeks:"4–6",
+    exercises:[
+      {name:"Dumbbell split squat",sets:"4×8/leg",rpe:"RPE 6–7",cue:"Back knee drops straight down. Front shin vertical. Torso upright. Pause at bottom — no momentum."},
+      {name:"Single-leg Romanian deadlift",sets:"4×8/leg",rpe:"RPE 6–7",cue:"Add load but keep movement quality. You should feel it in the hamstring, not the back."},
+      {name:"Hip thrust",sets:"4×10",rpe:"RPE 6",cue:"Upper back on bench, bar across hips. Full hip extension — squeeze hard at top. 1-sec hold."},
+      {name:"Copenhagen plank",sets:"3×20s/side",rpe:"RPE 5–6",cue:"Top foot on bench, bottom leg lifted. Straight line. Works adductors — key for lateral stability on the bike."},
+      {name:"Pallof press",sets:"3×10/side",rpe:"RPE 5",cue:"Press hands straight out, hold 2s, return. Resist rotation — core anti-rotation is more cycling-relevant than sit-ups."},
+      {name:"Dumbbell row",sets:"3×10/arm",rpe:"RPE 6",cue:"Chest supported or knee on bench. Row to hip, not armpit. Keeps upper back strong for long rides."},
+    ]
   },
-  VO2_5X4_112: {
-    id:"VO2_5X4_112", name:"VO2 Max · 5×4 (−6%)", type:"VO2", tss:85, duration:85,
-    description:"5×4 session at 112% FTP — reduced intensity for moderate readiness.",
-    intervals:[{ramp:[30,78],dur:15,label:"Warm-up"},{pct:112,dur:4,label:"VO2 effort (reduced)"},{pct:55,dur:3,label:"Recovery"},{pct:112,dur:4,label:"VO2 effort (reduced)"},{pct:55,dur:3,label:"Recovery"},{pct:112,dur:4,label:"VO2 effort (reduced)"},{pct:55,dur:3,label:"Recovery"},{pct:112,dur:4,label:"VO2 effort (reduced)"},{pct:55,dur:3,label:"Recovery"},{pct:112,dur:4,label:"VO2 effort (reduced)"},{ramp:[72,30],dur:15,label:"Cool-down"}]
+  // Weeks 7–9: Progressive overload — heavier, add Bulgarian split squat
+  STR_PROGRESSIVE:{
+    id:"STR_PROGRESSIVE",name:"Strength — Progressive Overload",type:"STRENGTH",duration:55,tss:35,
+    description:"Heavier weights, more single-leg volume. Bulgarian split squat replaces the standard split squat — greater range of motion and more glute/quad recruitment.",
+    phase:"Progressive",weeks:"7–9",
+    exercises:[
+      {name:"Bulgarian split squat",sets:"4×8/leg",rpe:"RPE 7–8",cue:"Rear foot elevated, drop into deep single-leg squat. Lean slightly forward from the hip. One of the best cycling-strength exercises there is."},
+      {name:"Romanian deadlift",sets:"4×8",rpe:"RPE 7",cue:"Both legs now. Push hips back, flat back, loaded stretch in hamstrings. Return by driving hips forward — not pulling with your back."},
+      {name:"Step-up with knee drive",sets:"3×10/leg",rpe:"RPE 6–7",cue:"Drive through the heel of the working leg. At the top, bring opposite knee to 90°. Controlled lowering."},
+      {name:"Hip thrust",sets:"4×8",rpe:"RPE 7–8",cue:"Increase load further. Focus on full hip extension and glute contraction. This is power generation — same as the pedal stroke."},
+      {name:"Side plank with hip abduction",sets:"3×10/side",rpe:"RPE 6",cue:"Side plank position, top leg lifts slowly. Works glute med under load. Key for knee tracking while fatigued."},
+      {name:"Face pull / Band pull-apart",sets:"3×15",rpe:"RPE 5",cue:"Pull to face, elbows high and wide. Keeps rotator cuff and upper back balanced against the forward-hunched riding position."},
+    ]
   },
-  FTP_TEST: {
-    id:"FTP_TEST", name:"FTP Test", type:"TEST", tss:80, duration:70,
-    description:"20-minute all-out effort. Pace it evenly. Take 95% of average power as your new FTP.",
-    intervals:[{ramp:[30,85],dur:10,label:"Warm-up"},{pct:100,dur:5,label:"Openers"},{pct:45,dur:5,label:"Rest"},{pct:106,dur:20,label:"20-min all-out effort"},{ramp:[80,30],dur:15,label:"Cool-down"}]
+  // Weeks 10–12: Peak strength — heaviest loads, maintain form
+  STR_PEAK:{
+    id:"STR_PEAK",name:"Strength — Peak",type:"STRENGTH",duration:60,tss:40,
+    description:"Maximum strength phase. These loads feed directly into peak power output on the bike. Every rep must be technically perfect — stop a set early if form breaks down.",
+    phase:"Peak",weeks:"10–12",
+    exercises:[
+      {name:"Bulgarian split squat",sets:"5×6/leg",rpe:"RPE 8",cue:"Heaviest weight yet. Take 2–3 min rest between legs. This drives the most adaptation — it's worth the effort."},
+      {name:"Romanian deadlift",sets:"4×6",rpe:"RPE 8",cue:"Slow eccentric — 3 seconds down, explosive up. Engages the stretch reflex. Think about it as loading a spring."},
+      {name:"Single-leg press (or pistol squat regression)",sets:"4×8/leg",rpe:"RPE 7",cue:"If no leg press machine, do box pistol squats (lower to box, stand single-leg). Full range, controlled."},
+      {name:"Hip thrust",sets:"4×6",rpe:"RPE 8",cue:"Heaviest hip thrust of the plan. Drive hips through full range, explosive concentric, slow eccentric."},
+      {name:"Dumbbell lateral lunge",sets:"3×8/side",rpe:"RPE 6–7",cue:"Step wide, sit back and down into working leg. Other leg straight. Excellent for hip stability and single-leg strength."},
+      {name:"Copenhagen plank",sets:"4×25s/side",rpe:"RPE 6–7",cue:"Progress from wks 4–6. Longer holds, better bracing. Core strength at fatigue is what matters on long climbs."},
+    ]
   },
 };
 
-// Add Z2 variants to WORKOUTS
-Z2_VARIANTS.forEach(v => { WORKOUTS[v.id] = v; });
-
-// Base plan — Z2 slots rotate through 6 variants
-const Z2_60_IDS = ["Z2_STEADY_60","Z2_CADENCE_60","Z2_PROGRESSIVE_60","Z2_TEMPO_BURSTS_60"];
-const Z2_90_IDS = ["Z2_STEADY_90","Z2_PYRAMID_90"];
-
-// Pre-assign Z2 variants so each occurrence gets the next in the rotation
-function buildBasePlan() {
-  const template = [
-    "Z2","Z2","RECOVERY","Z2_90","Z2","FREE","FREE",
-    "Z2","SWEET_SPOT","Z2","RECOVERY","Z2_90","FREE","FREE",
-    "Z2_90","SWEET_SPOT","Z2_90","Z2","Z2_90","FREE","FREE",
-    "RECOVERY","Z2","RECOVERY","REST","Z2","FREE","FREE",
-    "Z2","VO2_4X4","Z2","THRESHOLD_2X20","Z2_90","FREE","FREE",
-    "Z2","VO2_4X4","Z2","THRESHOLD_2X20","Z2_90","FREE","FREE",
-    "Z2_90","VO2_4X4","Z2_90","THRESHOLD_3X15","Z2_90","FREE","FREE",
-    "RECOVERY","Z2","RECOVERY","Z2","REST","FREE","FREE",
-    "Z2","VO2_5X4","Z2","THRESHOLD_3X15","Z2_90","FREE","FREE",
-    "Z2_90","VO2_5X4","Z2_90","THRESHOLD_3X15","Z2_90","FREE","FREE",
-    "Z2_90","VO2_5X4","Z2_90","THRESHOLD_3X15","Z2_90","FREE","FREE",
-    "Z2","SWEET_SPOT","Z2","RECOVERY","FTP_TEST","FREE","FREE",
-  ];
-  let z2Idx=0, z90Idx=0;
-  return template.map(id => {
-    if(id==="Z2") return Z2_60_IDS[z2Idx++ % Z2_60_IDS.length];
-    if(id==="Z2_90") return Z2_90_IDS[z90Idx++ % Z2_90_IDS.length];
-    return id;
-  });
+// Determine which strength session by week number
+function getStrengthSession(weekNum){
+  if(weekNum<=3) return STRENGTH_SESSIONS.STR_FOUNDATION;
+  if(weekNum<=6) return STRENGTH_SESSIONS.STR_LOAD;
+  if(weekNum<=9) return STRENGTH_SESSIONS.STR_PROGRESSIVE;
+  return STRENGTH_SESSIONS.STR_PEAK;
 }
 
-const BASE_PLAN = buildBasePlan();
+// ─── Cycling Workouts ─────────────────────────────────────────────────────────
+const WORKOUTS={
+  ...Z2_VARIANTS,
+  RECOVERY:{
+    id:"RECOVERY",name:"Active Recovery",type:"RECOVERY",duration:30,tss:12,
+    description:"20–30 min very easy spin. Zone 1 only — below 55% FTP. No structure, no targets. Just move the legs. This accelerates recovery, not fitness.",
+    intervals:[{label:"Easy spin",ramp:[30,50],dur:30}]
+  },
+  REST:{id:"REST",name:"Rest",type:"REST",duration:0,tss:0,description:"Complete rest day. Sleep, eat, recover.",intervals:[]},
+  FREE:{id:"FREE",name:"Free ride",type:"FREE",duration:90,tss:60,description:"No structure. Ride wherever you like.",intervals:[]},
+  FTP_TEST:{
+    id:"FTP_TEST",name:"FTP Test — 20-min",type:"TEST",duration:70,tss:85,
+    description:"Standard 20-minute FTP test. 95% of your 20-min average power = new FTP. Warm up thoroughly — the test result depends on it. Take the day before completely off the bike.",
+    intervals:[
+      {label:"Warm-up — easy",pct:55,dur:10},
+      {label:"3×1min fast legs (1min rest)",pct:110,dur:5},
+      {label:"5min easy",pct:55,dur:5},
+      {label:"5min hard — establish ceiling",pct:105,dur:5},
+      {label:"10min easy",pct:55,dur:10},
+      {label:"20-MINUTE TEST — all out",pct:100,dur:20},
+      {label:"Cool-down",ramp:[65,40],dur:15},
+    ]
+  },
+};
 
-const PHASE_MAP = [0,0,0,0,1,1,1,1,2,2,2,3];
-const PHASES = [
-  { name:"Base",  weeks:"1–4",  color:"#16a34a", desc:"Build your aerobic engine. Zone 2 is the priority." },
-  { name:"Build", weeks:"5–8",  color:"#ea580c", desc:"Threshold and VO2 max work introduced." },
-  { name:"Peak",  weeks:"9–11", color:"#dc2626", desc:"Maximum load. Longest threshold efforts of the block." },
-  { name:"Test",  weeks:"12",   color:"#7c3aed", desc:"Taper, freshen up, then prove your new FTP." },
-];
+// ─── Base Plan — 12-week Zone 2 + Strength, no VO2/threshold/peak ────────────
+// Structure per week:
+// Mon: Strength | Tue: Z2 60 | Wed: Z2 90 | Thu: Strength | Fri: Z2 60 | Sat: Free | Sun: Rest
+// Recovery weeks (4 & 8): volume -30%, no 90-min sessions
+// Week 12: FTP test midweek, taper around it
 
-const DAY_NAMES = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
-const PLAN_START = new Date(Date.UTC(2026, 8, 7));
+const buildPlan=(overrides={})=>{
+  const plan=[];
+  const z2_60=Z2_60_IDS;
+  const z2_90=Z2_90_IDS;
+  let z60i=0, z90i=0;
 
-function getTodayIndex() {
-  // Use local date to avoid timezone day-boundary issues
-  const now = new Date();
-  const y=now.getFullYear(), m=now.getMonth(), d=now.getDate();
-  const todayMs = Date.UTC(y, m, d);
-  const startMs = Date.UTC(2026, 8, 7); // 7 Sep 2026
-  const diffDays = Math.round((todayMs - startMs) / 864e5);
-  return Math.min(Math.max(diffDays, 0), 83);
-}
-function getPlanDate(i) { const d=new Date(PLAN_START); d.setDate(d.getDate()+i); return d; }
-function fmtDate(d) { return d.toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"}); }
-function calcW(pct,ftp) { return Math.round(ftp*pct/100); }
-function getZone(pct) { return ZONES.find(z=>pct>=z.pct[0]&&pct<=z.pct[1])||ZONES[0]; }
-function midPct(iv) { return iv.ramp?(iv.ramp[0]+iv.ramp[1])/2:iv.pct; }
-function ivLabel(iv,ftp) { return iv.ramp?`${calcW(iv.ramp[0],ftp)}→${calcW(iv.ramp[1],ftp)}w`:`${calcW(iv.pct,ftp)}w`; }
+  for(let wk=0;wk<12;wk++){
+    const weekNum=wk+1;
+    const isRecovery=weekNum===4||weekNum===8;
+    const isTestWeek=weekNum===12;
+    const strSession=getStrengthSession(weekNum);
 
-// ─── Granular readiness adjustment ────────────────────────────────────────────
-// Bands: 80–100 full, 65–79 intensity -3-5%, 50–64 step down type,
-//        35–49 Z2 only, 0–34 recovery/rest
-function adjustForReadiness(wId, readiness, restingHR, legsScore, tsb) {
-  // Even rest/recovery days get overridden if readiness is dangerously low
-  const hrPen = Math.max(0, (restingHR - ATHLETE.restingHR) * 2);
-  const safeLg = legsScore>=1&&legsScore<=5?legsScore:3;
-  const legPen = Math.max(0, (3 - safeLg) * 5);
-  // TSB as sanity check on TR — not an additional penalty (avoids double-counting)
-  // Garmin TR already accounts for training load, so TSB only intervenes
-  // when TR appears inconsistent with actual riding stress
-  let tsbAdj = 0;
-  let tsbNote = null;
-  if(tsb !== null && tsb !== undefined) {
-    // Case 1: TR looks high but Strava shows heavy fatigue — TR may be lagging
-    if(readiness >= 70 && tsb < -20) {
-      tsbAdj = -15;
-      tsbNote = `TSB ${tsb} suggests more fatigue than TR indicates — session softened as a precaution.`;
-    } else if(readiness >= 60 && tsb < -30) {
-      tsbAdj = -20;
-      tsbNote = `TSB ${tsb} is very negative despite reasonable TR — Strava data overrides.`;
+    // Days: 0=Mon 1=Tue 2=Wed 3=Thu 4=Fri 5=Sat 6=Sun
+    const week=[
+      isTestWeek ? "Z2_STEADY_60" : strSession.id,               // Mon: Strength (or easy Z2 in test week)
+      z2_60[z60i%4],                                             // Tue: Z2 60
+      isRecovery ? "Z2_STEADY_60" : z2_90[z90i%2],              // Wed: Z2 90 (Z2 60 in recovery)
+      isTestWeek ? "FTP_TEST" : (isRecovery ? "RECOVERY" : strSession.id), // Thu: Strength (or FTP test in week 12, recovery spin in recovery wk)
+      isRecovery ? "RECOVERY" : z2_60[(z60i+2)%4],              // Fri: Z2 60 (recovery in recovery week)
+      "FREE",                                                     // Sat: Free
+      "REST",                                                     // Sun: Rest
+    ];
+
+    // Increment rotation counters
+    if(!isRecovery&&!isTestWeek){ z60i++; z90i++; }
+
+    for(let d=0;d<7;d++){
+      const idx=wk*7+d;
+      const ov=overrides[idx];
+      plan.push({workoutId:ov||week[d], weekNum, dayOfWeek:d});
     }
-    // Case 2: TR is low but TSB is positive — confirm it's safe to train
-    else if(readiness < 50 && tsb > 10) {
-      tsbAdj = 5;
-      tsbNote = `TSB ${tsb} suggests good form — slight readiness boost applied.`;
+  }
+  return plan;
+};
+
+// ─── Readiness adjustment ─────────────────────────────────────────────────────
+function adjustForReadiness(wId,readiness,restingHR,legsScore,tsb){
+  const hrPenalty=Math.max(0,(restingHR-ATHLETE.restingHR)*2);
+  const safe=legsScore>=1&&legsScore<=5?legsScore:3;
+  const legsPenalty=Math.max(0,(3-safe)*5);
+  const tsbPenalty=(tsb===null||tsb===undefined)?0
+    :(readiness>=70&&tsb<-20)?15
+    :(readiness>=60&&tsb<-30)?20
+    :(readiness<50&&tsb>10)?-5:0;
+  const eff=Math.max(0,readiness-hrPenalty-legsPenalty+tsbPenalty);
+
+  const w=WORKOUTS[wId];
+  const isZ2=w&&w.type==="Z2";
+  const isStr=w&&w.type==="STRENGTH";
+
+  if(eff>=80) return {id:wId,note:null,adjusted:false,eff};
+  if(eff>=65){
+    if(isZ2){
+      // Use 60-min instead of 90-min variant
+      const lighter=Z2_60_IDS[0];
+      const changed=wId.includes("90")||wId.includes("PYRAMID");
+      return {id:changed?lighter:wId,note:changed?"Readiness slightly reduced — switching to 60-min Z2.":null,adjusted:changed,eff};
     }
-    // Case 3: Both agree — no adjustment needed, TR is accurate
+    if(isStr) return {id:wId,note:"Readiness slightly reduced — take a bit more rest between sets today.",adjusted:false,eff};
+    return {id:wId,note:null,adjusted:false,eff};
   }
-  const eff = Math.max(0, readiness - hrPen - legPen - tsbAdj);
-  if(wId==="FREE") return {id:wId, note:null, adjusted:false};
-  if(eff < 20) return {id:"REST", note:"Readiness is critically low — full rest today. No riding.", adjusted:true};
-  if(eff < 35 && (wId==="REST"||wId==="RECOVERY")) return {id:"REST", note:"Readiness very low — rest instead of easy spin.", adjusted:true};
-  if(wId==="REST"||wId==="RECOVERY") return {id:wId, note:null, adjusted:false};
-
-  // Composite score: weight readiness 60%, resting HR 20%, legs 20%
-  // HR penalty: each bpm above baseline (44) reduces effective score by 2pts
-  const hrPenalty = Math.max(0, (restingHR - ATHLETE.restingHR) * 2);
-  // Legs penalty: scale 1-5 → 0-20pts penalty (1=bad=20pts, 5=great=0pts)
-  const safeLgs = legsScore>=1&&legsScore<=5?legsScore:3;
-  const legsPenalty = Math.max(0, (3 - safeLgs) * 5);
-  const effective = Math.max(0, readiness - hrPenalty - legsPenalty);
-
-  const isVO2 = ["VO2_4X4","VO2_5X4"].includes(wId);
-  const isThreshold = ["THRESHOLD_2X20","THRESHOLD_3X15"].includes(wId);
-  const isSweetSpot = wId === "SWEET_SPOT";
-  const isHard = isVO2 || isThreshold || isSweetSpot;
-
-  if(effective >= 80) {
-    return {id:wId, note:tsbNote, adjusted:false};
+  if(eff>=50){
+    if(isStr) return {id:"Z2_STEADY_60",note:"Low readiness — replacing strength session with a gentle Zone 2 ride today.",adjusted:true,eff};
+    if(isZ2){
+      const lighter=Z2_60_IDS[0];
+      return {id:lighter,note:"Moderate readiness — keeping it to 60 min Zone 2 and keeping intensity low.",adjusted:wId!==lighter,eff};
+    }
+    return {id:"Z2_STEADY_60",note:"Stepped down to Zone 2 today.",adjusted:true,eff};
   }
-  if(effective >= 65) {
-    // Reduce intensity by 3–5% — use dedicated reduced variants
-    if(wId==="VO2_5X4") return {id:"VO2_5X4_112", note:"Readiness good but not peak — intensity reduced 6%.", adjusted:true};
-    if(wId==="VO2_4X4") return {id:"VO2_4X4_110", note:"Readiness good but not peak — intensity reduced 5%.", adjusted:true};
-    if(wId==="THRESHOLD_3X15") return {id:"THRESHOLD_3X15_93", note:"Readiness good but not peak — intensity reduced 4%.", adjusted:true};
-    if(wId==="THRESHOLD_2X20") return {id:"THRESHOLD_2X20_92", note:"Readiness good but not peak — intensity reduced 3%.", adjusted:true};
-    return {id:wId, note:"Readiness good — proceed, but back off if you feel flat.", adjusted:false};
+  if(eff>=35){
+    return {id:"RECOVERY",note:"Low readiness — easy spin only today. Zone 1, no targets.",adjusted:wId!=="RECOVERY",eff};
   }
-  if(effective >= 50) {
-    // Step down session type
-    if(wId==="VO2_5X4") return {id:"VO2_4X4", note:"Readiness moderate — stepped down from 5×4 to 4×4.", adjusted:true};
-    if(wId==="VO2_4X4") return {id:"THRESHOLD_2X20", note:"Readiness moderate — stepped down from VO2 to threshold.", adjusted:true};
-    if(wId==="THRESHOLD_3X15") return {id:"THRESHOLD_2X20", note:"Readiness moderate — stepped down to 2×20.", adjusted:true};
-    if(wId==="THRESHOLD_2X20") return {id:"SWEET_SPOT", note:"Readiness moderate — stepped down to sweet spot.", adjusted:true};
-    if(wId==="SWEET_SPOT") return {id:"Z2_STEADY_60", note:"Readiness moderate — replaced sweet spot with Zone 2.", adjusted:true};
-    return {id:wId, note:"Readiness moderate — listen to your body.", adjusted:false};
-  }
-  if(effective >= 35) {
-    // Zone 2 only
-    if(isHard) return {id:"Z2_STEADY_60", note:"Readiness low — all intensity replaced with Zone 2.", adjusted:true};
-    return {id:wId, note:"Readiness low — keep effort minimal.", adjusted:false};
-  }
-  // Very low — recovery or rest
-  if(effective < 20) return {id:"REST", note:"Readiness very low — full rest today. Don't ride.", adjusted:true};
-  return {id:"RECOVERY", note:"Readiness very low — easy spin only if you must move.", adjusted:true};
+  return {id:"REST",note:"Readiness is very low — take a full rest day. The plan will still be here tomorrow.",adjusted:wId!=="REST",eff};
 }
 
-function buildPlan(overrides) {
-  const result=[];
-  for(let d=0;d<84;d++){
-    if(overrides[d]) result.push({workoutId:overrides[d]==="HOLIDAY"?"HOLIDAY":"SICK",overridden:true});
-    else result.push({workoutId:BASE_PLAN[d]||"REST",overridden:false});
+// ─── ZWO export ───────────────────────────────────────────────────────────────
+function generateZWO(wId,ftp,zwiftName,workoutOverride){
+  const w=workoutOverride||WORKOUTS[wId];
+  if(!w||!w.intervals||w.intervals.length===0) return null;
+  const esc=s=>s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  let xml=`<?xml version="1.0" encoding="utf-8"?>\n<workout_file>\n`;
+  xml+=`  <author>WykesWatts Coach</author>\n`;
+  xml+=`  <name>${esc(w.name)}</name>\n`;
+  xml+=`  <description>${esc(w.description||"")}</description>\n`;
+  xml+=`  <sportType>bike</sportType>\n  <tags/>\n  <workout>\n`;
+  for(const iv of w.intervals){
+    const sec=iv.dur*60;
+    if(iv.ramp){
+      const lo=(iv.ramp[0]/100).toFixed(3);
+      const hi=(iv.ramp[1]/100).toFixed(3);
+      const [lo2,hi2]=iv.ramp[0]<iv.ramp[1]?[lo,hi]:[hi,lo];
+      const tag=iv.ramp[0]<iv.ramp[1]?"Warmup":"Cooldown";
+      xml+=`    <${tag} Duration="${sec}" PowerLow="${lo2}" PowerHigh="${hi2}" pace="0"/>\n`;
+    } else {
+      const p=(iv.pct/100).toFixed(3);
+      xml+=`    <SteadyState Duration="${sec}" Power="${p}" pace="0"/>\n`;
+    }
   }
-  return result;
+  xml+=`  </workout>\n</workout_file>`;
+  return xml;
 }
-
-function generateZWO(wId, ftp, zwiftName, workoutOverride) {
-  const w=workoutOverride||WORKOUTS[wId]; if(!w||!w.intervals.length) return null;
-  const displayName = zwiftName || w.name;
-  const ivs=w.intervals.map(i=>{
-    const s=i.dur*60;
-    if(i.ramp){const f=(i.ramp[0]/100).toFixed(2),t=(i.ramp[1]/100).toFixed(2),tag=i.ramp[1]>=i.ramp[0]?"Warmup":"Cooldown";return`    <${tag} Duration="${s}" PowerLow="${f}" PowerHigh="${t}" pace="0"/>`;}
-    return `    <SteadyState Duration="${s}" Power="${(i.pct/100).toFixed(2)}" pace="0"/>`;
-  }).join("\n");
-  return `<?xml version="1.0" encoding="utf-8"?>\n<workout_file>\n  <author>WykesWatts</author>\n  <name>${displayName}</name>\n  <description>${w.description}</description>\n  <sportType>bike</sportType>\n  <tags/>\n  <workout>\n${ivs}\n  </workout>\n</workout_file>`;
-}
-
-function downloadZWO(wId, ftp, wName, weekNum, planDayIdx, workoutOverride) {
-  const wkStr=String(weekNum).padStart(2,"0");
-  const actualDate=getPlanDate(planDayIdx);
-  const dayName=actualDate.toLocaleDateString("en-GB",{weekday:"short"});
-  const zwiftName=`Claude W${wkStr} ${dayName} - ${wName}`;
-  const content=generateZWO(wId,ftp,zwiftName,workoutOverride); if(!content) return;
-  const cleanName=wName.replace(/[\s·×]/g,"_").replace(/__+/g,"_");
-  const filename=`Claude_W${wkStr}_${dayName}_${cleanName}.zwo`;
-  const blob=new Blob([content],{type:"application/xml"});
+function downloadZWO(wId,ftp,wName,weekNum,planDayIdx,workoutOverride){
+  const xml=generateZWO(wId,ftp,wName,workoutOverride);
+  if(!xml) return;
+  const day=planDayIdx%7;
+  const dayNames=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+  const safeName=wName.replace(/[^a-zA-Z0-9\s–\-]/g,"").replace(/\s+/g,"_").substring(0,40);
+  const filename=`Claude_W${String(weekNum).padStart(2,"0")}_${dayNames[day]}_${safeName}.zwo`;
+  const blob=new Blob([xml],{type:"application/xml"});
   const url=URL.createObjectURL(blob);
-  const a=document.createElement("a"); a.href=url; a.download=filename;
-  document.body.appendChild(a); a.click();
-  setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url);},100);
+  const a=document.createElement("a");
+  a.href=url; a.download=filename; a.click();
+  URL.revokeObjectURL(url);
+}
+function shortenWorkout(w,pct){
+  if(!pct||pct>=1) return w;
+  const scaled=w.intervals.map(iv=>({...iv,dur:Math.max(1,Math.round(iv.dur*pct))}));
+  const dur=scaled.reduce((s,iv)=>s+iv.dur,0);
+  const tss=Math.round(w.tss*pct);
+  return {...w,intervals:scaled,duration:dur,tss,tssDeficit:w.tss-tss};
 }
 
-// ─── Workout shortener ────────────────────────────────────────────────────────
-function shortenWorkout(workout, pct) {
-  if(!workout||!workout.intervals||!workout.intervals.length) return workout;
-
-  const intervals = workout.intervals;
-  const totalDur = intervals.reduce((s,i)=>s+i.dur,0);
-  const targetDur = Math.round(totalDur * pct);
-
-  // Separate warm-up, cool-down, and working intervals
-  const hasWarmup = intervals[0] && intervals[0].ramp;
-  const hasCooldown = intervals[intervals.length-1] && intervals[intervals.length-1].ramp;
-  const warmup = hasWarmup ? intervals[0] : null;
-  const cooldown = hasCooldown ? intervals[intervals.length-1] : null;
-  const working = intervals.slice(hasWarmup?1:0, hasCooldown?intervals.length-1:intervals.length);
-
-  // Scale working intervals proportionally — always keep at least 1 working interval
-  // Working intervals get scaled to pct of their total, minimum 5 mins each
-  const workingTotal = working.reduce((s,i)=>s+i.dur,0);
-  const scaledWorkingTotal = Math.round(workingTotal * pct);
-
-  let newWorking = working.map(iv => ({
-    ...iv,
-    dur: Math.max(iv.pct > 60 ? 4 : 2, Math.round(iv.dur * pct))
-  }));
-
-  // Fixed short ramps — always 5 min warmup, 3 min cooldown minimum
-  const warmupDur = warmup ? Math.max(5, Math.min(warmup.dur, Math.round(warmup.dur * pct))) : 0;
-  const cooldownDur = cooldown ? Math.max(3, Math.min(cooldown.dur, Math.round(cooldown.dur * pct))) : 0;
-
-  const newWarmup = warmup ? {...warmup, dur: warmupDur} : null;
-  const newCooldown = cooldown ? {...cooldown, dur: cooldownDur} : null;
-
-  const finalIntervals = [
-    ...(newWarmup ? [newWarmup] : []),
-    ...newWorking,
-    ...(newCooldown ? [newCooldown] : []),
-  ];
-
-  const finalDur = finalIntervals.reduce((s,i)=>s+i.dur,0);
-  const tssDeficit = Math.round(workout.tss * (1-pct));
-
-  return {
-    ...workout,
-    name: workout.name + ` (${Math.round(pct*100)}%)`,
-    intervals: finalIntervals,
-    duration: finalDur,
-    tss: Math.round(workout.tss * pct),
-    tssDeficit,
-    shortened: true,
-    originalTss: workout.tss,
-  };
-}
-
-// ─── localStorage persistence ──────────────────────────────────────────────────
-// In-memory fallback when localStorage is unavailable (http:// context)
-const _mem = {};
-function loadState(key, fallback) {
-  try {
-    const v = localStorage.getItem(key);
-    return v ? JSON.parse(v) : (_mem[key] !== undefined ? _mem[key] : fallback);
-  } catch(e) {
-    return _mem[key] !== undefined ? _mem[key] : fallback;
-  }
-}
-function saveState(key, value) {
-  _mem[key] = value;
-  try { localStorage.setItem(key, JSON.stringify(value)); } catch(e) {}
-}
-
-// ─── Sub-components ───────────────────────────────────────────────────────────
-
-function Tag({type}){
-  const s=SESSION_TYPES[type]||SESSION_TYPES.REST;
-  return <span style={{display:"inline-block",padding:"3px 10px",borderRadius:20,fontSize:12,fontWeight:600,color:s.color,background:s.bg,border:`1px solid ${s.color}30`}}>{s.label}</span>;
-}
-
+// ─── Power Bar component ──────────────────────────────────────────────────────
 function PowerBar({intervals,ftp}){
-  if(!intervals||!intervals.length) return null;
-  const total=intervals.reduce((s,i)=>s+i.dur,0);
+  const total=intervals.reduce((s,iv)=>s+iv.dur,0);
   return(
-    <div style={{display:"flex",height:48,borderRadius:6,overflow:"hidden",gap:2,margin:"12px 0",alignItems:"flex-end"}}>
+    <div style={{display:"flex",height:40,borderRadius:8,overflow:"hidden",marginBottom:16,gap:1}}>
       {intervals.map((iv,i)=>{
-        const w=(iv.dur/total)*100;
-        if(iv.ramp){
-          const zF=getZone(iv.ramp[0]),zT=getZone(iv.ramp[1]),up=iv.ramp[1]>=iv.ramp[0];
-          const fH=Math.round(iv.ramp[0]/120*100),tH=Math.round(iv.ramp[1]/120*100);
-          return(
-            <div key={i} title={`${iv.label}: ${ivLabel(iv,ftp)} · ${iv.dur}min`} style={{width:`${w}%`,height:"100%",minWidth:3,position:"relative",overflow:"hidden"}}>
-              <div style={{position:"absolute",inset:0,background:`linear-gradient(to ${up?"right":"left"},${zF.color}40,${zT.color}60)`}}/>
-              <div style={{position:"absolute",inset:0,background:`linear-gradient(to ${up?"right":"left"},${zF.color}40,${zT.color}60)`,clipPath:`polygon(0 ${100-fH}%,100% ${100-tH}%,100% 100%,0 100%)`}}/>
-              <div style={{position:"absolute",bottom:0,left:0,right:0,height:3,background:`linear-gradient(to right,${zF.color},${zT.color})`}}/>
-            </div>
-          );
-        }
-        const z=getZone(iv.pct),hP=Math.round(iv.pct/120*100);
+        const pct=100*iv.dur/total;
+        const z=getZone(midPct(iv));
         return(
-          <div key={i} title={`${iv.label}: ${calcW(iv.pct,ftp)}w · ${iv.dur}min`} style={{width:`${w}%`,height:"100%",minWidth:2,display:"flex",alignItems:"flex-end"}}>
-            <div style={{width:"100%",height:`${Math.max(hP,8)}%`,background:z.color+"38",borderTop:`3px solid ${z.color}`}}/>
+          <div key={i} title={`${iv.label} — ${iv.dur}min`}
+            style={{flex:pct,background:z.color,minWidth:2,display:"flex",alignItems:"flex-end",paddingBottom:4,justifyContent:"center",opacity:0.85}}>
+            {pct>8&&<span style={{fontSize:9,color:"#fff",fontWeight:700,textShadow:"0 1px 2px rgba(0,0,0,0.5)"}}>{iv.dur}m</span>}
           </div>
         );
       })}
@@ -486,44 +412,96 @@ function PowerBar({intervals,ftp}){
   );
 }
 
-// ─── Morning Check-in ──────────────────────────────────────────────────────────
-function MorningCheckin({readiness, setReadiness, restingHR, setRestingHR, legsScore, setLegsScore, onSave}){
-  const rdColor = readiness>=80?"#16a34a":readiness>=65?"#22c55e":readiness>=50?"#ca8a04":readiness>=35?"#ea580c":"#dc2626";
-  const hrColor = restingHR <= 44?"#16a34a":restingHR<=48?"#ca8a04":"#dc2626";
-  const legsColor = legsScore>=4?"#16a34a":legsScore===3?"#ca8a04":"#ea580c";
-  const legsLabels = ["","Very heavy","Heavy","OK","Good","Fresh"];
+// ─── Session Type Tag ─────────────────────────────────────────────────────────
+function Tag({type}){
+  const st=SESSION_TYPES[type]||SESSION_TYPES.REST;
+  return <span style={{fontSize:11,fontWeight:700,letterSpacing:.5,color:st.color,background:st.bg,border:`1px solid ${st.color}25`,padding:"3px 10px",borderRadius:20}}>{st.label.toUpperCase()}</span>;
+}
 
+// ─── Strength Session Card ─────────────────────────────────────────────────────
+function StrengthCard({session,weekNum}){
+  const [expanded,setExpanded]=useState(true);
+  return(
+    <div style={{background:"var(--bg-card)",border:"1px solid #8b5cf620",borderRadius:12,padding:20,marginBottom:16,boxShadow:"var(--shadow)"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:12}}>
+        <div>
+          <Tag type="STRENGTH"/>
+          <h2 style={{fontSize:20,fontWeight:800,marginTop:8,color:"var(--text-primary)"}}>{session.name}</h2>
+          <p style={{fontSize:13,color:"#8b5cf6",marginTop:2,fontWeight:500}}>Phase: {session.phase} · Weeks {session.weeks}</p>
+        </div>
+        <div style={{textAlign:"right",background:"var(--bg-input)",border:"1px solid var(--border)",borderRadius:8,padding:"8px 14px",flexShrink:0}}>
+          <div style={{fontSize:11,color:"var(--text-faint)"}}>Duration</div>
+          <div style={{fontSize:22,fontWeight:800}}>{session.duration}min</div>
+        </div>
+      </div>
+      <p style={{fontSize:14,color:"var(--text-secondary)",lineHeight:1.7,marginBottom:16}}>{session.description}</p>
+
+      <button onClick={()=>setExpanded(!expanded)}
+        style={{width:"100%",padding:"10px",borderRadius:8,border:"1px solid var(--border)",background:"var(--bg-input)",color:"var(--text-secondary)",fontSize:13,fontWeight:600,display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom: expanded?12:0}}>
+        <span>Exercises ({session.exercises.length})</span>
+        <span>{expanded?"▲":"▼"}</span>
+      </button>
+
+      {expanded&&(
+        <div>
+          {session.exercises.map((ex,i)=>(
+            <div key={i} style={{padding:"12px 0",borderBottom:i<session.exercises.length-1?"1px solid var(--divider)":"none"}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:4}}>
+                <span style={{fontSize:15,fontWeight:700,color:"var(--text-primary)"}}>{ex.name}</span>
+                <div style={{display:"flex",gap:8,flexShrink:0,marginLeft:8}}>
+                  <span style={{fontSize:12,fontWeight:600,color:"#8b5cf6",background:"#f5f3ff",padding:"2px 8px",borderRadius:20}}>{ex.sets}</span>
+                  <span style={{fontSize:12,fontWeight:600,color:"#64748b",background:"var(--bg-input)",padding:"2px 8px",borderRadius:20}}>{ex.rpe}</span>
+                </div>
+              </div>
+              <p style={{fontSize:13,color:"var(--text-muted)",lineHeight:1.6}}>{ex.cue}</p>
+            </div>
+          ))}
+          <div style={{marginTop:12,padding:"10px 14px",background:"#f5f3ff",border:"1px solid #8b5cf630",borderRadius:8,fontSize:12,color:"#6d28d9",lineHeight:1.6}}>
+            💡 <strong>Weight guidance:</strong> Choose a weight where the last 2 reps of each set feel genuinely hard but your form holds. If it feels easy, go heavier. If your form breaks before the last rep, drop the weight. Track your weights and aim to increase them between sets of the same exercise each week.
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Morning Check-in ─────────────────────────────────────────────────────────
+function MorningCheckin({readiness,setReadiness,restingHR,setRestingHR,legsScore,setLegsScore,onSave}){
+  const rdColor=readiness>=80?"#16a34a":readiness>=65?"#22c55e":readiness>=50?"#ca8a04":readiness>=35?"#ea580c":"#dc2626";
+  const hrColor=restingHR>ATHLETE.restingHR+4?"#dc2626":restingHR>ATHLETE.restingHR+2?"#ea580c":"#16a34a";
+  const legsLabels=["","Very heavy","Heavy","Normal","Good","Fresh"];
+  const legsColors=["","#dc2626","#ea580c","#ca8a04","#22c55e","#16a34a"];
+  const legsColor=legsColors[legsScore]||"#ca8a04";
   return(
     <div>
       <div style={{marginBottom:20}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
           <span style={{fontSize:13,fontWeight:600,color:"var(--text-secondary)"}}>Training Readiness</span>
-          <span style={{fontSize:22,fontWeight:800,color:rdColor}}>{readiness}</span>
+          <span style={{fontSize:24,fontWeight:800,color:rdColor}}>{readiness}</span>
         </div>
         <input type="range" min={0} max={100} value={readiness} onChange={e=>setReadiness(Number(e.target.value))} style={{accentColor:rdColor}}/>
         <div style={{fontSize:11,color:"var(--text-faint)",marginTop:4}}>From your Garmin Connect app</div>
       </div>
-
       <div style={{marginBottom:20}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
           <span style={{fontSize:13,fontWeight:600,color:"var(--text-secondary)"}}>Resting Heart Rate</span>
-          <span style={{fontSize:22,fontWeight:800,color:hrColor}}>{restingHR} <span style={{fontSize:13,fontWeight:400}}>bpm</span></span>
+          <span style={{fontSize:24,fontWeight:800,color:hrColor}}>{restingHR} <span style={{fontSize:13,fontWeight:400}}>bpm</span></span>
         </div>
         <input type="range" min={30} max={80} value={restingHR} onChange={e=>setRestingHR(Number(e.target.value))} style={{accentColor:hrColor}}/>
         <div style={{display:"flex",justifyContent:"space-between",fontSize:11,color:"var(--text-faint)",marginTop:4}}>
           <span>Baseline: {ATHLETE.restingHR}bpm</span>
-          <span>{restingHR > ATHLETE.restingHR+4?`⚠ ${restingHR-ATHLETE.restingHR}bpm above baseline`:restingHR > ATHLETE.restingHR+2?`↑ ${restingHR-ATHLETE.restingHR}bpm above baseline`:"✓ Normal range"}</span>
+          <span>{restingHR>ATHLETE.restingHR+4?`⚠ ${restingHR-ATHLETE.restingHR}bpm above baseline`:restingHR>ATHLETE.restingHR+2?`↑ ${restingHR-ATHLETE.restingHR}bpm above baseline`:"✓ Normal range"}</span>
         </div>
       </div>
-
-      <div style={{marginBottom:20}}>
+      <div style={{marginBottom:24}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
           <span style={{fontSize:13,fontWeight:600,color:"var(--text-secondary)"}}>How do your legs feel?</span>
           <span style={{fontSize:14,fontWeight:700,color:legsColor}}>{legsLabels[legsScore]}</span>
         </div>
         <div style={{display:"flex",gap:8}}>
           {[1,2,3,4,5].map(n=>(
-            <button key={n} onClick={()=>setLegsScore(n)} style={{flex:1,padding:"10px 0",borderRadius:8,border:legsScore===n?`2px solid ${legsColor}`:"1px solid #e5e7eb",background:legsScore===n?legsColor+"18":"#f9fafb",color:legsScore===n?legsColor:"#9ca3af",fontSize:18,cursor:"pointer",fontFamily:"inherit"}}>
+            <button key={n} onClick={()=>setLegsScore(n)}
+              style={{flex:1,padding:"12px 0",borderRadius:10,border:legsScore===n?`2px solid ${legsColor}`:"1px solid var(--border)",background:legsScore===n?legsColor+"22":"var(--bg-input)",color:legsScore===n?legsColor:"var(--text-faint)",fontSize:20,cursor:"pointer",fontFamily:"inherit",transition:"all .15s"}}>
               {n}
             </button>
           ))}
@@ -532,89 +510,60 @@ function MorningCheckin({readiness, setReadiness, restingHR, setRestingHR, legsS
           <span>Very heavy</span><span>Fresh</span>
         </div>
       </div>
-
-      <button onClick={onSave} style={{width:"100%",padding:"12px",borderRadius:8,border:"none",background:"#111827",color:"#fff",fontSize:14,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>
-        Save check-in & see today's session
+      <button onClick={onSave}
+        style={{width:"100%",padding:"14px",borderRadius:10,border:"none",background:"#0f172a",color:"#fff",fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"inherit",letterSpacing:.2}}>
+        Save check-in → see today's session
       </button>
     </div>
   );
 }
 
 // ─── Yesterday Analysis ───────────────────────────────────────────────────────
-function YesterdayAnalysis({ data, plannedId, ftp, loading }) {
-  if (loading) {
-    return <div style={{fontSize:13,color:"var(--text-muted)",padding:"12px 0"}}>Checking Strava...</div>;
-  }
-
-  if (!data) {
-    return <div style={{fontSize:13,color:"var(--text-muted)",padding:"12px 0"}}>No data yet — will check automatically.</div>;
-  }
-
-  if (!data.found) {
-    const planned = WORKOUTS[plannedId];
-    return (
+function YesterdayAnalysis({data,plannedId,ftp,loading}){
+  if(loading) return <div style={{fontSize:13,color:"var(--text-muted)",padding:"12px 0"}}>Checking Strava…</div>;
+  if(!data) return <div style={{fontSize:13,color:"var(--text-muted)",padding:"12px 0"}}>No data yet — will check automatically.</div>;
+  if(!data.found){
+    const planned=WORKOUTS[plannedId];
+    return(
       <div style={{padding:"12px 14px",background:"var(--bg-input)",border:"1px solid var(--border)",borderRadius:8}}>
         <div style={{fontSize:13,color:"var(--text-muted)"}}>
           No ride recorded yesterday.
-          {planned && <span style={{color:"var(--text-secondary)"}}> Planned session was <strong>{planned.name}</strong> — skipped or rest taken.</span>}
+          {planned&&<span style={{color:"var(--text-secondary)"}}> Planned: <strong>{planned.name}</strong> — skipped or rest taken.</span>}
         </div>
       </div>
     );
   }
-
-  const ride = data.ride;
-  const planned = WORKOUTS[plannedId];
-
-  // Determine assessment
-  let assessment = null;
-  let assessColor = "#16a34a";
-  let assessIcon = "✅";
-
-  if (planned && planned.type !== "FREE" && planned.type !== "REST" && planned.type !== "RECOVERY") {
-    // Was a structured session planned?
-    if (!ride.likelyStructured && planned.intervals.length > 0) {
-      assessment = `Free ride instead of ${planned.name}. TSS: ${ride.tss} (planned ~${planned.tss}).`;
-      assessColor = "#ca8a04"; assessIcon = "🔄";
-    } else if (ride.hrAssessment === "elevated") {
-      assessment = `HR was elevated for the power output — possible residual fatigue. Factor into today's readiness.`;
-      assessColor = "#ea580c"; assessIcon = "⚠️";
-    } else if (ride.powerZoneId <= 2 && (planned.type === "Z2" || planned.type === "RECOVERY")) {
-      assessment = `Zone 2 well executed. Power in the right range, HR appropriate.`;
-      assessColor = "#16a34a"; assessIcon = "✅";
-    } else if (ride.powerZoneId >= 4 && planned.type === "THRESHOLD") {
-      assessment = `Threshold session completed. Good effort.`;
-      assessColor = "#16a34a"; assessIcon = "✅";
-    } else if (ride.powerZoneId >= 5 && planned.type === "VO2") {
-      assessment = `VO2 session completed. Hard work done.`;
-      assessColor = "#16a34a"; assessIcon = "✅";
+  const ride=data.ride;
+  const planned=WORKOUTS[plannedId];
+  let assessment=null,assessColor="#16a34a",assessIcon="✅";
+  if(planned&&planned.type!=="FREE"&&planned.type!=="REST"&&planned.type!=="RECOVERY"){
+    if(!ride.likelyStructured&&planned.intervals&&planned.intervals.length>0){
+      assessment=`Free ride instead of ${planned.name}. TSS: ${ride.tss} (planned ~${planned.tss}).`;
+      assessColor="#ca8a04"; assessIcon="🔄";
+    } else if(ride.hrAssessment==="elevated"){
+      assessment="HR was elevated for the power output — possible residual fatigue. Factor into today's readiness.";
+      assessColor="#ea580c"; assessIcon="⚠️";
+    } else if(ride.powerZoneId<=2){
+      assessment="Zone 2 well executed. Power in the right range, HR appropriate.";
     } else {
-      assessment = `${ride.powerZoneId > 3 ? "Higher" : "Lower"} intensity than planned (${planned.name}). Adjust readiness if needed.`;
-      assessColor = "#ca8a04"; assessIcon = "🔄";
+      assessment=`${ride.powerZoneId>3?"Higher":"Lower"} intensity than planned (${planned.name}). Adjust readiness if needed.`;
+      assessColor="#ca8a04"; assessIcon="🔄";
     }
   } else {
-    // Free ride or rest was planned
-    assessment = ride.isVirtual ? "Zwift session — structured indoor ride." : `Outdoor ride — ${ride.distance}km, ${ride.elevGain}m climbing.`;
-    assessIcon = "🚴";
+    assessment=ride.isVirtual?"Zwift session — structured indoor ride.":`Outdoor ride — ${ride.distance}km, ${ride.elevGain}m climbing.`;
+    assessIcon="🚴";
   }
-
-  return (
+  return(
     <div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:6,marginBottom:10}}>
-        {[
-          { label:"Duration", value:`${ride.duration}min` },
-          { label:"Avg power", value: ride.avgPower ? `${ride.avgPower}w` : "–" },
-          { label:"Avg HR", value: ride.avgHR ? `${Math.round(ride.avgHR)}bpm` : "–" },
-          { label:"TSS", value:`${ride.tss}` },
-          { label:"Distance", value:`${ride.distance}km` },
-          { label:"Zone", value: ride.powerZone || "–" },
-        ].map(({label,value})=>(
-          <div key={label} style={{background:"var(--bg-input)",border:"1px solid var(--border)",borderRadius:6,padding:"6px 8px",textAlign:"center"}}>
+        {[{label:"Duration",value:`${ride.duration}min`},{label:"Avg power",value:ride.avgPower?`${ride.avgPower}w`:"–"},{label:"Avg HR",value:ride.avgHR?`${Math.round(ride.avgHR)}bpm`:"–"},{label:"TSS",value:`${ride.tss}`},{label:"Distance",value:`${ride.distance}km`},{label:"Zone",value:ride.powerZone||"–"}].map(({label,value})=>(
+          <div key={label} style={{background:"var(--bg-input)",border:"1px solid var(--border)",borderRadius:8,padding:"6px 8px",textAlign:"center"}}>
             <div style={{fontSize:9,color:"var(--text-faint)",marginBottom:2}}>{label}</div>
             <div style={{fontSize:13,fontWeight:700,color:"var(--text-primary)"}}>{value}</div>
           </div>
         ))}
       </div>
-      {assessment && (
+      {assessment&&(
         <div style={{padding:"8px 12px",background:assessColor+"12",border:`1px solid ${assessColor}30`,borderRadius:8,fontSize:13,color:assessColor}}>
           {assessIcon} {assessment}
         </div>
@@ -624,131 +573,87 @@ function YesterdayAnalysis({ data, plannedId, ftp, loading }) {
 }
 
 // ─── Progress Tab ─────────────────────────────────────────────────────────────
-function ProgressTab({ ftp, stravaData, planStart, todayIdx }) {
-  const weekNum = Math.floor(todayIdx / 7) + 1;
-
-  // Build weekly TSS data from stravaData if available
-  const last7 = stravaData ? stravaData.last7 : [];
-
-  // Weekly TSS bars — show last 8 weeks from plan start
-  const weeks = Array.from({ length: Math.min(weekNum, 12) }, (_, i) => {
-    const wkStart = new Date(planStart);
-    wkStart.setDate(wkStart.getDate() + i * 7);
-    const wkEnd = new Date(wkStart);
-    wkEnd.setDate(wkStart.getDate() + 6);
-    return {
-      label: `W${i + 1}`,
-      start: wkStart,
-      end: wkEnd,
-      isCurrent: i + 1 === weekNum,
-    };
-  });
-
-  // Calculate TSS for current week from stravaData
-  const currentWeekTSS = stravaData ? stravaData.weeklyTSS : 0;
-
-  const S2 = {
-    card: { background:"var(--bg-card)", border:"1px solid var(--border)", borderRadius:12, padding:20, marginBottom:16 },
-    h3: { fontSize:16, fontWeight:600, margin:"0 0 12px", color:"var(--text-primary)" },
-    label: { fontSize:12, color:"var(--text-muted)", marginBottom:6, display:"block" },
+function ProgressTab({ftp,stravaData,todayIdx}){
+  const weekNum=Math.floor(todayIdx/7)+1;
+  const C={
+    card:{background:"var(--bg-card)",border:"1px solid var(--border)",borderRadius:12,padding:20,marginBottom:16,boxShadow:"var(--shadow)"},
+    h3:{fontSize:17,fontWeight:700,margin:"0 0 14px",color:"var(--text-primary)"},
   };
-
-  return (
+  return(
     <div>
-      {/* Fitness snapshot */}
-      <div style={S2.card}>
-        <h3 style={S2.h3}>Fitness snapshot</h3>
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:10, marginBottom:16 }}>
+      <div style={C.card}>
+        <h3 style={C.h3}>FTP progress</h3>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:16}}>
           {[
-            { label:"Current FTP", value:`${ftp}w`, sub:"Last tested", color:"#111827" },
-            { label:"Target FTP", value:"280w", sub:"Week 12 goal", color:"#16a34a" },
-            { label:"Progress", value:`${Math.round((ftp-220)/(280-220)*100)}%`, sub:"Towards target", color:"#ea580c" },
-          ].map(({ label, value, sub, color }) => (
-            <div key={label} style={{ background:"var(--bg-input)", border:"1px solid var(--border)", borderRadius:10, padding:"12px 10px", textAlign:"center" }}>
-              <div style={{ fontSize:11, color:"var(--text-faint)", marginBottom:4 }}>{label}</div>
-              <div style={{ fontSize:22, fontWeight:800, color }}>{value}</div>
-              <div style={{ fontSize:10, color:"var(--text-faint)", marginTop:2 }}>{sub}</div>
+            {label:"Current FTP",value:`${ftp}w`,sub:"Last tested",color:"var(--text-primary)"},
+            {label:"Target FTP",value:"280w",sub:"Week 12 goal",color:"#16a34a"},
+            {label:"Progress",value:`${Math.round((ftp-220)/(280-220)*100)}%`,sub:"Towards target",color:"#ea580c"},
+          ].map(({label,value,sub,color})=>(
+            <div key={label} style={{background:"var(--bg-input)",border:"1px solid var(--border)",borderRadius:10,padding:"12px 8px",textAlign:"center"}}>
+              <div style={{fontSize:11,color:"var(--text-faint)",marginBottom:4}}>{label}</div>
+              <div style={{fontSize:22,fontWeight:800,color}}>{value}</div>
+              <div style={{fontSize:10,color:"var(--text-faint)",marginTop:2}}>{sub}</div>
             </div>
           ))}
         </div>
-
-        {/* FTP progress bar */}
-        <div style={{ marginBottom:6, display:"flex", justifyContent:"space-between", fontSize:12, color:"var(--text-muted)" }}>
-          <span>220w (start)</span><span>280w (target)</span>
+        <div style={{display:"flex",justifyContent:"space-between",fontSize:12,color:"var(--text-muted)",marginBottom:6}}>
+          <span>220w</span><span>280w target</span>
         </div>
-        <div style={{ height:10, background:"var(--bg-input)", borderRadius:5, overflow:"hidden", border:"1px solid var(--border)" }}>
-          <div style={{ height:"100%", width:`${Math.min(100,Math.max(0,(ftp-220)/(280-220)*100))}%`, background:"#16a34a", borderRadius:5, transition:"width 0.5s" }}/>
-        </div>
-        <div style={{ fontSize:11, color:"var(--text-faint)", marginTop:6, textAlign:"center" }}>
-          Update FTP in the Zones tab after each test
+        <div style={{height:8,background:"var(--bg-input)",borderRadius:4,overflow:"hidden",border:"1px solid var(--border)"}}>
+          <div style={{height:"100%",width:`${Math.min(100,Math.max(0,(ftp-220)/(280-220)*100))}%`,background:"linear-gradient(to right,#22c55e,#16a34a)",borderRadius:4,transition:"width .5s"}}/>
         </div>
       </div>
 
-      {/* Strava fitness metrics */}
-      {stravaData ? (
-        <div style={S2.card}>
-          <h3 style={S2.h3}>Training load (from Strava)</h3>
-          <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:10, marginBottom:16 }}>
+      {stravaData?(
+        <div style={C.card}>
+          <h3 style={C.h3}>Training load — Strava</h3>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:16}}>
             {[
-              { label:"CTL", value:stravaData.ctl, sub:"Fitness base", color:"#16a34a" },
-              { label:"ATL", value:stravaData.atl, sub:"Current fatigue", color:"#ea580c" },
-              { label:"TSB", value:stravaData.tsb, sub:"Form", color:stravaData.tsb>=0?"#16a34a":"#dc2626" },
-            ].map(({ label, value, sub, color }) => (
-              <div key={label} style={{ background:"var(--bg-input)", border:"1px solid var(--border)", borderRadius:10, padding:"12px 10px", textAlign:"center" }}>
-                <div style={{ fontSize:11, color:"var(--text-faint)", marginBottom:4 }}>{sub}</div>
-                <div style={{ fontSize:22, fontWeight:800, color }}>{value}</div>
-                <div style={{ fontSize:11, fontWeight:600, color:"var(--text-secondary)", marginTop:2 }}>{label}</div>
+              {label:"CTL",value:stravaData.ctl,sub:"Fitness base",color:"#16a34a"},
+              {label:"ATL",value:stravaData.atl,sub:"Current fatigue",color:"#ea580c"},
+              {label:"TSB",value:stravaData.tsb,sub:"Form",color:stravaData.tsb>=0?"#16a34a":"#dc2626"},
+            ].map(({label,value,sub,color})=>(
+              <div key={label} style={{background:"var(--bg-input)",border:"1px solid var(--border)",borderRadius:10,padding:"12px 8px",textAlign:"center"}}>
+                <div style={{fontSize:11,color:"var(--text-faint)",marginBottom:4}}>{sub}</div>
+                <div style={{fontSize:22,fontWeight:800,color}}>{value}</div>
+                <div style={{fontSize:12,fontWeight:700,color:"var(--text-muted)",marginTop:2}}>{label}</div>
               </div>
             ))}
           </div>
-
-          {/* TSB visual gauge */}
-          <div style={{ marginBottom:6, display:"flex", justifyContent:"space-between", fontSize:11, color:"var(--text-faint)" }}>
-            <span>Very fatigued (-30)</span><span>Fresh (+20)</span>
+          <div style={{height:8,background:"var(--bg-input)",borderRadius:4,overflow:"hidden",border:"1px solid var(--border)",position:"relative"}}>
+            <div style={{position:"absolute",left:"60%",top:0,bottom:0,width:2,background:"var(--border-strong)"}}/>
+            <div style={{height:"100%",width:`${Math.min(100,Math.max(0,((stravaData.tsb+30)/50)*100))}%`,background:stravaData.tsb>=0?"#16a34a":"#dc2626",borderRadius:4,transition:"width .5s"}}/>
           </div>
-          <div style={{ height:10, background:"var(--bg-input)", borderRadius:5, overflow:"hidden", border:"1px solid var(--border)", position:"relative" }}>
-            {/* Zero line */}
-            <div style={{ position:"absolute", left:"60%", top:0, bottom:0, width:2, background:"var(--border-strong)" }}/>
-            {/* TSB bar */}
-            <div style={{
-              height:"100%",
-              width:`${Math.min(100,Math.max(0,((stravaData.tsb+30)/50)*100))}%`,
-              background: stravaData.tsb >= 0 ? "#16a34a" : "#dc2626",
-              borderRadius:5,
-              transition:"width 0.5s"
-            }}/>
-          </div>
-          <div style={{ fontSize:12, color:"var(--text-muted)", marginTop:10, padding:"8px 12px", background:"var(--bg-input)", borderRadius:8, border:"1px solid var(--border)" }}>
-            {stravaData.form} · {stravaData.ridesLast7} rides last 7 days · {stravaData.weeklyTSS} TSS this week
+          <div style={{marginTop:10,padding:"8px 12px",background:"var(--bg-input)",border:"1px solid var(--border)",borderRadius:8,fontSize:13,color:"var(--text-secondary)"}}>
+            {stravaData.form} · {stravaData.ridesLast7} rides last 7 days · {stravaData.weeklyTSS} TSS
           </div>
         </div>
-      ) : (
-        <div style={{ ...S2.card, textAlign:"center", padding:32 }}>
-          <div style={{ fontSize:32, marginBottom:12 }}>📊</div>
-          <div style={{ fontSize:15, fontWeight:600, color:"var(--text-primary)", marginBottom:6 }}>No Strava data yet</div>
-          <div style={{ fontSize:13, color:"var(--text-muted)" }}>Connect Strava in the Check-in tab to see your training load chart.</div>
+      ):(
+        <div style={{...C.card,textAlign:"center",padding:32}}>
+          <div style={{fontSize:36,marginBottom:12}}>📊</div>
+          <div style={{fontSize:15,fontWeight:600,color:"var(--text-primary)",marginBottom:6}}>No Strava data yet</div>
+          <div style={{fontSize:13,color:"var(--text-muted)"}}>Connect Strava in the Check-in tab to see training load.</div>
         </div>
       )}
 
-      {/* Plan progress */}
-      <div style={S2.card}>
-        <h3 style={S2.h3}>Block progress</h3>
-        <div style={{ display:"flex", justifyContent:"space-between", fontSize:12, color:"var(--text-muted)", marginBottom:8 }}>
+      <div style={C.card}>
+        <h3 style={C.h3}>Block progress</h3>
+        <div style={{display:"flex",justifyContent:"space-between",fontSize:12,color:"var(--text-muted)",marginBottom:6}}>
           <span>Week 1</span><span>Week {weekNum} of 12</span><span>Week 12</span>
         </div>
-        <div style={{ height:10, background:"var(--bg-input)", borderRadius:5, overflow:"hidden", border:"1px solid var(--border)" }}>
-          <div style={{ height:"100%", width:`${(weekNum/12)*100}%`, background:"linear-gradient(to right,#16a34a,#ea580c)", borderRadius:5, transition:"width 0.5s" }}/>
+        <div style={{height:8,background:"var(--bg-input)",borderRadius:4,overflow:"hidden",border:"1px solid var(--border)",marginBottom:14}}>
+          <div style={{height:"100%",width:`${(weekNum/12)*100}%`,background:"linear-gradient(to right,#22c55e,#8b5cf6)",borderRadius:4,transition:"width .5s"}}/>
         </div>
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:6, marginTop:14 }}>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6}}>
           {[
-            { name:"Base", weeks:"1–4", color:"#16a34a", done: weekNum > 4 },
-            { name:"Build", weeks:"5–8", color:"#ea580c", done: weekNum > 8 },
-            { name:"Peak", weeks:"9–11", color:"#dc2626", done: weekNum > 11 },
-            { name:"Test", weeks:"12", color:"#7c3aed", done: weekNum >= 12 },
-          ].map(p => (
-            <div key={p.name} style={{ background:"var(--bg-input)", border:`1px solid ${p.done?"#16a34a":p.color}40`, borderRadius:8, padding:"8px 6px", textAlign:"center" }}>
-              <div style={{ fontSize:10, color:p.done?"#16a34a":p.color, fontWeight:600 }}>{p.done?"✓ ":""}{p.name}</div>
-              <div style={{ fontSize:9, color:"var(--text-faint)", marginTop:2 }}>Wk {p.weeks}</div>
+            {name:"Foundation",weeks:"1–3",color:"#22c55e",done:weekNum>3},
+            {name:"Load",weeks:"4–6",color:"#3b82f6",done:weekNum>6},
+            {name:"Progressive",weeks:"7–9",color:"#8b5cf6",done:weekNum>9},
+            {name:"Peak",weeks:"10–12",color:"#ea580c",done:weekNum>=12},
+          ].map(p=>(
+            <div key={p.name} style={{background:"var(--bg-input)",border:`1px solid ${p.done?"#16a34a":p.color}40`,borderRadius:8,padding:"8px 6px",textAlign:"center"}}>
+              <div style={{fontSize:10,color:p.done?"#16a34a":p.color,fontWeight:700}}>{p.done?"✓ ":""}{p.name}</div>
+              <div style={{fontSize:9,color:"var(--text-faint)",marginTop:2}}>Wk {p.weeks}</div>
             </div>
           ))}
         </div>
@@ -759,171 +664,127 @@ function ProgressTab({ ftp, stravaData, planStart, todayIdx }) {
 
 // ─── Main App ─────────────────────────────────────────────────────────────────
 function App(){
-  const [ftp,setFtp]=useState(()=>loadState("ww_ftp",220));
+  const todayIdx=getTodayIndex();
+
+  const [ftp,setFtp]=useState(()=>loadState("ww_ftp",ATHLETE.ftp));
   const [readiness,setReadiness]=useState(()=>loadState("ww_readiness",75));
-  const [restingHR,setRestingHR]=useState(()=>loadState("ww_rhr",44));
-  const [legsScore,setLegsScore]=useState(()=>{ const v=loadState("ww_legs",3); return (v>=1&&v<=5)?v:3; });
+  const [restingHR,setRestingHR]=useState(()=>loadState("ww_rhr",ATHLETE.restingHR));
+  const [legsScore,setLegsScore]=useState(()=>{const v=loadState("ww_legs",3);return(v>=1&&v<=5)?v:3;});
   const [stravaTokens,setStravaTokens]=useState(()=>loadState("ww_strava_tokens",null));
   const [yesterdayData,setYesterdayData]=useState(()=>loadState("ww_yesterday",null));
-  const [showInstallPrompt,setShowInstallPrompt]=useState(()=>!loadState("ww_install_dismissed",false));
-  const [isStandalone]=useState(()=>window.matchMedia("(display-mode: standalone)").matches||window.navigator.standalone===true);
-  const [yesterdayLoading,setYesterdayLoading]=useState(false);
   const [stravaData,setStravaData]=useState(()=>loadState("ww_strava_data",null));
+  const [yesterdayLoading,setYesterdayLoading]=useState(false);
   const [stravaSyncing,setStravaSyncing]=useState(false);
   const [stravaError,setStravaError]=useState(null);
+  const [showInstall,setShowInstall]=useState(()=>!loadState("ww_install_dismissed",false));
+  const [isStandalone]=useState(()=>window.matchMedia("(display-mode: standalone)").matches||window.navigator.standalone===true);
   const [checkinDone,setCheckinDone]=useState(()=>{
     const saved=loadState("ww_checkin_date","");
-    const today=new Date().toDateString();
-    return saved===today;
+    return saved===new Date().toDateString();
   });
-
-  const todayIdx=getTodayIndex();
-  const [currentDay,setCurrentDay]=useState(todayIdx);
   const [tab,setTab]=useState("today");
+  const [currentDay,setCurrentDay]=useState(todayIdx); // starts on today
   const [overrides,setOverrides]=useState(()=>loadState("ww_overrides",{}));
   const [blockMode,setBlockMode]=useState(null);
   const [blockStart,setBlockStart]=useState(null);
-  const [shortenPct,setShortenPct]=useState(null); // null = full workout
+  const [shortenPct,setShortenPct]=useState(null);
 
-  // Persist state
+  // Persist
   useEffect(()=>saveState("ww_ftp",ftp),[ftp]);
   useEffect(()=>saveState("ww_overrides",overrides),[overrides]);
   useEffect(()=>saveState("ww_readiness",readiness),[readiness]);
   useEffect(()=>saveState("ww_rhr",restingHR),[restingHR]);
   useEffect(()=>saveState("ww_legs",legsScore),[legsScore]);
 
-  // Auto-fetch yesterday's ride on first load if tokens available
-  useEffect(() => {
-    if (stravaTokens && !yesterdayData && !yesterdayLoading) {
-      fetchYesterday(stravaTokens);
-    }
-  }, [stravaTokens]);
+  // Reset shorten when navigating days
+  useEffect(()=>setShortenPct(null),[currentDay]);
 
-  const handleCheckinSave=()=>{
-    const today = new Date().toDateString();
-    saveState("ww_checkin_date", today);
-    saveState("ww_readiness", readiness);
-    saveState("ww_rhr", restingHR);
-    saveState("ww_legs", legsScore);
-    setCheckinDone(true);
-    setTab("today");
-  };
+  // Auto-fetch yesterday on load
+  useEffect(()=>{
+    if(stravaTokens&&!yesterdayData&&!yesterdayLoading) fetchYesterday(stravaTokens);
+  },[stravaTokens]);
 
-  // Strava OAuth connect
-  const handleStravaConnect = () => {
-    const clientId = "282863";
-    const redirect = encodeURIComponent(window.location.origin + "/callback");
-    const scope = "read,activity:read";
-    window.location.href = `https://www.strava.com/oauth/authorize?client_id=${clientId}&redirect_uri=${redirect}&response_type=code&scope=${scope}`;
-  };
-
-  // Check for OAuth callback token in URL
-  React.useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const tokenParam = params.get("strava_token");
-    const errorParam = params.get("strava_error");
-
-    if (errorParam) {
-      setStravaError("Strava connection failed — please try again");
-      window.history.replaceState({}, "", window.location.pathname);
-    }
-
-    if (tokenParam && !stravaTokens) {
-      try {
-        const data = JSON.parse(decodeURIComponent(tokenParam));
-        if (data.access_token) {
-          setStravaTokens(data);
-          saveState("ww_strava_tokens", data);
-          window.history.replaceState({}, "", window.location.pathname);
-          setTab("checkin");
-          doStravaSync(data);
+  // Handle Strava OAuth callback
+  useEffect(()=>{
+    const params=new URLSearchParams(window.location.search);
+    const tokenParam=params.get("strava_token");
+    const errorParam=params.get("strava_error");
+    if(errorParam){setStravaError("Strava connection failed");window.history.replaceState({},"",window.location.pathname);}
+    if(tokenParam&&!stravaTokens){
+      try{
+        const data=JSON.parse(decodeURIComponent(tokenParam));
+        if(data.access_token){
+          setStravaTokens(data);saveState("ww_strava_tokens",data);
+          window.history.replaceState({},"",window.location.pathname);
+          setTab("checkin");doStravaSync(data);
         }
-      } catch(e) {
-        setStravaError("Connection failed — try again");
-        window.history.replaceState({}, "", window.location.pathname);
-      }
+      }catch{setStravaError("Connection failed");window.history.replaceState({},"",window.location.pathname);}
     }
-  }, []);
+  },[]);
 
-  const fetchYesterday = async (tokens) => {
-    const t = tokens || stravaTokens;
-    if (!t) return;
+  const fetchYesterday=async(tokens)=>{
+    const t=tokens||stravaTokens;if(!t)return;
     setYesterdayLoading(true);
-    try {
-      const res = await fetch("/.netlify/functions/strava-yesterday", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...t, ftp })
-      });
-      const data = await res.json();
-      if (!data.error) {
-        setYesterdayData(data);
-        saveState("ww_yesterday", data);
-        // Update tokens if refreshed
-        if (data.access_token && data.access_token !== t.access_token) {
-          const newTokens = { ...t, access_token: data.access_token, refresh_token: data.refresh_token, expires_at: data.expires_at };
-          setStravaTokens(newTokens);
-          saveState("ww_strava_tokens", newTokens);
+    try{
+      const res=await fetch("/.netlify/functions/strava-yesterday",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({...t,ftp})});
+      const data=await res.json();
+      if(!data.error){
+        setYesterdayData(data);saveState("ww_yesterday",data);
+        if(data.access_token&&data.access_token!==t.access_token){
+          const nt={...t,access_token:data.access_token,refresh_token:data.refresh_token,expires_at:data.expires_at};
+          setStravaTokens(nt);saveState("ww_strava_tokens",nt);
         }
       }
-    } catch(e) {}
+    }catch{}
     setYesterdayLoading(false);
   };
 
-  const doStravaSync = async (tokens) => {
-    const t = tokens || stravaTokens;
-    if (!t) return;
-    setStravaSyncing(true);
-    setStravaError(null);
-    try {
-      const res = await fetch("/.netlify/functions/strava-sync", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(t)
-      });
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
-      // Update tokens if refreshed
-      if (data.access_token !== t.access_token) {
-        const newTokens = { ...t, access_token: data.access_token, refresh_token: data.refresh_token, expires_at: data.expires_at };
-        setStravaTokens(newTokens);
-        saveState("ww_strava_tokens", newTokens);
+  const doStravaSync=async(tokens)=>{
+    const t=tokens||stravaTokens;if(!t)return;
+    setStravaSyncing(true);setStravaError(null);
+    try{
+      const res=await fetch("/.netlify/functions/strava-sync",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(t)});
+      const data=await res.json();
+      if(data.error)throw new Error(data.error);
+      if(data.access_token!==t.access_token){
+        const nt={...t,access_token:data.access_token,refresh_token:data.refresh_token,expires_at:data.expires_at};
+        setStravaTokens(nt);saveState("ww_strava_tokens",nt);
       }
-      setStravaData(data);
-      saveState("ww_strava_data", data);
-      saveState("ww_strava_sync_date", new Date().toDateString());
-    } catch(err) {
-      setStravaError(err.message || "Sync failed");
-    }
+      setStravaData(data);saveState("ww_strava_data",data);saveState("ww_strava_sync_date",new Date().toDateString());
+    }catch(err){setStravaError(err.message||"Sync failed");}
     setStravaSyncing(false);
   };
 
-  const plan=buildPlan(overrides);
+  const handleStravaConnect=()=>{
+    const clientId="282863";
+    const redirect=encodeURIComponent(window.location.origin+"/callback");
+    const scope="read,activity:read";
+    window.location.href=`https://www.strava.com/oauth/authorize?client_id=${clientId}&redirect_uri=${redirect}&response_type=code&scope=${scope}`;
+  };
+
+  const handleCheckinSave=()=>{
+    const today=new Date().toDateString();
+    saveState("ww_checkin_date",today);
+    saveState("ww_readiness",readiness);
+    saveState("ww_rhr",restingHR);
+    saveState("ww_legs",legsScore);
+    setCheckinDone(true);setTab("today");
+  };
+
+  const plan=useMemo(()=>buildPlan(overrides),[overrides]);
   const entry=plan[currentDay]||{workoutId:"REST"};
   const isBlockedDay=entry.workoutId==="HOLIDAY"||entry.workoutId==="SICK"||entry.workoutId==="FREE";
-  const tsb = stravaData ? stravaData.tsb : null;
-  const {id:adjId, note:rdNote, adjusted} = isBlockedDay
-    ? {id:entry.workoutId, note:null, adjusted:false}
-    : adjustForReadiness(entry.workoutId, readiness, restingHR, legsScore, tsb);
+  const tsb=stravaData?stravaData.tsb:null;
+  const {id:adjId,note:rdNote,adjusted,eff:effectiveReadiness}=isBlockedDay
+    ?{id:entry.workoutId,note:null,adjusted:false,eff:readiness}
+    :adjustForReadiness(entry.workoutId,readiness,restingHR,legsScore,tsb);
   const baseWorkout=WORKOUTS[adjId]||WORKOUTS.REST;
   const workout=shortenPct?shortenWorkout(baseWorkout,shortenPct):baseWorkout;
   const plannedWorkout=WORKOUTS[entry.workoutId]||WORKOUTS.REST;
-
-  useEffect(()=>{ setShortenPct(null); },[currentDay]);
   const weekNum=Math.floor(currentDay/7)+1;
-  const phase=PHASES[PHASE_MAP[weekNum-1]??3];
+  const isStrengthDay=workout&&workout.type==="STRENGTH";
+  const strSession=isStrengthDay?getStrengthSession(weekNum):null;
 
-  // Composite readiness colour
-  const hrPenalty=Math.max(0,(restingHR-ATHLETE.restingHR)*2);
-  const safeLegs=legsScore>=1&&legsScore<=5?legsScore:3;
-  const legsPenalty=Math.max(0,(3-safeLegs)*5);
-  // Mirror the sanity-check logic for display
-  const tsbPenalty = (tsb===null||tsb===undefined) ? 0
-    : (readiness>=70&&tsb<-20) ? 15
-    : (readiness>=60&&tsb<-30) ? 20
-    : (readiness<50&&tsb>10) ? -5
-    : 0;
-  const effectiveReadiness=Math.max(0,readiness-hrPenalty-legsPenalty+tsbPenalty);
   const effColor=effectiveReadiness>=80?"#16a34a":effectiveReadiness>=65?"#22c55e":effectiveReadiness>=50?"#ca8a04":effectiveReadiness>=35?"#ea580c":"#dc2626";
   const effLabel=effectiveReadiness>=80?"Peak — full session":effectiveReadiness>=65?"Good — slight reduction":effectiveReadiness>=50?"Moderate — stepped down":effectiveReadiness>=35?"Low — Zone 2 only":"Very low — rest today";
 
@@ -936,162 +797,156 @@ function App(){
         for(let d=s;d<=e;d++) next[d]=blockMode;
         setOverrides(next);setBlockStart(null);setBlockMode(null);
       }
-    } else {setCurrentDay(idx);setTab("today");}
+    }else{setCurrentDay(idx);setTab("today");}
   },[blockMode,blockStart,overrides]);
 
   const clearOverride=(idx)=>{const n={...overrides};delete n[idx];setOverrides(n);};
 
+  // Styles
   const S={
     page:{minHeight:"100vh",background:"var(--bg-page)",color:"var(--text-primary)"},
-    hdr:{background:"var(--hdr-bg)",borderBottom:"1px solid var(--border)",padding:"16px 20px",display:"flex",justifyContent:"space-between",alignItems:"center"},
-    nav:{background:"var(--hdr-bg)",borderBottom:"1px solid var(--border)",display:"flex"},
-    navBtn:(a)=>({padding:"12px 16px",background:"none",border:"none",borderBottom:a?"2px solid #111827":"2px solid transparent",cursor:"pointer",fontSize:13,fontWeight:a?600:400,color:a?"var(--text-primary)":"var(--text-muted)",fontFamily:"inherit"}),
+    hdr:{background:"var(--hdr-bg)",padding:"16px 20px 14px",display:"flex",justifyContent:"space-between",alignItems:"center"},
+    nav:{background:"var(--hdr-bg)",borderBottom:"1px solid var(--hdr-border)",display:"flex",overflowX:"auto"},
+    navBtn:(a)=>({padding:"11px 16px",background:"none",border:"none",borderBottom:a?"2px solid #e2e8f0":"2px solid transparent",cursor:"pointer",fontSize:13,fontWeight:a?700:400,color:a?"#f8fafc":"#64748b",fontFamily:"inherit",whiteSpace:"nowrap",transition:"color .15s"}),
     body:{maxWidth:660,margin:"0 auto",padding:"20px 16px"},
-    card:{background:"var(--bg-card)",border:"1px solid var(--border)",borderRadius:12,padding:20,marginBottom:16},
+    card:{background:"var(--bg-card)",border:"1px solid var(--border)",borderRadius:var(--radius,12),padding:20,marginBottom:16,boxShadow:"var(--shadow)"},
     lbl:{fontSize:12,color:"var(--text-muted)",marginBottom:6,display:"block"},
-    h2:{fontSize:22,fontWeight:700,margin:"0 0 4px",color:"var(--text-primary)"},
-    h3:{fontSize:16,fontWeight:600,margin:"0 0 8px",color:"var(--text-primary)"},
-    b2:{fontSize:14,color:"var(--text-muted)",lineHeight:1.6},
+    h2:{fontSize:22,fontWeight:800,margin:"0 0 4px",color:"var(--text-primary)"},
+    h3:{fontSize:16,fontWeight:700,margin:"0 0 10px",color:"var(--text-primary)"},
+    b2:{fontSize:14,color:"var(--text-secondary)",lineHeight:1.7},
     divider:{border:"none",borderTop:"1px solid var(--divider)",margin:"16px 0"},
-    btn:(c="#374151",bg="#f9fafb")=>({padding:"8px 16px",borderRadius:8,border:"1px solid var(--border)",background:bg,color:c,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}),
-    btnP:{padding:"9px 18px",borderRadius:8,border:"none",background:"#111827",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit"},
+    btn:(c="var(--text-secondary)",bg="var(--bg-input)")=>({padding:"8px 14px",borderRadius:8,border:"1px solid var(--border)",background:bg,color:c,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}),
+    btnP:{padding:"10px 20px",borderRadius:8,border:"none",background:"#0f172a",color:"#f8fafc",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit"},
+    card12:{background:"var(--bg-card)",border:"1px solid var(--border)",borderRadius:12,padding:20,marginBottom:16,boxShadow:"var(--shadow)"},
   };
 
   return(
     <div style={S.page}>
+      {/* Header */}
       <div style={S.hdr}>
         <div>
-          <div style={{fontSize:12,color:"var(--text-faint)",marginBottom:2}}>WykesWatts · Adaptive Cycling Coach · <span style={{color:"#22c55e"}}>Built 28 Sep 2026 12:27</span></div>
-          <div style={{fontSize:18,fontWeight:700}}>FTP Block · Autumn/Winter 2026</div>
+          <div style={{fontSize:11,color:"#475569",marginBottom:2,letterSpacing:.3}}>WYKESWATTS · OFF-SEASON BASE · AUT/WIN 2026</div>
+          <div style={{fontSize:19,fontWeight:800,color:"#f8fafc",letterSpacing:-.3}}>Adaptive Cycling Coach</div>
         </div>
         <div style={{textAlign:"right"}}>
-          <div style={{fontSize:12,color:"var(--text-faint)"}}>FTP / Target</div>
-          <div style={{fontSize:16,fontWeight:700}}>{ftp}w → <span style={{color:"#16a34a"}}>280w</span></div>
+          <div style={{fontSize:11,color:"#475569"}}>FTP / Target</div>
+          <div style={{fontSize:17,fontWeight:800,color:"#f8fafc"}}>{ftp}w <span style={{color:"#22c55e",fontWeight:500}}>→ 280w</span></div>
         </div>
       </div>
 
+      {/* Nav */}
       <div style={S.nav}>
         {[["today","Today"],["checkin","Check-in"],["plan","Plan"],["progress","Progress"],["zones","Zones"]].map(([v,l])=>(
           <button key={v} style={S.navBtn(tab===v)} onClick={()=>setTab(v)}>
-            {l}{v==="checkin"&&!checkinDone?<span style={{marginLeft:4,width:7,height:7,borderRadius:4,background:"#ef4444",display:"inline-block",verticalAlign:"middle"}}/>:null}
+            {l}{v==="checkin"&&!checkinDone?<span style={{marginLeft:5,width:7,height:7,borderRadius:4,background:"#ef4444",display:"inline-block",verticalAlign:"middle"}}/>:null}
           </button>
         ))}
       </div>
 
       <div style={S.body}>
 
-        {/* CHECK-IN TAB */}
+        {/* ── CHECK-IN TAB ─────────────────────────────────────────────────── */}
         {tab==="checkin"&&(
-          <div style={S.card}>
+          <div style={S.card12}>
             <h3 style={{...S.h3,marginBottom:4}}>Morning check-in</h3>
             <p style={{...S.b2,marginBottom:20}}>{checkinDone?"Today's check-in saved. Update any values if needed.":"Takes 30 seconds. Tells the system how hard to push today."}</p>
-            {/* Yesterday's ride analysis */}
-            {stravaTokens && (
+
+            {/* Yesterday's ride */}
+            {stravaTokens&&(
               <div style={{marginBottom:20,paddingBottom:20,borderBottom:"1px solid var(--border)"}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-                  <div style={{fontSize:14,fontWeight:600,color:"var(--text-primary)"}}>Yesterday's ride</div>
+                  <div style={{fontSize:14,fontWeight:700,color:"var(--text-primary)"}}>Yesterday's ride</div>
                   <button onClick={()=>fetchYesterday(stravaTokens)} disabled={yesterdayLoading}
                     style={{background:"none",border:"none",fontSize:12,color:"var(--text-muted)",cursor:"pointer",fontFamily:"inherit",padding:0}}>
-                    {yesterdayLoading?"checking...":"refresh"}
+                    {yesterdayLoading?"checking…":"refresh"}
                   </button>
                 </div>
-                <YesterdayAnalysis data={yesterdayData} plannedId={BASE_PLAN[Math.max(0,todayIdx-1)]} ftp={ftp} loading={yesterdayLoading}/>
+                <YesterdayAnalysis data={yesterdayData} plannedId={entry.workoutId} ftp={ftp} loading={yesterdayLoading}/>
               </div>
             )}
 
             {/* Strava sync */}
-            <div style={{marginBottom:20,paddingBottom:20,borderBottom:"1px solid var(--divider)"}}>
+            <div style={{marginBottom:20,paddingBottom:20,borderBottom:"1px solid var(--border)"}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
                 <div>
-                  <div style={{fontSize:14,fontWeight:600,color:"var(--text-secondary)"}}>Strava sync</div>
+                  <div style={{fontSize:14,fontWeight:700,color:"var(--text-secondary)"}}>Strava sync</div>
                   <div style={{fontSize:12,color:"var(--text-faint)",marginTop:2}}>
-                    {stravaData ? `Last synced: ${loadState("ww_strava_sync_date","never")}` : "Connect to pull ATL/CTL/TSB"}
+                    {stravaData?`Last: ${loadState("ww_strava_sync_date","never")}`:"Connect to pull ATL/CTL/TSB"}
                   </div>
                 </div>
-                {stravaTokens ? (
+                {stravaTokens?(
                   <button onClick={()=>doStravaSync()} disabled={stravaSyncing}
-                    style={{padding:"8px 16px",borderRadius:8,border:"none",background:stravaSyncing?"#e5e7eb":"#fc4c02",color:stravaSyncing?"#9ca3af":"#fff",fontSize:13,fontWeight:600,cursor:stravaSyncing?"not-allowed":"pointer",fontFamily:"inherit"}}>
-                    {stravaSyncing?"Syncing...":"Sync now"}
+                    style={{padding:"8px 16px",borderRadius:8,border:"none",background:stravaSyncing?"#e2e8f0":"#fc4c02",color:stravaSyncing?"#94a3b8":"#fff",fontSize:13,fontWeight:700,cursor:stravaSyncing?"not-allowed":"pointer",fontFamily:"inherit"}}>
+                    {stravaSyncing?"Syncing…":"Sync now"}
                   </button>
-                ) : (
+                ):(
                   <button onClick={handleStravaConnect}
-                    style={{padding:"8px 16px",borderRadius:8,border:"none",background:"#fc4c02",color:"#fff",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>
+                    style={{padding:"8px 16px",borderRadius:8,border:"none",background:"#fc4c02",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
                     Connect Strava
                   </button>
                 )}
               </div>
-              {stravaError && <div style={{padding:"8px 12px",background:"#fef2f2",border:"1px solid #fecaca",borderRadius:8,fontSize:13,color:"#dc2626",marginBottom:10}}>{stravaError}</div>}
-              {stravaData && (
-                <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>
-                  {[
-                    ["CTL", stravaData.ctl, "Fitness", "#16a34a"],
-                    ["ATL", stravaData.atl, "Fatigue", "#ea580c"],
-                    ["TSB", stravaData.tsb, "Form", stravaData.tsb>=0?"#16a34a":"#dc2626"],
-                  ].map(([key,val,label,color])=>(
+              {stravaError&&<div style={{padding:"8px 12px",background:"#fef2f2",border:"1px solid #fecaca",borderRadius:8,fontSize:13,color:"#dc2626",marginBottom:10}}>{stravaError}</div>}
+              {stravaData&&(
+                <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:8}}>
+                  {[["CTL",stravaData.ctl,"Fitness","#16a34a"],["ATL",stravaData.atl,"Fatigue","#ea580c"],["TSB",stravaData.tsb,"Form",stravaData.tsb>=0?"#16a34a":"#dc2626"]].map(([key,val,label,color])=>(
                     <div key={key} style={{background:"var(--bg-input)",border:"1px solid var(--border)",borderRadius:8,padding:"10px 12px",textAlign:"center"}}>
                       <div style={{fontSize:11,color:"var(--text-faint)"}}>{label}</div>
                       <div style={{fontSize:24,fontWeight:800,color}}>{val}</div>
-                      <div style={{fontSize:11,fontWeight:600,color:"var(--text-secondary)"}}>{key}</div>
+                      <div style={{fontSize:11,fontWeight:700,color:"var(--text-muted)"}}>{key}</div>
                     </div>
                   ))}
                 </div>
               )}
-              {stravaData && (
-                <div style={{marginTop:10,padding:"8px 12px",background:"var(--bg-input)",border:"1px solid var(--border)",borderRadius:8,fontSize:13,color:"var(--text-secondary)"}}>
-                  {stravaData.form} · {stravaData.ridesLast7} rides last 7 days · {stravaData.weeklyTSS} TSS
-                </div>
-              )}
+              {stravaData&&<div style={{padding:"8px 12px",background:"var(--bg-input)",border:"1px solid var(--border)",borderRadius:8,fontSize:13,color:"var(--text-secondary)"}}>{stravaData.form} · {stravaData.ridesLast7} rides last 7 days · {stravaData.weeklyTSS} TSS</div>}
             </div>
 
-            <MorningCheckin
-              readiness={readiness} setReadiness={setReadiness}
-              restingHR={restingHR} setRestingHR={setRestingHR}
-              legsScore={legsScore} setLegsScore={setLegsScore}
-              onSave={handleCheckinSave}
-            />
+            <MorningCheckin readiness={readiness} setReadiness={setReadiness} restingHR={restingHR} setRestingHR={setRestingHR} legsScore={legsScore} setLegsScore={setLegsScore} onSave={handleCheckinSave}/>
           </div>
         )}
 
-        {/* TODAY TAB */}
+        {/* ── TODAY TAB ───────────────────────────────────────────────────── */}
         {tab==="today"&&(
           <>
-            {/* PWA install prompt — only show in browser, not when already installed */}
-            {showInstallPrompt && !isStandalone && (
-              <div style={{...S.card,borderColor:"#8b5cf6",background:"var(--bg-card)",marginBottom:16}}>
+            {/* PWA install */}
+            {showInstall&&!isStandalone&&(
+              <div style={{...S.card12,borderColor:"#8b5cf640"}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
                   <div style={{flex:1}}>
-                    <div style={{fontSize:14,fontWeight:600,color:"var(--text-primary)",marginBottom:4}}>📱 Add to Home Screen</div>
-                    <div style={{fontSize:13,color:"var(--text-muted)",lineHeight:1.6,marginBottom:10}}>
-                      Install WykesWatts as an app for quick access every morning.
-                    </div>
-                    <div style={{fontSize:13,color:"var(--text-secondary)",lineHeight:1.8}}>
-                      <strong>iPhone/iPad:</strong> Tap <strong>Share ↑</strong> → <strong>Add to Home Screen</strong><br/>
-                      <strong>Mac (Safari):</strong> Click <strong>Share ↑</strong> → <strong>Add to Dock</strong>
+                    <div style={{fontSize:14,fontWeight:700,color:"var(--text-primary)",marginBottom:4}}>📱 Add to Home Screen</div>
+                    <div style={{fontSize:13,color:"var(--text-secondary)",lineHeight:1.6,marginBottom:8}}>Install WykesWatts as an app for instant morning access.</div>
+                    <div style={{fontSize:13,color:"var(--text-muted)",lineHeight:1.8}}>
+                      <strong>iPhone/iPad:</strong> Tap Share ↑ → Add to Home Screen<br/>
+                      <strong>Mac/Safari:</strong> Click Share ↑ → Add to Dock
                     </div>
                   </div>
-                  <button onClick={()=>{setShowInstallPrompt(false);saveState("ww_install_dismissed",true);}}
-                    style={{background:"none",border:"none",fontSize:18,cursor:"pointer",color:"var(--text-faint)",padding:"0 0 0 12px",lineHeight:1}}>×</button>
+                  <button onClick={()=>{setShowInstall(false);saveState("ww_install_dismissed",true);}}
+                    style={{background:"none",border:"none",fontSize:20,cursor:"pointer",color:"var(--text-faint)",padding:"0 0 0 12px",lineHeight:1}}>×</button>
                 </div>
               </div>
             )}
 
+            {/* Check-in prompt */}
             {!checkinDone&&(
-              <div style={{...S.card,borderColor:"#f97316",background:"#fff7ed",cursor:"pointer"}} onClick={()=>setTab("checkin")}>
+              <div style={{...S.card12,borderColor:"#f97316",background:"var(--bg-card)",cursor:"pointer"}} onClick={()=>setTab("checkin")}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                   <div>
-                    <div style={{fontSize:14,fontWeight:600,color:"#9a3412"}}>Morning check-in not done yet</div>
-                    <div style={{fontSize:13,color:"#c2410c",marginTop:2}}>Tap to complete — 30 seconds</div>
+                    <div style={{fontSize:14,fontWeight:700,color:"var(--text-primary)"}}>Morning check-in not done yet</div>
+                    <div style={{fontSize:13,color:"var(--text-muted)",marginTop:2}}>Tap to complete — 30 seconds</div>
                   </div>
-                  <span style={{fontSize:20}}>→</span>
+                  <span style={{fontSize:20,color:"var(--text-faint)"}}>→</span>
                 </div>
               </div>
             )}
 
-            <div style={S.card}>
+            {/* Day navigation */}
+            <div style={S.card12}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
                 <div>
                   <div style={{fontSize:13,color:"var(--text-muted)"}}>{fmtDate(getPlanDate(currentDay))} · Week {weekNum}</div>
-                  <div style={{fontSize:16,fontWeight:600,marginTop:2}}><span style={{color:phase.color}}>●</span> {phase.name} phase</div>
+                  <div style={{fontSize:15,fontWeight:700,marginTop:2,color:"var(--text-primary)"}}>
+                    Off-season base block
+                  </div>
                 </div>
                 <div style={{display:"flex",gap:6,flexWrap:"wrap",justifyContent:"flex-end"}}>
                   {currentDay!==todayIdx&&<button style={S.btn("#16a34a","#f0fdf4")} onClick={()=>setCurrentDay(todayIdx)}>Today</button>}
@@ -1099,24 +954,24 @@ function App(){
                   <button style={S.btn()} onClick={()=>setCurrentDay(Math.min(83,currentDay+1))}>→</button>
                 </div>
               </div>
-              <input type="range" min={0} max={83} value={currentDay} onChange={e=>setCurrentDay(Number(e.target.value))} style={{accentColor:"#111827"}}/>
+              <input type="range" min={0} max={83} value={currentDay} onChange={e=>setCurrentDay(Number(e.target.value))} style={{accentColor:"#0f172a"}}/>
               <div style={{display:"flex",justifyContent:"space-between",fontSize:11,color:"var(--text-faint)",marginTop:4}}>
                 <span>Wk 1 · {fmtDate(getPlanDate(0))}</span>
                 <span>Wk 12 · {fmtDate(getPlanDate(83))}</span>
               </div>
             </div>
 
-            {/* Effective readiness summary */}
+            {/* Effective readiness */}
             {!isBlockedDay&&checkinDone&&(
-              <div style={{...S.card,borderColor:effColor+"40",padding:"14px 20px"}}>
+              <div style={{...S.card12,borderColor:effColor+"40",padding:"14px 20px"}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                   <div>
                     <div style={{fontSize:12,color:"var(--text-muted)"}}>Effective readiness</div>
-                    <div style={{fontSize:14,fontWeight:600,color:effColor,marginTop:2}}>{effLabel}</div>
+                    <div style={{fontSize:14,fontWeight:700,color:effColor,marginTop:2}}>{effLabel}</div>
                   </div>
                   <div style={{textAlign:"right"}}>
-                    <div style={{fontSize:32,fontWeight:800,color:effColor}}>{effectiveReadiness}</div>
-                    <div style={{fontSize:11,color:"var(--text-faint)"}}>TR {readiness} · HR {restingHR}bpm · Legs {legsScore}/5{tsb!==null?` · TSB ${tsb}`:""}</div>
+                    <div style={{fontSize:36,fontWeight:900,color:effColor,lineHeight:1}}>{effectiveReadiness}</div>
+                    <div style={{fontSize:11,color:"var(--text-faint)",marginTop:4}}>TR {readiness} · HR {restingHR}bpm · Legs {legsScore}/5{tsb!==null?` · TSB ${tsb}`:""}</div>
                   </div>
                 </div>
                 {adjusted&&rdNote&&(
@@ -1125,51 +980,48 @@ function App(){
                   </div>
                 )}
                 {adjusted&&(
-                  <div style={{marginTop:8,fontSize:12,color:"var(--text-faint)"}}>
-                    Planned: {plannedWorkout.name}
-                  </div>
+                  <div style={{marginTop:6,fontSize:12,color:"var(--text-faint)"}}>Planned: {plannedWorkout.name}</div>
                 )}
               </div>
             )}
 
+            {/* Session display */}
             {adjId==="REST"&&!isBlockedDay?(
-              <div style={{...S.card,borderColor:"#94a3b8",background:"#f8fafc"}}>
+              <div style={{...S.card12,borderColor:"#cbd5e1"}}>
                 <Tag type="REST"/>
-                <div style={{fontSize:20,fontWeight:700,marginTop:8}}>Rest today 🛌</div>
-                <div style={{fontSize:14,color:"var(--text-muted)",marginTop:4,lineHeight:1.6}}>
-                  {rdNote||"Your body needs recovery today. Sleep well, eat well, stay off the bike."}
-                </div>
-                {adjusted&&<div style={{marginTop:10,fontSize:12,color:"#94a3b8"}}>Planned: {plannedWorkout.name}</div>}
+                <div style={{fontSize:22,fontWeight:800,marginTop:10,color:"var(--text-primary)"}}>Rest today 🛌</div>
+                <p style={{...S.b2,marginTop:6}}>{rdNote||"Complete rest. Sleep, eat well, stay off the bike. Recovery is where adaptation happens."}</p>
+                {adjusted&&<div style={{marginTop:10,fontSize:12,color:"var(--text-faint)"}}>Planned: {plannedWorkout.name}</div>}
               </div>
             ):adjId==="RECOVERY"&&entry.workoutId!=="RECOVERY"?(
-              <div style={{...S.card,borderColor:"#64748b",background:"#f8fafc"}}>
+              <div style={{...S.card12,borderColor:"#94a3b8"}}>
                 <Tag type="RECOVERY"/>
-                <div style={{fontSize:20,fontWeight:700,marginTop:8}}>Easy spin only 🚴</div>
-                <div style={{fontSize:14,color:"var(--text-muted)",marginTop:4,lineHeight:1.6}}>
-                  {rdNote||"Readiness is very low. If you must ride, keep it to an easy 20–30 min spin at conversational pace. No ERG mode."}
-                </div>
-                {adjusted&&<div style={{marginTop:10,fontSize:12,color:"#94a3b8"}}>Planned: {plannedWorkout.name}</div>}
+                <div style={{fontSize:22,fontWeight:800,marginTop:10,color:"var(--text-primary)"}}>Easy spin only 🚴</div>
+                <p style={{...S.b2,marginTop:6}}>{rdNote||"Readiness is very low. 20–30 min easy spin at conversational pace. No ERG mode, no targets."}</p>
+                {adjusted&&<div style={{marginTop:10,fontSize:12,color:"var(--text-faint)"}}>Planned: {plannedWorkout.name}</div>}
               </div>
             ):entry.workoutId==="FREE"?(
-              <div style={{...S.card,borderColor:"#8b5cf6"}}>
+              <div style={{...S.card12,borderColor:"#6366f140"}}>
                 <Tag type="FREE"/>
-                <div style={{fontSize:20,fontWeight:700,marginTop:8}}>Weekend — free ride 🚴</div>
-                <div style={{fontSize:14,color:"var(--text-muted)",marginTop:4}}>No structure today. Ride wherever you like, at whatever pace feels good.</div>
+                <div style={{fontSize:22,fontWeight:800,marginTop:10,color:"var(--text-primary)"}}>Weekend — free ride 🚴</div>
+                <p style={{...S.b2,marginTop:6}}>No structure today. Ride wherever you like, at whatever pace feels good. Just move.</p>
               </div>
             ):entry.workoutId==="HOLIDAY"||entry.workoutId==="SICK"?(
-              <div style={{...S.card,borderColor:entry.workoutId==="HOLIDAY"?"#0ea5e9":"#be185d"}}>
+              <div style={{...S.card12,borderColor:entry.workoutId==="HOLIDAY"?"#0ea5e940":"#be185d40"}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                   <div>
                     <Tag type={entry.workoutId}/>
-                    <div style={{fontSize:20,fontWeight:700,marginTop:8}}>{entry.workoutId==="HOLIDAY"?"You're on holiday":"Sick day"}</div>
-                    <div style={{fontSize:14,color:"var(--text-muted)",marginTop:4}}>{entry.workoutId==="HOLIDAY"?"Rest up and enjoy it.":"Take it easy. The plan resumes once you're recovered."}</div>
+                    <div style={{fontSize:22,fontWeight:800,marginTop:10,color:"var(--text-primary)"}}>{entry.workoutId==="HOLIDAY"?"On holiday":"Sick day"}</div>
+                    <p style={{...S.b2,marginTop:6}}>{entry.workoutId==="HOLIDAY"?"Enjoy it. The plan will be here when you're back.":"Rest up. The plan resumes once you've recovered."}</p>
                   </div>
-                  <button style={S.btn("#dc2626","#fff")} onClick={()=>clearOverride(currentDay)}>Remove</button>
+                  <button style={S.btn("#dc2626","#fff1f2")} onClick={()=>clearOverride(currentDay)}>Remove</button>
                 </div>
               </div>
+            ):isStrengthDay&&strSession?(
+              <StrengthCard session={strSession} weekNum={weekNum}/>
             ):(
               <>
-                <div style={{...S.card,borderColor:(SESSION_TYPES[workout.type]?.color||"#e5e7eb")+"40"}}>
+                <div style={{...S.card12,borderColor:(SESSION_TYPES[workout.type]?.color||"#e2e8f0")+"30"}}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:12}}>
                     <div>
                       <Tag type={workout.type}/>
@@ -1194,14 +1046,14 @@ function App(){
                           const isRamp=!!iv.ramp;
                           const swatch=isRamp?`linear-gradient(to bottom,${getZone(iv.ramp[0]).color},${getZone(iv.ramp[1]).color})`:z.color;
                           return(
-                            <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 0",borderBottom:i<workout.intervals.length-1?"1px solid #f9fafb":"none"}}>
+                            <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"9px 0",borderBottom:i<workout.intervals.length-1?"1px solid var(--divider)":"none"}}>
                               <div style={{display:"flex",alignItems:"center",gap:10}}>
-                                <div style={{width:3,height:18,borderRadius:2,background:swatch}}/>
+                                <div style={{width:3,height:18,borderRadius:2,background:swatch,flexShrink:0}}/>
                                 <span style={{fontSize:14,color:"var(--text-secondary)"}}>{iv.label}</span>
-                                {isRamp&&<span style={{fontSize:10,color:"var(--text-faint)",background:"#f3f4f6",padding:"1px 6px",borderRadius:10}}>ramp</span>}
+                                {isRamp&&<span style={{fontSize:10,color:"var(--text-faint)",background:"var(--bg-input)",padding:"1px 6px",borderRadius:10}}>ramp</span>}
                               </div>
                               <div style={{display:"flex",gap:16,alignItems:"center"}}>
-                                <span style={{fontSize:14,fontWeight:600,color:z.color}}>{ivLabel(iv,ftp)}</span>
+                                <span style={{fontSize:14,fontWeight:700,color:z.color}}>{ivLabel(iv,ftp)}</span>
                                 <span style={{fontSize:13,color:"var(--text-faint)",width:36,textAlign:"right"}}>{iv.dur}m</span>
                               </div>
                             </div>
@@ -1209,28 +1061,29 @@ function App(){
                         })}
                       </div>
                       <hr style={S.divider}/>
+                      {/* Shorten workout */}
                       <div style={{marginBottom:14}}>
                         <div style={{fontSize:13,fontWeight:600,color:"var(--text-secondary)",marginBottom:8}}>Short on time?</div>
                         <div style={{display:"flex",gap:6}}>
                           {[null,0.75,0.5,0.25].map(p=>{
-                            const dur = p===null ? baseWorkout.duration : shortenWorkout(baseWorkout,p).duration;
+                            const dur=p===null?baseWorkout.duration:shortenWorkout(baseWorkout,p).duration;
                             return(
                               <button key={p} onClick={()=>setShortenPct(p)}
-                                style={{flex:1,padding:"8px 4px",borderRadius:8,border:shortenPct===p?"2px solid #111827":"1px solid #e5e7eb",background:shortenPct===p?"#111827":"#f9fafb",color:shortenPct===p?"#fff":"#374151",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit",lineHeight:1.4}}>
+                                style={{flex:1,padding:"9px 4px",borderRadius:8,border:shortenPct===p?"2px solid #0f172a":"1px solid var(--border)",background:shortenPct===p?"#0f172a":"var(--bg-input)",color:shortenPct===p?"#f8fafc":"var(--text-secondary)",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit",lineHeight:1.4,transition:"all .15s"}}>
                                 <div>{p===null?"Full":Math.round(p*100)+"%"}</div>
-                                <div style={{fontSize:10,fontWeight:400,opacity:0.8}}>{dur} min</div>
+                                <div style={{fontSize:10,fontWeight:400,opacity:.8}}>{dur} min</div>
                               </button>
                             );
                           })}
                         </div>
                         {shortenPct&&(
                           <div style={{marginTop:8,padding:"8px 12px",background:"#fff7ed",border:"1px solid #fed7aa",borderRadius:8,fontSize:12,color:"#9a3412"}}>
-                            ⚠ TSS deficit: {workout.tssDeficit} points — consider an extra Zone 2 session later this week to compensate.
+                            ⚠ TSS deficit: {workout.tssDeficit} pts — consider an extra Zone 2 session to compensate.
                           </div>
                         )}
                       </div>
                       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                        <div style={{fontSize:14,fontWeight:600}}>Export to Zwift</div>
+                        <div style={{fontSize:14,fontWeight:700,color:"var(--text-primary)"}}>Export to Zwift</div>
                         <button style={S.btnP} onClick={()=>downloadZWO(adjId,ftp,workout.name,weekNum,currentDay,shortenPct?workout:null)}>
                           Download .zwo
                         </button>
@@ -1239,53 +1092,66 @@ function App(){
                   )}
                 </div>
 
-                <div style={S.card}>
+                <div style={S.card12}>
                   <span style={S.lbl}>FTP — update after each test</span>
                   <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}>
-                    <span style={{fontSize:20,fontWeight:700}}>{ftp}w</span>
-                    <span style={{fontSize:14,color:"var(--text-muted)"}}>{(ftp/ATHLETE.weight).toFixed(2)} w/kg</span>
+                    <span style={{fontSize:22,fontWeight:800}}>{ftp}w</span>
+                    <span style={{fontSize:14,color:"var(--text-muted)",alignSelf:"center"}}>{(ftp/ATHLETE.weight).toFixed(2)} w/kg</span>
                   </div>
-                  <input type="range" min={180} max={320} value={ftp} onChange={e=>setFtp(Number(e.target.value))} style={{accentColor:"#111827"}}/>
+                  <input type="range" min={180} max={320} value={ftp} onChange={e=>setFtp(Number(e.target.value))} style={{accentColor:"#0f172a"}}/>
                 </div>
               </>
             )}
           </>
         )}
 
-        {/* PLAN TAB */}
+        {/* ── PLAN TAB ─────────────────────────────────────────────────────── */}
         {tab==="plan"&&(
           <>
-            <div style={S.card}>
+            {/* Plan summary */}
+            <div style={S.card12}>
+              <h3 style={S.h3}>Off-season base block</h3>
+              <p style={{fontSize:13,color:"var(--text-muted)",lineHeight:1.7,marginBottom:12}}>
+                12 weeks of Zone 2 cycling + progressive strength work. No VO2 or threshold — this block builds aerobic engine and cycling-specific strength. FTP test in week 12.
+              </p>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:8}}>
+                {[
+                  {label:"Mon/Thu",value:"Strength",icon:"🏋️",color:"#8b5cf6"},
+                  {label:"Tue/Fri",value:"Zone 2 · 60 min",icon:"🚴",color:"#22c55e"},
+                  {label:"Wed",value:"Zone 2 · 90 min",icon:"🚴",color:"#22c55e"},
+                  {label:"Sat",value:"Free ride",icon:"🚵",color:"#6366f1"},
+                ].map(({label,value,icon,color})=>(
+                  <div key={label} style={{background:"var(--bg-input)",border:"1px solid var(--border)",borderRadius:8,padding:"10px 12px"}}>
+                    <div style={{fontSize:11,color:"var(--text-faint)",marginBottom:2}}>{label}</div>
+                    <div style={{fontSize:13,fontWeight:700,color}}>{icon} {value}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Mark days off */}
+            <div style={S.card12}>
               <h3 style={S.h3}>Mark days off</h3>
               <p style={{fontSize:13,color:"var(--text-muted)",marginBottom:12}}>
                 {blockMode?(blockStart===null?`Click the first day of your ${blockMode==="HOLIDAY"?"holiday":"sick period"}.`:`Now click the last day.`):"Select type then tap start and end days on the calendar."}
               </p>
               <div style={{display:"flex",gap:8}}>
-                <button style={{...S.btn(blockMode==="HOLIDAY"?"#0369a1":"#374151",blockMode==="HOLIDAY"?"#e0f2fe":"#f9fafb"),borderColor:blockMode==="HOLIDAY"?"#7dd3fc":"#e5e7eb"}} onClick={()=>{setBlockMode(blockMode==="HOLIDAY"?null:"HOLIDAY");setBlockStart(null);}}>✈ Holiday</button>
-                <button style={{...S.btn(blockMode==="SICK"?"#9d174d":"#374151",blockMode==="SICK"?"#fce7f3":"#f9fafb"),borderColor:blockMode==="SICK"?"#f9a8d4":"#e5e7eb"}} onClick={()=>{setBlockMode(blockMode==="SICK"?null:"SICK");setBlockStart(null);}}>🤒 Sick</button>
-                {blockMode&&<button style={S.btn("#6b7280")} onClick={()=>{setBlockMode(null);setBlockStart(null);}}>Cancel</button>}
+                <button style={{...S.btn(blockMode==="HOLIDAY"?"#0369a1":"var(--text-secondary)",blockMode==="HOLIDAY"?"#e0f2fe":"var(--bg-input)"),borderColor:blockMode==="HOLIDAY"?"#7dd3fc":"var(--border)"}} onClick={()=>{setBlockMode(blockMode==="HOLIDAY"?null:"HOLIDAY");setBlockStart(null);}}>✈ Holiday</button>
+                <button style={{...S.btn(blockMode==="SICK"?"#9d174d":"var(--text-secondary)",blockMode==="SICK"?"#fce7f3":"var(--bg-input)"),borderColor:blockMode==="SICK"?"#f9a8d4":"var(--border)"}} onClick={()=>{setBlockMode(blockMode==="SICK"?null:"SICK");setBlockStart(null);}}>🤒 Sick</button>
+                {blockMode&&<button style={S.btn()} onClick={()=>{setBlockMode(null);setBlockStart(null);}}>Cancel</button>}
               </div>
             </div>
 
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:16}}>
-              {PHASES.map((p,i)=>(
-                <div key={i} style={{...S.card,marginBottom:0,borderLeft:`3px solid ${p.color}`,padding:"12px 16px"}}>
-                  <div style={{fontSize:11,color:p.color,fontWeight:600,marginBottom:2}}>Weeks {p.weeks}</div>
-                  <div style={{fontSize:14,fontWeight:700}}>{p.name}</div>
-                  <div style={{fontSize:11,color:"var(--text-muted)",marginTop:4,lineHeight:1.5}}>{p.desc}</div>
-                </div>
-              ))}
-            </div>
-
+            {/* Calendar grid */}
             {Array.from({length:12},(_,wk)=>{
-              const ph=PHASES[PHASE_MAP[wk]??3];
-              const isRec=[3,7].includes(wk);
+              const isRec=wk===3||wk===7;
+              const isTest=wk===11;
               return(
-                <div key={wk} style={{marginBottom:10}}>
+                <div key={wk} style={{marginBottom:12}}>
                   <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
-                    <span style={{fontSize:13,fontWeight:600,color:"var(--text-secondary)"}}>Week {wk+1}</span>
-                    <span style={{fontSize:11,color:ph.color,fontWeight:600}}>{ph.name}</span>
-                    {isRec&&<span style={{fontSize:11,color:"var(--text-faint)",background:"#f3f4f6",padding:"1px 8px",borderRadius:20}}>recovery</span>}
+                    <span style={{fontSize:13,fontWeight:700,color:"var(--text-secondary)"}}>Week {wk+1}</span>
+                    {isRec&&<span style={{fontSize:11,color:"#64748b",background:"var(--bg-input)",padding:"1px 8px",borderRadius:20,border:"1px solid var(--border)"}}>recovery</span>}
+                    {isTest&&<span style={{fontSize:11,color:"#7c3aed",background:"#faf5ff",padding:"1px 8px",borderRadius:20,border:"1px solid #8b5cf640"}}>FTP test</span>}
                   </div>
                   <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:3}}>
                     {Array.from({length:7},(_,d)=>{
@@ -1297,15 +1163,17 @@ function App(){
                       const isSel=idx===currentDay&&!isToday;
                       const isBStart=blockStart===idx;
                       const w=WORKOUTS[wId];
-                      const type=wId==="HOLIDAY"?"HOLIDAY":wId==="SICK"?"SICK":w?.type||"REST";
+                      const isStr=STRENGTH_SESSIONS[wId];
+                      const type=wId==="HOLIDAY"?"HOLIDAY":wId==="SICK"?"SICK":isStr?"STRENGTH":w?.type||"REST";
                       const st=SESSION_TYPES[type]||SESSION_TYPES.REST;
-                      const lbl=wId==="REST"?"–":wId==="RECOVERY"?"EZ":wId==="FREE"?"🚴":wId==="HOLIDAY"?"✈":wId==="SICK"?"🤒":wId.startsWith("Z2")||wId.startsWith("Z2_")?wId.includes("90")||wId.includes("PYRAMID")?"Z2+":"Z2":wId.startsWith("THRESHOLD")?"TH":wId.startsWith("VO2")?"V5":wId==="SWEET_SPOT"?"SS":wId==="FTP_TEST"?"TEST":"?";
+                      const lbl=wId==="REST"?"–":wId==="RECOVERY"?"EZ":wId==="FREE"?"🚴":wId==="HOLIDAY"?"✈":wId==="SICK"?"🤒":STRENGTH_SESSIONS[wId]?"💪":wId.includes("90")||wId.includes("PYRAMID")?"Z2+":"Z2";
                       const pd=getPlanDate(idx);
                       return(
-                        <button key={d} onClick={()=>handleCalendarClick(idx)} style={{background:isToday?"#111827":isBStart?"#dbeafe":st.bg,border:isToday?"2px solid #111827":isSel?"2px solid #6b7280":isBStart?"2px solid #3b82f6":`1px solid ${st.color}20`,borderRadius:6,padding:"5px 2px",cursor:blockMode?"crosshair":"pointer",textAlign:"center",opacity:isPast&&!isToday?0.5:1}}>
-                          <div style={{fontSize:8,color:isToday?"#9ca3af":"#9ca3af",marginBottom:1}}>{DAY_NAMES[d]}</div>
-                          <div style={{fontSize:9,fontWeight:700,color:isToday?"#fff":isPast?"#9ca3af":st.color}}>{lbl}</div>
-                          <div style={{fontSize:7,color:isToday?"#6b7280":"#d1d5db",marginTop:1}}>{pd.getDate()}</div>
+                        <button key={d} onClick={()=>handleCalendarClick(idx)}
+                          style={{background:isToday?"#0f172a":isBStart?"#dbeafe":st.bg,border:isToday?"2px solid #0f172a":isSel?"2px solid #64748b":isBStart?"2px solid #3b82f6":`1px solid ${st.color}20`,borderRadius:8,padding:"5px 2px",cursor:blockMode?"crosshair":"pointer",textAlign:"center",opacity:isPast&&!isToday?.5:1,transition:"opacity .15s"}}>
+                          <div style={{fontSize:8,color:isToday?"#64748b":"var(--text-faint)",marginBottom:1}}>{DAY_NAMES[d]}</div>
+                          <div style={{fontSize:10,fontWeight:800,color:isToday?"#f8fafc":isPast?"var(--text-faint)":st.color}}>{lbl}</div>
+                          <div style={{fontSize:7,color:isToday?"#475569":"var(--text-faint)",marginTop:1}}>{pd.getDate()}</div>
                         </button>
                       );
                     })}
@@ -1314,48 +1182,49 @@ function App(){
               );
             })}
 
-            <div style={{...S.card,marginTop:8}}>
+            {/* Legend */}
+            <div style={S.card12}>
               <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
                 {Object.entries(SESSION_TYPES).map(([k,v])=>(
-                  <span key={k} style={{fontSize:11,color:v.color,background:v.bg,border:`1px solid ${v.color}30`,padding:"2px 8px",borderRadius:20}}>{v.label}</span>
+                  <span key={k} style={{fontSize:11,color:v.color,background:v.bg,border:`1px solid ${v.color}25`,padding:"3px 10px",borderRadius:20}}>{v.label}</span>
                 ))}
               </div>
-              <div style={{marginTop:8,fontSize:11,color:"var(--text-faint)"}}>Dark = today · Faded = past · Holidays & sick days saved automatically</div>
+              <div style={{marginTop:8,fontSize:11,color:"var(--text-faint)"}}>Dark = today · Faded = past · 💪 = Strength · Z2+ = 90 min</div>
             </div>
           </>
         )}
 
-        {/* PROGRESS TAB */}
+        {/* ── PROGRESS TAB ─────────────────────────────────────────────────── */}
         {tab==="progress"&&(
-          <ProgressTab ftp={ftp} stravaData={stravaData} planStart={PLAN_START} todayIdx={todayIdx}/>
+          <ProgressTab ftp={ftp} stravaData={stravaData} todayIdx={todayIdx}/>
         )}
 
-        {/* ZONES TAB */}
+        {/* ── ZONES TAB ────────────────────────────────────────────────────── */}
         {tab==="zones"&&(
           <>
-            <div style={S.card}>
+            <div style={S.card12}>
               <span style={S.lbl}>FTP</span>
               <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}>
-                <span style={{fontSize:28,fontWeight:800}}>{ftp}w</span>
+                <span style={{fontSize:30,fontWeight:900}}>{ftp}w</span>
                 <span style={{fontSize:16,color:"var(--text-muted)",alignSelf:"flex-end"}}>{(ftp/ATHLETE.weight).toFixed(2)} w/kg</span>
               </div>
-              <input type="range" min={180} max={320} value={ftp} onChange={e=>setFtp(Number(e.target.value))} style={{accentColor:"#111827"}}/>
+              <input type="range" min={180} max={320} value={ftp} onChange={e=>setFtp(Number(e.target.value))} style={{accentColor:"#0f172a"}}/>
             </div>
             {ZONES.map(z=>(
-              <div key={z.id} style={{...S.card,display:"flex",alignItems:"center",gap:16}}>
-                <div style={{width:4,height:52,borderRadius:2,background:z.color,flexShrink:0}}/>
+              <div key={z.id} style={{...S.card12,display:"flex",alignItems:"center",gap:16,padding:"14px 20px"}}>
+                <div style={{width:4,height:56,borderRadius:2,background:z.color,flexShrink:0}}/>
                 <div style={{flex:1}}>
-                  <div style={{fontSize:12,fontWeight:600,color:z.color,marginBottom:2}}>Zone {z.id}</div>
-                  <div style={{fontSize:17,fontWeight:700}}>{z.name}</div>
+                  <div style={{fontSize:11,fontWeight:700,color:z.color,marginBottom:2,letterSpacing:.5}}>ZONE {z.id}</div>
+                  <div style={{fontSize:17,fontWeight:700,color:"var(--text-primary)"}}>{z.name}</div>
                   <div style={{fontSize:12,color:"var(--text-faint)",marginTop:2}}>{z.pct[0]}–{z.pct[1]}% FTP</div>
                 </div>
                 <div style={{fontSize:22,fontWeight:800,color:z.color}}>{calcW(z.pct[0],ftp)}–{calcW(z.pct[1],ftp)}w</div>
               </div>
             ))}
-            <div style={S.card}>
+            <div style={S.card12}>
               <h3 style={S.h3}>Your numbers</h3>
-              {[["Current FTP",`${ftp}w`],["W/kg",(ftp/ATHLETE.weight).toFixed(2)],["Target FTP","280w"],["Target W/kg",(280/ATHLETE.weight).toFixed(2)],["VO2 Max","55 ml/kg/min"],["Baseline HR",`${ATHLETE.restingHR} bpm`],["Weight","69 kg"]].map(([k,v])=>(
-                <div key={k} style={{display:"flex",justifyContent:"space-between",padding:"10px 0",borderBottom:"1px solid var(--divider)",fontSize:14}}>
+              {[["Current FTP",`${ftp}w`],["W/kg",(ftp/ATHLETE.weight).toFixed(2)],["Target FTP","280w"],["Target W/kg",(280/ATHLETE.weight).toFixed(2)],["Baseline RHR",`${ATHLETE.restingHR} bpm`],["Weight",`${ATHLETE.weight} kg`]].map(([k,v])=>(
+                <div key={k} style={{display:"flex",justifyContent:"space-between",padding:"11px 0",borderBottom:"1px solid var(--divider)",fontSize:14}}>
                   <span style={{color:"var(--text-muted)"}}>{k}</span>
                   <span style={{fontWeight:700}}>{v}</span>
                 </div>
