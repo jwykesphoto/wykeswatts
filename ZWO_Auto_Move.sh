@@ -3,8 +3,8 @@
 # + auto-cleanup of stale Claude workouts from the Zwift folder
 # Run this once in Terminal, then never think about it again
 
-# Find your Zwift workouts folder (works even if ID varies)
-ZWIFT_DIR=$(find ~/Documents/Zwift/Workouts -maxdepth 1 -mindepth 1 -type d 2>/dev/null | head -1)
+# Find your Zwift workouts folder (the numbered subfolder like 16435)
+ZWIFT_DIR=$(find ~/Documents/Zwift/Workouts -maxdepth 2 -mindepth 1 -type d 2>/dev/null | head -1)
 
 if [ -z "$ZWIFT_DIR" ]; then
   ZWIFT_DIR=~/Documents/Zwift/Workouts
@@ -21,39 +21,35 @@ SCRIPT_PATH=~/Documents/zwo_mover.sh
 cat > "$SCRIPT_PATH" << 'MOVER'
 #!/bin/bash
 
-# Find Zwift folder
-ZWIFT_DIR=$(find ~/Documents/Zwift/Workouts -maxdepth 1 -mindepth 1 -type d 2>/dev/null | head -1)
+# Find the numbered athlete subfolder (e.g. Workouts/16435/)
+ZWIFT_DIR=$(find ~/Documents/Zwift/Workouts -maxdepth 2 -mindepth 1 -type d 2>/dev/null | head -1)
 if [ -z "$ZWIFT_DIR" ]; then
   ZWIFT_DIR=~/Documents/Zwift/Workouts
 fi
 
-# ── 1. Move any new .zwo files from Downloads into Zwift ─────────────────────
+# ── 1. Move any new Claude .zwo files from Downloads into Zwift ───────────────
 for f in ~/Downloads/Claude_*.zwo; do
   [ -f "$f" ] || continue
   mv "$f" "$ZWIFT_DIR/"
   echo "Moved $(basename $f) → Zwift"
 done
 
-# ── 2. Clean up stale Claude workouts from Zwift ─────────────────────────────
-# Files are named: Claude_W07_Thu_Strength_Progressive_Overload.zwo
-# We keep today's and tomorrow's day (in case you downloaded ahead).
-# Everything else with the Claude_ prefix gets removed.
-
-TODAY=$(date +%a)      # e.g. "Wed"
-TOMORROW=$(date -v+1d +%a 2>/dev/null || date -d "+1 day" +%a 2>/dev/null)  # macOS / Linux
+# ── 2. Clean up stale Claude workouts ─────────────────────────────────────────
+# Keep today's and tomorrow's day token. Delete everything else Claude_ prefixed.
+TODAY=$(date +%a)
+TOMORROW=$(date -v+1d +%a 2>/dev/null || date -d "+1 day" +%a 2>/dev/null)
 
 for f in "$ZWIFT_DIR"/Claude_*.zwo; do
   [ -f "$f" ] || continue
   fname=$(basename "$f")
-
-  # Extract the day token from position 3 (Claude_W07_Thu_...)
+  # Filename: Claude_W07_Thu_Workout_Name.zwo — day is field 3
   day_token=$(echo "$fname" | cut -d'_' -f3)
 
   if [ "$day_token" = "$TODAY" ] || [ "$day_token" = "$TOMORROW" ]; then
-    echo "Keeping $fname ($day_token)"
+    echo "Keeping $fname"
   else
     rm "$f"
-    echo "Removed stale workout: $fname"
+    echo "Removed: $fname"
   fi
 done
 MOVER
@@ -61,7 +57,7 @@ MOVER
 chmod +x "$SCRIPT_PATH"
 echo "Created mover+cleanup script at: $SCRIPT_PATH"
 
-# Write the launchd plist — triggers on Downloads changes AND once at login
+# Write the launchd plist
 cat > "$PLIST_PATH" << PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
@@ -85,15 +81,12 @@ cat > "$PLIST_PATH" << PLIST
 </plist>
 PLIST
 
-# Load it (reload if already running)
+# Reload the agent
 launchctl unload "$PLIST_PATH" 2>/dev/null
 launchctl load "$PLIST_PATH"
 
 echo ""
-echo "✅ Done! The script now:"
-echo "   • Moves any Claude_*.zwo from Downloads → Zwift automatically"
-echo "   • Removes Claude workouts from Zwift that aren't today's or tomorrow's"
-echo "   • Runs at login and whenever your Downloads folder changes"
+echo "✅ Done! Run 'bash ~/Documents/zwo_mover.sh' any time to trigger manually."
 echo ""
 echo "To uninstall later, run:"
 echo "   launchctl unload $PLIST_PATH && rm $PLIST_PATH $SCRIPT_PATH"
