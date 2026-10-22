@@ -327,29 +327,30 @@ function adjustForReadiness(wId,readiness,restingHR,legsScore,tsb){
   const isZ2=w&&w.type==="Z2";
   const isStr=w&&w.type==="STRENGTH";
 
-  if(eff>=80) return {id:wId,note:null,adjusted:false,eff};
+  if(eff>=80) return {id:wId,note:null,adjusted:false,eff,strMod:null};
   if(eff>=65){
     if(isZ2){
-      // Use 60-min instead of 90-min variant
       const lighter=Z2_60_IDS[0];
       const changed=wId.includes("90")||wId.includes("PYRAMID");
-      return {id:changed?lighter:wId,note:changed?"Readiness slightly reduced — switching to 60-min Z2.":null,adjusted:changed,eff};
+      return {id:changed?lighter:wId,note:changed?"Readiness slightly reduced — switching to 60-min Z2.":null,adjusted:changed,eff,strMod:null};
     }
-    if(isStr) return {id:wId,note:"Readiness slightly reduced — take a bit more rest between sets today.",adjusted:false,eff};
-    return {id:wId,note:null,adjusted:false,eff};
+    if(isStr) return {id:wId,note:"Readiness slightly reduced — take extra rest between sets and drop RPE by 1 if needed.",adjusted:false,eff,strMod:"easy"};
+    return {id:wId,note:null,adjusted:false,eff,strMod:null};
   }
   if(eff>=50){
-    if(isStr) return {id:"Z2_STEADY_60",note:"Low readiness — replacing strength session with a gentle Zone 2 ride today.",adjusted:true,eff};
+    if(isStr) return {id:wId,note:"Moderate readiness — keep the session but drop to 2–3 sets per exercise and reduce RPE by 1–2. Skip any exercise that feels wrong today.",adjusted:false,eff,strMod:"reduced"};
     if(isZ2){
       const lighter=Z2_60_IDS[0];
-      return {id:lighter,note:"Moderate readiness — keeping it to 60 min Zone 2 and keeping intensity low.",adjusted:wId!==lighter,eff};
+      return {id:lighter,note:"Moderate readiness — keeping it to 60 min Zone 2.",adjusted:wId!==lighter,eff,strMod:null};
     }
-    return {id:"Z2_STEADY_60",note:"Stepped down to Zone 2 today.",adjusted:true,eff};
+    return {id:"Z2_STEADY_60",note:"Stepped down to Zone 2 today.",adjusted:true,eff,strMod:null};
   }
   if(eff>=35){
-    return {id:"RECOVERY",note:"Low readiness — easy spin only today. Zone 1, no targets.",adjusted:wId!=="RECOVERY",eff};
+    if(isStr) return {id:wId,note:"Low readiness — do the warm-up only (2 sets of each) and call it done. Movement without stress.",adjusted:false,eff,strMod:"warmup"};
+    return {id:"RECOVERY",note:"Low readiness — easy spin only today. Zone 1, no targets.",adjusted:wId!=="RECOVERY",eff,strMod:null};
   }
-  return {id:"REST",note:"Readiness is very low — take a full rest day. The plan will still be here tomorrow.",adjusted:wId!=="REST",eff};
+  if(isStr) return {id:"REST",note:"Readiness is very low — skip the gym today. The session will still be here next week.",adjusted:true,eff,strMod:null};
+  return {id:"REST",note:"Readiness is very low — take a full rest day. The plan will still be here tomorrow.",adjusted:wId!=="REST",eff,strMod:null};
 }
 
 // ─── ZWO export ───────────────────────────────────────────────────────────────
@@ -425,8 +426,16 @@ function Tag({type}){
 }
 
 // ─── Strength Session Card ─────────────────────────────────────────────────────
-function StrengthCard({session,weekNum}){
+function shortenSets(sets,pct){
+  // Parse "4×8" or "4×8/leg" → reduce set count
+  return sets.replace(/^(\d+)(×.*)$/,(m,n,rest)=>Math.max(1,Math.round(Number(n)*pct))+rest);
+}
+
+function StrengthCard({session,weekNum,shortenPct,setShortenPct,strMod}){
   const [expanded,setExpanded]=useState(true);
+  const pctOptions=[null,0.75,0.5];
+  const pctLabel={null:"Full",0.75:"75%",0.5:"50%"};
+
   return(
     <div style={{background:"var(--bg-card)",border:"1px solid #8b5cf620",borderRadius:12,padding:20,marginBottom:16,boxShadow:"var(--shadow)"}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:12}}>
@@ -442,20 +451,38 @@ function StrengthCard({session,weekNum}){
       </div>
       <p style={{fontSize:14,color:"var(--text-secondary)",lineHeight:1.7,marginBottom:16}}>{session.description}</p>
 
+      {/* Short on time */}
+      <div style={{marginBottom:14}}>
+        <div style={{fontSize:13,fontWeight:600,color:"var(--text-secondary)",marginBottom:8}}>Short on time?</div>
+        <div style={{display:"flex",gap:6}}>
+          {pctOptions.map(p=>(
+            <button key={String(p)} onClick={()=>setShortenPct(p)}
+              style={{flex:1,padding:"9px 4px",borderRadius:8,border:shortenPct===p?"2px solid #0f172a":"1px solid var(--border)",background:shortenPct===p?"#0f172a":"var(--bg-input)",color:shortenPct===p?"#f8fafc":"var(--text-secondary)",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit",lineHeight:1.4,transition:"all .15s"}}>
+              <div>{pctLabel[p]}</div>
+              <div style={{fontSize:10,fontWeight:400,opacity:.8}}>{p===null?session.exercises.length:Math.max(1,Math.round(session.exercises.length*p))} exercises</div>
+            </button>
+          ))}
+        </div>
+      </div>
+
       <button onClick={()=>setExpanded(!expanded)}
-        style={{width:"100%",padding:"10px",borderRadius:8,border:"1px solid var(--border)",background:"var(--bg-input)",color:"var(--text-secondary)",fontSize:13,fontWeight:600,display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom: expanded?12:0}}>
-        <span>Exercises ({session.exercises.length})</span>
+        style={{width:"100%",padding:"10px",borderRadius:8,border:"1px solid var(--border)",background:"var(--bg-input)",color:"var(--text-secondary)",fontSize:13,fontWeight:600,display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:expanded?12:0}}>
+        <span>Exercises ({shortenPct===null||shortenPct===undefined?session.exercises.length:Math.max(1,Math.round(session.exercises.length*shortenPct))})</span>
         <span>{expanded?"▲":"▼"}</span>
       </button>
 
       {expanded&&(
         <div>
-          {session.exercises.map((ex,i)=>(
-            <div key={i} style={{padding:"12px 0",borderBottom:i<session.exercises.length-1?"1px solid var(--divider)":"none"}}>
+          {session.exercises
+            .slice(0,shortenPct===null||shortenPct===undefined?undefined:Math.max(1,Math.round(session.exercises.length*shortenPct)))
+            .map((ex,i,arr)=>(
+            <div key={i} style={{padding:"12px 0",borderBottom:i<arr.length-1?"1px solid var(--divider)":"none"}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:4}}>
                 <span style={{fontSize:15,fontWeight:700,color:"var(--text-primary)"}}>{ex.name}</span>
                 <div style={{display:"flex",gap:8,flexShrink:0,marginLeft:8}}>
-                  <span style={{fontSize:12,fontWeight:600,color:"#8b5cf6",background:"#f5f3ff",padding:"2px 8px",borderRadius:20}}>{ex.sets}</span>
+                  <span style={{fontSize:12,fontWeight:600,color:"#8b5cf6",background:"#f5f3ff",padding:"2px 8px",borderRadius:20}}>
+                    {strMod==="reduced"?shortenSets(ex.sets,0.67):strMod==="warmup"?shortenSets(ex.sets,0.5):ex.sets}
+                  </span>
                   <span style={{fontSize:12,fontWeight:600,color:"#64748b",background:"var(--bg-input)",padding:"2px 8px",borderRadius:20}}>{ex.rpe}</span>
                 </div>
               </div>
@@ -781,18 +808,19 @@ function App(){
   const entry=plan[currentDay]||{workoutId:"REST"};
   const isBlockedDay=entry.workoutId==="HOLIDAY"||entry.workoutId==="SICK"||entry.workoutId==="FREE";
   const tsb=stravaData?stravaData.tsb:null;
-  const {id:adjId,note:rdNote,adjusted,eff:effectiveReadiness}=isBlockedDay
-    ?{id:entry.workoutId,note:null,adjusted:false,eff:readiness}
+  const {id:adjId,note:rdNote,adjusted,eff:effectiveReadiness,strMod}=isBlockedDay
+    ?{id:entry.workoutId,note:null,adjusted:false,eff:readiness,strMod:null}
     :adjustForReadiness(entry.workoutId,readiness,restingHR,legsScore,tsb);
   const baseWorkout=WORKOUTS[adjId]||WORKOUTS.REST;
   const workout=shortenPct?shortenWorkout(baseWorkout,shortenPct):baseWorkout;
   const plannedWorkout=WORKOUTS[entry.workoutId]||WORKOUTS.REST;
   const weekNum=Math.floor(currentDay/7)+1;
-  const isStrengthDay=workout&&workout.type==="STRENGTH";
+  // Strength: check planned workout type (adjId never swaps away from strength now)
+  const isStrengthDay=WORKOUTS[adjId]&&WORKOUTS[adjId].type==="STRENGTH";
   const strSession=isStrengthDay?getStrengthSession(weekNum):null;
 
   const effColor=effectiveReadiness>=80?"#16a34a":effectiveReadiness>=65?"#22c55e":effectiveReadiness>=50?"#ca8a04":effectiveReadiness>=35?"#ea580c":"#dc2626";
-  const effLabel=effectiveReadiness>=80?"Peak — full session":effectiveReadiness>=65?"Good — slight reduction":effectiveReadiness>=50?"Moderate — stepped down":effectiveReadiness>=35?"Low — Zone 2 only":"Very low — rest today";
+  const effLabel=effectiveReadiness>=80?"Peak — full session":effectiveReadiness>=65?"Good — slight reduction":effectiveReadiness>=50?"Moderate — stepped down":effectiveReadiness>=35?"Low — go easy":"Very low — rest today";
 
   const handleCalendarClick=useCallback((idx)=>{
     if(blockMode){
@@ -1024,7 +1052,7 @@ function App(){
                 </div>
               </div>
             ):isStrengthDay&&strSession?(
-              <StrengthCard session={strSession} weekNum={weekNum}/>
+              <StrengthCard session={strSession} weekNum={weekNum} shortenPct={shortenPct} setShortenPct={setShortenPct} strMod={strMod}/>
             ):(
               <>
                 <div style={{...S.card12,borderColor:(SESSION_TYPES[workout.type]?.color||"#e2e8f0")+"30"}}>
