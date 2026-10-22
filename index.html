@@ -241,8 +241,14 @@ function getStrengthSession(weekNum){
 }
 
 // ─── Cycling Workouts ─────────────────────────────────────────────────────────
+// Merge strength sessions into WORKOUTS lookup so they resolve correctly
+const STRENGTH_WORKOUT_MAP=Object.fromEntries(
+  Object.values(STRENGTH_SESSIONS).map(s=>[s.id,s])
+);
+
 const WORKOUTS={
   ...Z2_VARIANTS,
+  ...STRENGTH_WORKOUT_MAP,
   RECOVERY:{
     id:"RECOVERY",name:"Active Recovery",type:"RECOVERY",duration:30,tss:12,
     description:"20–30 min very easy spin. Zone 1 only — below 55% FTP. No structure, no targets. Just move the legs. This accelerates recovery, not fitness.",
