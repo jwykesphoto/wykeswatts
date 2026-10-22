@@ -446,7 +446,7 @@ function StrengthCard({session,weekNum,shortenPct,setShortenPct,strMod}){
         </div>
         <div style={{textAlign:"right",background:"var(--bg-input)",border:"1px solid var(--border)",borderRadius:8,padding:"8px 14px",flexShrink:0}}>
           <div style={{fontSize:11,color:"var(--text-faint)"}}>Duration</div>
-          <div style={{fontSize:22,fontWeight:800}}>{session.duration}min</div>
+          <div style={{fontSize:22,fontWeight:800}}>{shortenPct===null||shortenPct===undefined?session.duration:Math.round(session.duration*shortenPct)}min</div>
         </div>
       </div>
       <p style={{fontSize:14,color:"var(--text-secondary)",lineHeight:1.7,marginBottom:16}}>{session.description}</p>

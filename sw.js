@@ -1,5 +1,5 @@
 // Cache version — bump this with every deploy to force refresh
-const CACHE = 'wykeswatts-v20261022-1110';
+const CACHE = 'wykeswatts-v20261022-1115';
 const ASSETS = ['/', '/index.html', '/manifest.json', '/icon-192.png', '/icon-512.png'];
 
 self.addEventListener('install', e => {
