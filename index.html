@@ -721,6 +721,7 @@ function App(){
   const [blockMode,setBlockMode]=useState(null);
   const [blockStart,setBlockStart]=useState(null);
   const [shortenPct,setShortenPct]=useState(null);
+  const [strShortenPct,setStrShortenPct]=useState(null);
 
   // Persist
   useEffect(()=>saveState("ww_ftp",ftp),[ftp]);
@@ -730,7 +731,7 @@ function App(){
   useEffect(()=>saveState("ww_legs",legsScore),[legsScore]);
 
   // Reset shorten when navigating days
-  useEffect(()=>setShortenPct(null),[currentDay]);
+  useEffect(()=>{setShortenPct(null);setStrShortenPct(null);},[currentDay]);
 
   // Auto-fetch yesterday on load
   useEffect(()=>{
@@ -1052,7 +1053,7 @@ function App(){
                 </div>
               </div>
             ):isStrengthDay&&strSession?(
-              <StrengthCard session={strSession} weekNum={weekNum} shortenPct={shortenPct} setShortenPct={setShortenPct} strMod={strMod}/>
+              <StrengthCard session={strSession} weekNum={weekNum} shortenPct={strShortenPct} setShortenPct={setStrShortenPct} strMod={strMod}/>
             ):(
               <>
                 <div style={{...S.card12,borderColor:(SESSION_TYPES[workout.type]?.color||"#e2e8f0")+"30"}}>
