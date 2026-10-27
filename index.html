@@ -360,7 +360,7 @@ function generateZWO(wId,ftp,zwiftName,workoutOverride){
   const esc=s=>s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
   let xml=`<?xml version="1.0" encoding="utf-8"?>\n<workout_file>\n`;
   xml+=`  <author>WykesWatts Coach</author>\n`;
-  xml+=`  <name>${esc(w.name)}</name>\n`;
+  xml+=`  <name>${esc(zwiftName)}</name>\n`;
   xml+=`  <description>${esc(w.description||"")}</description>\n`;
   xml+=`  <sportType>bike</sportType>\n  <tags/>\n  <workout>\n`;
   for(const iv of w.intervals){
@@ -380,12 +380,13 @@ function generateZWO(wId,ftp,zwiftName,workoutOverride){
   return xml;
 }
 function downloadZWO(wId,ftp,wName,weekNum,planDayIdx,workoutOverride){
-  const xml=generateZWO(wId,ftp,wName,workoutOverride);
-  if(!xml) return;
   const day=planDayIdx%7;
   const dayNames=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
   const safeName=wName.replace(/[^a-zA-Z0-9\s–\-]/g,"").replace(/\s+/g,"_").substring(0,40);
   const filename=`Claude_W${String(weekNum).padStart(2,"0")}_${dayNames[day]}_${safeName}.zwo`;
+  const zwiftTitle=`Claude_W${String(weekNum).padStart(2,"0")}_${dayNames[day]}_${safeName}`;
+  const xml=generateZWO(wId,ftp,zwiftTitle,workoutOverride);
+  if(!xml) return;
   const blob=new Blob([xml],{type:"application/xml"});
   const url=URL.createObjectURL(blob);
   const a=document.createElement("a");
