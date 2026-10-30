@@ -9,9 +9,14 @@ async function getToken(apiKey) {
     { method: "POST", headers: { Authorization: `ApiKey ${apiKey}` } }
   );
   if (!res.ok) throw new Error(`Token exchange failed: ${res.status}`);
-  const data = await res.json();
-  // Response contains access_token (bearer token)
-  return data.access_token || data.accessToken;
+  const text = await res.text();
+  // Garmin returns the JWT as a plain string, not JSON
+  try {
+    const data = JSON.parse(text);
+    return data.access_token || data.accessToken || data.token || text.trim();
+  } catch {
+    return text.trim(); // plain JWT string
+  }
 }
 
 async function garminGet(token, path) {
