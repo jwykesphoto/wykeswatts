@@ -790,6 +790,9 @@ function App(){
   const [shortenPct,setShortenPct]=useState(null);
   const [strShortenPct,setStrShortenPct]=useState(null);
   const [dragFrom,setDragFrom]=useState(null); // day index being dragged
+  const [garminData,setGarminData]=useState(()=>loadState("ww_garmin_morning",null));
+  const [garminLoading,setGarminLoading]=useState(false);
+  const [garminError,setGarminError]=useState(null);
 
   // Persist
   useEffect(()=>saveState("ww_ftp",ftp),[ftp]);
@@ -805,6 +808,12 @@ function App(){
   useEffect(()=>{
     if(stravaTokens&&!yesterdayData&&!yesterdayLoading) fetchYesterday(stravaTokens);
   },[stravaTokens]);
+
+  // Auto-fetch Garmin morning data once per day
+  useEffect(()=>{
+    const lastFetch=loadState("ww_garmin_date","");
+    if(lastFetch!==new Date().toDateString()) fetchGarminMorning();
+  },[]);
 
   // Handle Strava OAuth callback
   useEffect(()=>{
@@ -839,6 +848,23 @@ function App(){
       }
     }catch{}
     setYesterdayLoading(false);
+  };
+
+  const fetchGarminMorning=async()=>{
+    setGarminLoading(true);setGarminError(null);
+    try{
+      const res=await fetch("/.netlify/functions/garmin-morning");
+      const data=await res.json();
+      if(data.error)throw new Error(data.error);
+      setGarminData(data);
+      saveState("ww_garmin_morning",data);
+      saveState("ww_garmin_date",new Date().toDateString());
+      // Auto-populate RHR if available and no manual override today
+      if(data.restingHR&&data.restingHR>30&&data.restingHR<120){
+        setRestingHR(data.restingHR);
+      }
+    }catch(err){setGarminError(err.message||"Garmin fetch failed");}
+    setGarminLoading(false);
   };
 
   const doStravaSync=async(tokens)=>{
@@ -972,6 +998,38 @@ function App(){
           <div style={S.card12}>
             <h3 style={{...S.h3,marginBottom:4}}>Morning check-in</h3>
             <p style={{...S.b2,marginBottom:20}}>{checkinDone?"Today's check-in saved. Update any values if needed.":"Takes 30 seconds. Tells the system how hard to push today."}</p>
+
+            {/* Garmin morning data */}
+            <div style={{marginBottom:20,paddingBottom:20,borderBottom:"1px solid var(--border)"}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+                <div style={{fontSize:14,fontWeight:700,color:"var(--text-primary)"}}>Garmin health data</div>
+                <button onClick={fetchGarminMorning} disabled={garminLoading}
+                  style={{background:"none",border:"none",fontSize:12,color:"var(--text-muted)",cursor:"pointer",fontFamily:"inherit",padding:0}}>
+                  {garminLoading?"fetching…":"refresh"}
+                </button>
+              </div>
+              {garminError&&<div style={{fontSize:12,color:"#ef4444",marginBottom:8}}>{garminError}</div>}
+              {garminData&&!garminError?(
+                <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:6}}>
+                  {[
+                    {label:"Resting HR",value:garminData.restingHR?`${garminData.restingHR} bpm`:null},
+                    {label:"HRV",value:garminData.hrv!=null?`${Math.round(garminData.hrv)} ms`:null,sub:garminData.hrvBaseline?`baseline ${Math.round(garminData.hrvBaseline)}ms`:null},
+                    {label:"Body Battery",value:garminData.bodyBattery!=null?`${garminData.bodyBattery}%`:null},
+                    {label:"Sleep score",value:garminData.sleepScore!=null?`${garminData.sleepScore}/100`:null},
+                    {label:"Sleep",value:garminData.sleepDurationMin?`${Math.floor(garminData.sleepDurationMin/60)}h ${garminData.sleepDurationMin%60}m`:null},
+                    {label:"Stress",value:garminData.stress!=null?`${garminData.stress}/100`:null},
+                  ].map(({label,value,sub})=>(
+                    <div key={label} style={{background:"var(--bg-input)",border:"1px solid var(--border)",borderRadius:8,padding:"6px 8px",textAlign:"center"}}>
+                      <div style={{fontSize:9,color:"var(--text-faint)",marginBottom:2}}>{label}</div>
+                      <div style={{fontSize:13,fontWeight:700,color:value?"var(--text-primary)":"var(--text-faint)"}}>{value||"–"}</div>
+                      {sub&&<div style={{fontSize:8,color:"var(--text-faint)",marginTop:1}}>{sub}</div>}
+                    </div>
+                  ))}
+                </div>
+              ):(
+                !garminLoading&&<div style={{fontSize:12,color:"var(--text-faint)"}}>Fetching last night's data…</div>
+              )}
+            </div>
 
             {/* Yesterday's ride */}
             {stravaTokens&&(
