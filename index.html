@@ -732,6 +732,23 @@ function PinLock({onUnlock}){
   );
 }
 
+// ─── Debug Panel (temporary) ──────────────────────────────────────────────────
+function DebugPanel({data}){
+  const [open,setOpen]=React.useState(false);
+  return(
+    <div style={{marginTop:10}}>
+      <div onClick={()=>setOpen(o=>!o)} style={{fontSize:11,color:"var(--text-faint)",cursor:"pointer",userSelect:"none"}}>
+        {open?"▾":"▸"} Debug: raw Garmin response
+      </div>
+      {open&&(
+        <pre style={{fontSize:9,color:"var(--text-faint)",overflowX:"auto",marginTop:6,padding:8,background:"var(--bg-input)",borderRadius:6,whiteSpace:"pre-wrap",wordBreak:"break-all"}}>
+          {JSON.stringify(data,null,2)}
+        </pre>
+      )}
+    </div>
+  );
+}
+
 // ─── Main App ─────────────────────────────────────────────────────────────────
 function App(){
   // PIN gate — only once per browser session
@@ -1027,14 +1044,7 @@ function App(){
                     </div>
                   </div>
                   {/* TEMP DEBUG — remove once Garmin fields confirmed */}
-                  {garminData.raw&&(
-                    <details style={{marginTop:10}}>
-                      <summary style={{fontSize:11,color:"var(--text-faint)",cursor:"pointer"}}>Debug: raw Garmin response</summary>
-                      <pre style={{fontSize:9,color:"var(--text-faint)",overflowX:"auto",marginTop:6,padding:8,background:"var(--bg-input)",borderRadius:6,whiteSpace:"pre-wrap",wordBreak:"break-all"}}>
-                        {JSON.stringify(garminData.raw,null,2)}
-                      </pre>
-                    </details>
-                  )}
+                  {garminData.raw&&<DebugPanel data={garminData.raw}/>}
                 </>
               ):(
                 <>
