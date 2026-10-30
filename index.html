@@ -92,7 +92,7 @@ const {useState,useEffect,useCallback,useRef,useMemo}=React;
 
 // ─── Athlete & Constants ──────────────────────────────────────────────────────
 const ATHLETE={ftp:220,weight:69,vo2max:55,restingHR:44,targetFtp:280};
-const PLAN_START=new Date(Date.UTC(2026,8,7)); // Mon 7 Sep 2026
+const PLAN_START=new Date(Date.UTC(2026,9,27)); // Mon 27 Oct 2026
 const DAY_NAMES=["M","T","W","T","F","S","S"];
 
 // ─── Zones ────────────────────────────────────────────────────────────────────
@@ -273,7 +273,7 @@ const WORKOUTS={
 
 // ─── Base Plan — 12-week Zone 2 + Strength, no VO2/threshold/peak ────────────
 // Structure per week:
-// Mon: Strength | Tue: Z2 60 | Wed: Z2 90 | Thu: Strength | Fri: Z2 60 | Sat: Free | Sun: Rest
+// Mon: Z2 60 | Tue: Strength | Wed: Z2 90 | Thu: Strength | Fri: Z2 60 | Sat: Free (outdoor) | Sun: Rest
 // Recovery weeks (4 & 8): volume -30%, no 90-min sessions
 // Week 12: FTP test midweek, taper around it
 
@@ -291,12 +291,12 @@ const buildPlan=(overrides={})=>{
 
     // Days: 0=Mon 1=Tue 2=Wed 3=Thu 4=Fri 5=Sat 6=Sun
     const week=[
-      isTestWeek ? "Z2_STEADY_60" : strSession.id,               // Mon: Strength (or easy Z2 in test week)
-      z2_60[z60i%4],                                             // Tue: Z2 60
-      isRecovery ? "Z2_STEADY_60" : z2_90[z90i%2],              // Wed: Z2 90 (Z2 60 in recovery)
-      isTestWeek ? "FTP_TEST" : (isRecovery ? "RECOVERY" : strSession.id), // Thu: Strength (or FTP test in week 12, recovery spin in recovery wk)
+      isRecovery ? "RECOVERY" : z2_60[z60i%4],                  // Mon: Z2 60 (recovery spin in recovery week)
+      isTestWeek ? "Z2_STEADY_60" : strSession.id,               // Tue: Strength (or easy Z2 in test week)
+      isTestWeek ? "FTP_TEST" : (isRecovery ? "Z2_STEADY_60" : z2_90[z90i%2]), // Wed: Z2 90 (FTP test in week 12, Z2 60 in recovery)
+      isTestWeek ? "RECOVERY" : (isRecovery ? "RECOVERY" : strSession.id), // Thu: Strength (recovery in recovery/test weeks)
       isRecovery ? "RECOVERY" : z2_60[(z60i+2)%4],              // Fri: Z2 60 (recovery in recovery week)
-      "FREE",                                                     // Sat: Free
+      "FREE",                                                     // Sat: Free outdoor ride
       "REST",                                                     // Sun: Rest
     ];
 
@@ -450,7 +450,13 @@ function StrengthCard({session,weekNum,shortenPct,setShortenPct,strMod}){
           <div style={{fontSize:22,fontWeight:800}}>{shortenPct===null||shortenPct===undefined?session.duration:Math.round(session.duration*shortenPct)}min</div>
         </div>
       </div>
-      <p style={{fontSize:14,color:"var(--text-secondary)",lineHeight:1.7,marginBottom:16}}>{session.description}</p>
+      <p style={{fontSize:14,color:"var(--text-secondary)",lineHeight:1.7,marginBottom:12}}>{session.description}</p>
+
+      {/* Open full strength plan */}
+      <a href="https://claude.ai/artifact/1zYDH6DQoyyGJLTJXqpSJy" target="_blank" rel="noopener noreferrer"
+        style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,width:"100%",padding:"11px",borderRadius:8,border:"1px solid #8b5cf640",background:"#f5f3ff",color:"#6d28d9",fontSize:13,fontWeight:700,textDecoration:"none",marginBottom:14,transition:"background .15s"}}>
+        📋 Open Full Strength Plan
+      </a>
 
       {/* Short on time */}
       <div style={{marginBottom:14}}>
@@ -1043,8 +1049,8 @@ function App(){
             ):entry.workoutId==="FREE"?(
               <div style={{...S.card12,borderColor:"#6366f140"}}>
                 <Tag type="FREE"/>
-                <div style={{fontSize:22,fontWeight:800,marginTop:10,color:"var(--text-primary)"}}>Weekend — free ride 🚴</div>
-                <p style={{...S.b2,marginTop:6}}>No structure today. Ride wherever you like, at whatever pace feels good. Just move.</p>
+                <div style={{fontSize:22,fontWeight:800,marginTop:10,color:"var(--text-primary)"}}>Optional outdoor ride 🚵</div>
+                <p style={{...S.b2,marginTop:6}}>No structure — if the weather is good, get outside. Any pace, any route. If not, rest or an easy spin works too.</p>
               </div>
             ):entry.workoutId==="HOLIDAY"||entry.workoutId==="SICK"?(
               <div style={{...S.card12,borderColor:entry.workoutId==="HOLIDAY"?"#0ea5e940":"#be185d40"}}>
@@ -1156,10 +1162,10 @@ function App(){
               </p>
               <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:8}}>
                 {[
-                  {label:"Mon/Thu",value:"Strength",icon:"🏋️",color:"#8b5cf6"},
-                  {label:"Tue/Fri",value:"Zone 2 · 60 min",icon:"🚴",color:"#22c55e"},
-                  {label:"Wed",value:"Zone 2 · 90 min",icon:"🚴",color:"#22c55e"},
-                  {label:"Sat",value:"Free ride",icon:"🚵",color:"#6366f1"},
+                  {label:"Mon/Wed/Fri",value:"Zone 2 cycling",icon:"🚴",color:"#22c55e"},
+                  {label:"Tue/Thu",value:"Strength",icon:"🏋️",color:"#8b5cf6"},
+                  {label:"Sat",value:"Optional outdoor",icon:"🚵",color:"#6366f1"},
+                  {label:"Sun",value:"Rest",icon:"🛌",color:"#94a3b8"},
                 ].map(({label,value,icon,color})=>(
                   <div key={label} style={{background:"var(--bg-input)",border:"1px solid var(--border)",borderRadius:8,padding:"10px 12px"}}>
                     <div style={{fontSize:11,color:"var(--text-faint)",marginBottom:2}}>{label}</div>
