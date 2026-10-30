@@ -709,8 +709,62 @@ function ProgressTab({ftp,stravaData,todayIdx}){
   );
 }
 
+// ─── PIN Lock ─────────────────────────────────────────────────────────────────
+const PIN_CODE="3009";
+function PinLock({onUnlock}){
+  const [val,setVal]=useState("");
+  const [err,setErr]=useState(false);
+  const shake=()=>{setErr(true);setTimeout(()=>{setErr(false);setVal("");},600);};
+  const check=(v)=>{
+    if(v.length<4)return;
+    if(v===PIN_CODE){onUnlock();}else{shake();}
+  };
+  const press=(d)=>{
+    const next=val+d;
+    setVal(next);
+    if(next.length===4) check(next);
+  };
+  const del=()=>setVal(v=>v.slice(0,-1));
+  return(
+    <div style={{position:"fixed",inset:0,background:"#0f172a",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",zIndex:9999,userSelect:"none"}}>
+      <div style={{marginBottom:28,textAlign:"center"}}>
+        <div style={{fontSize:13,fontWeight:700,color:"#475569",letterSpacing:2,marginBottom:8}}>WYKESWATTS</div>
+        <div style={{fontSize:22,fontWeight:800,color:"#f8fafc"}}>Enter PIN</div>
+      </div>
+      <div style={{display:"flex",gap:14,marginBottom:32,transition:err?"transform .05s":"none",transform:err?"translateX(8px)":"none"}}>
+        {[0,1,2,3].map(i=>(
+          <div key={i} style={{width:16,height:16,borderRadius:"50%",background:val.length>i?"#3b82f6":"#1e293b",border:"2px solid",borderColor:val.length>i?"#3b82f6":"#334155",transition:"background .1s"}}/>
+        ))}
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(3,80px)",gap:10}}>
+        {[1,2,3,4,5,6,7,8,9,"",0,"⌫"].map((d,i)=>(
+          <button key={i} onClick={()=>d==="⌫"?del():d!==""&&press(String(d))}
+            disabled={d===""}
+            style={{height:80,borderRadius:16,border:"1px solid #1e293b",background:d===""?"transparent":"#1e293b",color:d==="⌫"?"#64748b":"#f8fafc",fontSize:d==="⌫"?20:26,fontWeight:600,cursor:d===""?"default":"pointer",fontFamily:"inherit",transition:"background .1s",outline:"none"}}
+            onMouseDown={e=>{if(d!=="")e.currentTarget.style.background="#334155"}}
+            onMouseUp={e=>{if(d!=="")e.currentTarget.style.background="#1e293b"}}
+            onTouchStart={e=>{if(d!=="")e.currentTarget.style.background="#334155"}}
+            onTouchEnd={e=>{if(d!=="")e.currentTarget.style.background="#1e293b"}}
+          >{d}</button>
+        ))}
+      </div>
+      {err&&<div style={{marginTop:24,fontSize:13,color:"#ef4444",fontWeight:600}}>Incorrect PIN</div>}
+    </div>
+  );
+}
+
 // ─── Main App ─────────────────────────────────────────────────────────────────
 function App(){
+  // PIN gate — only once per browser session
+  const [pinUnlocked,setPinUnlocked]=useState(()=>{
+    try{return sessionStorage.getItem("ww_pin")==="ok";}catch{return false;}
+  });
+  const handlePinUnlock=()=>{
+    try{sessionStorage.setItem("ww_pin","ok");}catch{}
+    setPinUnlocked(true);
+  };
+  if(!pinUnlocked) return <PinLock onUnlock={handlePinUnlock}/>;
+
   const todayIdx=getTodayIndex();
 
   const [ftp,setFtp]=useState(()=>loadState("ww_ftp",ATHLETE.ftp));
@@ -736,6 +790,7 @@ function App(){
   const [blockStart,setBlockStart]=useState(null);
   const [shortenPct,setShortenPct]=useState(null);
   const [strShortenPct,setStrShortenPct]=useState(null);
+  const [dragFrom,setDragFrom]=useState(null); // day index being dragged
 
   // Persist
   useEffect(()=>saveState("ww_ftp",ftp),[ftp]);
@@ -850,6 +905,23 @@ function App(){
   },[blockMode,blockStart,overrides]);
 
   const clearOverride=(idx)=>{const n={...overrides};delete n[idx];setOverrides(n);};
+
+  // Drag & drop: swap two days within the same week only
+  const handleDrop=(toIdx)=>{
+    if(dragFrom===null||dragFrom===toIdx)return;
+    if(Math.floor(dragFrom/7)!==Math.floor(toIdx/7))return; // same week check
+    const planSnap=buildPlan(overrides); // read base plan
+    const fromId=planSnap[dragFrom]?.workoutId||"REST";
+    const toId=planSnap[toIdx]?.workoutId||"REST";
+    setOverrides(prev=>{
+      const n={...prev};
+      // Set each day to the other's workout; if it matches the un-overridden base, store it anyway so the swap is explicit
+      n[dragFrom]=toId;
+      n[toIdx]=fromId;
+      return n;
+    });
+    setDragFrom(null);
+  };
 
   // Styles
   const S={
@@ -1217,12 +1289,20 @@ function App(){
                       const st=SESSION_TYPES[type]||SESSION_TYPES.REST;
                       const lbl=wId==="REST"?"–":wId==="RECOVERY"?"EZ":wId==="FREE"?"🚴":wId==="HOLIDAY"?"✈":wId==="SICK"?"🤒":STRENGTH_SESSIONS[wId]?"💪":wId.includes("90")||wId.includes("PYRAMID")?"Z2+":"Z2";
                       const pd=getPlanDate(idx);
+                      const isDragTarget=dragFrom!==null&&dragFrom!==idx&&Math.floor(dragFrom/7)===Math.floor(idx/7);
+                      const isDragging=dragFrom===idx;
                       return(
-                        <button key={d} onClick={()=>handleCalendarClick(idx)}
-                          style={{background:isToday?"#0f172a":isBStart?"#dbeafe":st.bg,border:isToday?"2px solid #0f172a":isSel?"2px solid #64748b":isBStart?"2px solid #3b82f6":`1px solid ${st.color}20`,borderRadius:8,padding:"5px 2px",cursor:blockMode?"crosshair":"pointer",textAlign:"center",opacity:isPast&&!isToday?.5:1,transition:"opacity .15s"}}>
-                          <div style={{fontSize:8,color:isToday?"#64748b":"var(--text-faint)",marginBottom:1}}>{DAY_NAMES[d]}</div>
-                          <div style={{fontSize:10,fontWeight:800,color:isToday?"#f8fafc":isPast?"var(--text-faint)":st.color}}>{lbl}</div>
-                          <div style={{fontSize:7,color:isToday?"#475569":"var(--text-faint)",marginTop:1}}>{pd.getDate()}</div>
+                        <button key={d}
+                          draggable={!blockMode}
+                          onDragStart={()=>setDragFrom(idx)}
+                          onDragEnd={()=>setDragFrom(null)}
+                          onDragOver={e=>{if(isDragTarget)e.preventDefault();}}
+                          onDrop={e=>{e.preventDefault();handleDrop(idx);}}
+                          onClick={()=>handleCalendarClick(idx)}
+                          style={{background:isDragging?"#1e40af":isToday?"#0f172a":isBStart?"#dbeafe":isDragTarget?"#dbeafe":st.bg,border:isDragging?"2px solid #3b82f6":isToday?"2px solid #0f172a":isSel?"2px solid #64748b":isBStart?"2px solid #3b82f6":isDragTarget?"2px dashed #3b82f6":`1px solid ${st.color}20`,borderRadius:8,padding:"5px 2px",cursor:blockMode?"crosshair":"grab",textAlign:"center",opacity:isPast&&!isToday?.5:1,transition:"all .15s"}}>
+                          <div style={{fontSize:8,color:isToday||isDragging?"#64748b":"var(--text-faint)",marginBottom:1}}>{DAY_NAMES[d]}</div>
+                          <div style={{fontSize:10,fontWeight:800,color:isDragging?"#bfdbfe":isToday?"#f8fafc":isPast?"var(--text-faint)":st.color}}>{lbl}</div>
+                          <div style={{fontSize:7,color:isToday||isDragging?"#475569":"var(--text-faint)",marginTop:1}}>{pd.getDate()}</div>
                         </button>
                       );
                     })}
@@ -1239,6 +1319,7 @@ function App(){
                 ))}
               </div>
               <div style={{marginTop:8,fontSize:11,color:"var(--text-faint)"}}>Dark = today · Faded = past · 💪 = Strength · Z2+ = 90 min</div>
+              <div style={{marginTop:4,fontSize:11,color:"var(--text-faint)"}}>↔ Drag days within a week to swap workouts</div>
             </div>
           </>
         )}
