@@ -1000,22 +1000,33 @@ function App(){
               <div style={{fontSize:13,fontWeight:700,color:"var(--text-secondary)",marginBottom:10}}>Garmin health data</div>
               {garminError&&<div style={{fontSize:12,color:"#ef4444",marginBottom:8}}>{garminError}</div>}
               {garminData&&!garminError?(
-                <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:6}}>
-                  {[
-                    {label:"Resting HR",value:garminData.restingHR?`${garminData.restingHR} bpm`:null},
-                    {label:"HRV",value:garminData.hrv!=null?`${Math.round(garminData.hrv)} ms`:null,sub:garminData.hrvBaseline?`baseline ${Math.round(garminData.hrvBaseline)}ms`:null},
-                    {label:"Body Battery",value:garminData.bodyBattery!=null?`${garminData.bodyBattery}%`:null},
-                    {label:"Sleep score",value:garminData.sleepScore!=null?`${garminData.sleepScore}/100`:null},
-                    {label:"Sleep",value:garminData.sleepDurationMin?`${Math.floor(garminData.sleepDurationMin/60)}h ${garminData.sleepDurationMin%60}m`:null},
-                    {label:"Stress",value:garminData.stress!=null?`${garminData.stress}/100`:null},
-                  ].map(({label,value,sub})=>(
-                    <div key={label} style={{background:"var(--bg-input)",border:"1px solid var(--border)",borderRadius:8,padding:"6px 8px",textAlign:"center"}}>
-                      <div style={{fontSize:9,color:"var(--text-faint)",marginBottom:2}}>{label}</div>
-                      <div style={{fontSize:13,fontWeight:700,color:value?"var(--text-primary)":"var(--text-faint)"}}>{value||"–"}</div>
-                      {sub&&<div style={{fontSize:8,color:"var(--text-faint)",marginTop:1}}>{sub}</div>}
-                    </div>
-                  ))}
-                </div>
+                <>
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:6}}>
+                    {[
+                      {label:"Resting HR",value:garminData.restingHR?`${garminData.restingHR} bpm`:null},
+                      {label:"HRV",value:garminData.hrv!=null?`${Math.round(garminData.hrv)} ms`:null,sub:garminData.hrvBaseline?`baseline ${Math.round(garminData.hrvBaseline)}ms`:null},
+                      {label:"Body Battery",value:garminData.bodyBattery!=null?`${garminData.bodyBattery}%`:null},
+                      {label:"Sleep score",value:garminData.sleepScore!=null?`${garminData.sleepScore}/100`:null},
+                      {label:"Sleep",value:garminData.sleepDurationMin?`${Math.floor(garminData.sleepDurationMin/60)}h ${garminData.sleepDurationMin%60}m`:null},
+                      {label:"Stress",value:garminData.stress!=null?`${garminData.stress}/100`:null},
+                    ].map(({label,value,sub})=>(
+                      <div key={label} style={{background:"var(--bg-input)",border:"1px solid var(--border)",borderRadius:8,padding:"6px 8px",textAlign:"center"}}>
+                        <div style={{fontSize:9,color:"var(--text-faint)",marginBottom:2}}>{label}</div>
+                        <div style={{fontSize:13,fontWeight:700,color:value?"var(--text-primary)":"var(--text-faint)"}}>{value||"–"}</div>
+                        {sub&&<div style={{fontSize:8,color:"var(--text-faint)",marginTop:1}}>{sub}</div>}
+                      </div>
+                    ))}
+                  </div>
+                  {/* TEMP DEBUG — remove once Garmin fields confirmed */}
+                  {garminData.raw&&(
+                    <details style={{marginTop:10}}>
+                      <summary style={{fontSize:11,color:"var(--text-faint)",cursor:"pointer"}}>Debug: raw Garmin response</summary>
+                      <pre style={{fontSize:9,color:"var(--text-faint)",overflowX:"auto",marginTop:6,padding:8,background:"var(--bg-input)",borderRadius:6,whiteSpace:"pre-wrap",wordBreak:"break-all"}}>
+                        {JSON.stringify(garminData.raw,null,2)}
+                      </pre>
+                    </details>
+                  )}
+                </>
               ):(
                 !garminLoading&&<div style={{fontSize:12,color:"var(--text-faint)"}}>No Garmin data yet — tap Sync.</div>
               )}
