@@ -859,13 +859,19 @@ function App(){
       setGarminData(data);
       saveState("ww_garmin_morning",data);
       saveState("ww_garmin_date",new Date().toDateString());
-      // Auto-populate RHR if available and no manual override today
-      if(data.restingHR&&data.restingHR>30&&data.restingHR<120){
-        setRestingHR(data.restingHR);
-      }
+      if(data.restingHR&&data.restingHR>30&&data.restingHR<120) setRestingHR(data.restingHR);
     }catch(err){setGarminError(err.message||"Garmin fetch failed");}
     setGarminLoading(false);
   };
+
+  const syncAll=async()=>{
+    // Fire Garmin and Strava in parallel
+    await Promise.all([
+      fetchGarminMorning(),
+      stravaTokens?Promise.all([doStravaSync(stravaTokens),fetchYesterday(stravaTokens)]):Promise.resolve(),
+    ]);
+  };
+  const syncing=garminLoading||stravaSyncing||yesterdayLoading;
 
   const doStravaSync=async(tokens)=>{
     const t=tokens||stravaTokens;if(!t)return;
@@ -999,15 +1005,20 @@ function App(){
             <h3 style={{...S.h3,marginBottom:4}}>Morning check-in</h3>
             <p style={{...S.b2,marginBottom:20}}>{checkinDone?"Today's check-in saved. Update any values if needed.":"Takes 30 seconds. Tells the system how hard to push today."}</p>
 
+            {/* Sync button */}
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
+              <div style={{fontSize:12,color:"var(--text-faint)"}}>
+                {syncing?"Syncing…":garminData?`Garmin: ${loadState("ww_garmin_date","–")} · Strava: ${loadState("ww_strava_sync_date","not connected")}`:"Tap Sync to fetch latest data"}
+              </div>
+              <button onClick={syncAll} disabled={syncing}
+                style={{padding:"8px 18px",borderRadius:8,border:"none",background:syncing?"#e2e8f0":"#0f172a",color:syncing?"#94a3b8":"#f8fafc",fontSize:13,fontWeight:700,cursor:syncing?"not-allowed":"pointer",fontFamily:"inherit"}}>
+                {syncing?"Syncing…":"⟳ Sync"}
+              </button>
+            </div>
+
             {/* Garmin morning data */}
             <div style={{marginBottom:20,paddingBottom:20,borderBottom:"1px solid var(--border)"}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-                <div style={{fontSize:14,fontWeight:700,color:"var(--text-primary)"}}>Garmin health data</div>
-                <button onClick={fetchGarminMorning} disabled={garminLoading}
-                  style={{background:"none",border:"none",fontSize:12,color:"var(--text-muted)",cursor:"pointer",fontFamily:"inherit",padding:0}}>
-                  {garminLoading?"fetching…":"refresh"}
-                </button>
-              </div>
+              <div style={{fontSize:13,fontWeight:700,color:"var(--text-secondary)",marginBottom:10}}>Garmin health data</div>
               {garminError&&<div style={{fontSize:12,color:"#ef4444",marginBottom:8}}>{garminError}</div>}
               {garminData&&!garminError?(
                 <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:6}}>
@@ -1034,34 +1045,18 @@ function App(){
             {/* Yesterday's ride */}
             {stravaTokens&&(
               <div style={{marginBottom:20,paddingBottom:20,borderBottom:"1px solid var(--border)"}}>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-                  <div style={{fontSize:14,fontWeight:700,color:"var(--text-primary)"}}>Yesterday's ride</div>
-                  <button onClick={()=>fetchYesterday(stravaTokens)} disabled={yesterdayLoading}
-                    style={{background:"none",border:"none",fontSize:12,color:"var(--text-muted)",cursor:"pointer",fontFamily:"inherit",padding:0}}>
-                    {yesterdayLoading?"checking…":"refresh"}
-                  </button>
-                </div>
+                <div style={{fontSize:13,fontWeight:700,color:"var(--text-secondary)",marginBottom:10}}>Yesterday's ride</div>
                 <YesterdayAnalysis data={yesterdayData} plannedId={entry.workoutId} ftp={ftp} loading={yesterdayLoading}/>
               </div>
             )}
 
-            {/* Strava sync */}
+            {/* Strava data */}
             <div style={{marginBottom:20,paddingBottom:20,borderBottom:"1px solid var(--border)"}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-                <div>
-                  <div style={{fontSize:14,fontWeight:700,color:"var(--text-secondary)"}}>Strava sync</div>
-                  <div style={{fontSize:12,color:"var(--text-faint)",marginTop:2}}>
-                    {stravaData?`Last: ${loadState("ww_strava_sync_date","never")}`:"Connect to pull ATL/CTL/TSB"}
-                  </div>
-                </div>
-                {stravaTokens?(
-                  <button onClick={()=>doStravaSync()} disabled={stravaSyncing}
-                    style={{padding:"8px 16px",borderRadius:8,border:"none",background:stravaSyncing?"#e2e8f0":"#fc4c02",color:stravaSyncing?"#94a3b8":"#fff",fontSize:13,fontWeight:700,cursor:stravaSyncing?"not-allowed":"pointer",fontFamily:"inherit"}}>
-                    {stravaSyncing?"Syncing…":"Sync now"}
-                  </button>
-                ):(
+                <div style={{fontSize:13,fontWeight:700,color:"var(--text-secondary)"}}>Strava fitness data</div>
+                {!stravaTokens&&(
                   <button onClick={handleStravaConnect}
-                    style={{padding:"8px 16px",borderRadius:8,border:"none",background:"#fc4c02",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
+                    style={{padding:"6px 14px",borderRadius:8,border:"none",background:"#fc4c02",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
                     Connect Strava
                   </button>
                 )}
