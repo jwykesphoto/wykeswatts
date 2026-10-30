@@ -1004,7 +1004,7 @@ function App(){
                   <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:6}}>
                     {[
                       {label:"Resting HR",value:garminData.restingHR?`${garminData.restingHR} bpm`:null},
-                      {label:"HRV",value:garminData.hrv!=null?`${Math.round(garminData.hrv)} ms`:null,sub:garminData.hrvBaseline?`baseline ${Math.round(garminData.hrvBaseline)}ms`:null},
+                      {label:"HRV",value:garminData.hrv!=null?`${Math.round(garminData.hrv)} ms`:null,sub:garminData.hrvStatus?garminData.hrvStatus.toLowerCase():(garminData.hrvBaseline?`baseline ${Math.round(garminData.hrvBaseline)}ms`:null)},
                       {label:"Body Battery",value:garminData.bodyBattery!=null?`${garminData.bodyBattery}%`:null},
                       {label:"Sleep score",value:garminData.sleepScore!=null?`${garminData.sleepScore}/100`:null},
                       {label:"Sleep",value:garminData.sleepDurationMin?`${Math.floor(garminData.sleepDurationMin/60)}h ${garminData.sleepDurationMin%60}m`:null},

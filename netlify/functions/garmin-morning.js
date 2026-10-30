@@ -53,37 +53,47 @@ exports.handler = async () => {
     const today = berlinDate(0);
     const yesterday = berlinDate(-1);
 
-    const [hrvData, sleepToday, sleepYest, batteryData, stressData, hrData, summaryToday] = await Promise.all([
+    const [hrvData, sleepToday, sleepYest, sleepWellness, batteryData, stressData, stressYest, hrData, summaryToday] = await Promise.all([
       garminGet(token, `/hrv-service/hrv/${today}`),
       garminGet(token, `/sleep-service/sleep/${today}`),
       garminGet(token, `/sleep-service/sleep/${yesterday}`),
+      garminGet(token, `/wellness-service/wellness/dailySleep?date=${today}`),
       garminGet(token, `/wellness-service/wellness/bodyBattery/reports/daily?startDate=${yesterday}&endDate=${today}`),
-      garminGet(token, `/wellness-service/wellness/dailyStress?date=${today}`),
+      garminGet(token, `/wellness-service/wellness/dailyStress/${today}`),
+      garminGet(token, `/wellness-service/wellness/dailyStress/${yesterday}`),
       garminGet(token, `/wellness-service/wellness/dailyHeartRate?date=${today}`),
       garminGet(token, `/usersummary-service/usersummary/daily/${today}`),
     ]);
 
     // ── HRV ──
-    // Garmin HRV structure: hrvData.hrvSummary.lastNight (number, ms)
-    //                    or hrvData.hrvSummary.lastNight5MinHigh
-    // Baseline: hrvData.hrvSummary.baseline.balancedLow / balancedHigh
+    // Confirmed field: hrvData.hrvSummary.lastNightAvg (number)
+    // Status: hrvData.hrvSummary.lastNight5MinHigh, or status field
     const hrvSummary = hrvData?.hrvSummary ?? {};
-    const hrv = hrvSummary.lastNight ?? deepFind(hrvData, "lastNight") ?? null;
+    const hrv = hrvSummary.lastNightAvg
+      ?? hrvSummary.lastNight
+      ?? deepFind(hrvData, "lastNightAvg")
+      ?? deepFind(hrvData, "lastNight")
+      ?? null;
+    const hrvStatus = hrvSummary.status
+      ?? hrvSummary.hrvStatus
+      ?? deepFind(hrvData, "status")
+      ?? null;
     const hrvBaseline = hrvSummary.baseline?.balancedLow
       ?? hrvSummary.baseline?.low
       ?? deepFind(hrvData, "balancedLow")
       ?? null;
 
     // ── SLEEP ──
-    // Pick whichever endpoint returned real data (not an error marker)
+    // Try multiple endpoints: sleep-service/sleep/{date}, wellness dailySleep
     const sleepRaw = (sleepToday && !sleepToday._error) ? sleepToday
                    : (sleepYest && !sleepYest._error) ? sleepYest
+                   : (sleepWellness && !sleepWellness._error) ? sleepWellness
                    : null;
-    // Garmin sleep: sleepRaw.dailySleepDTO.sleepScores.overall.value  OR  sleepRaw.sleepScore
     const sleepDTO = sleepRaw?.dailySleepDTO ?? sleepRaw ?? {};
     const sleepScore =
       sleepDTO?.sleepScores?.overall?.value ??
       sleepDTO?.sleepScore ??
+      sleepDTO?.overallSleepScore ??
       deepFind(sleepRaw, "overallSleepScore") ??
       deepFind(sleepRaw, "sleepScore") ??
       null;
@@ -109,9 +119,13 @@ exports.handler = async () => {
       null;
 
     // ── STRESS ──
+    // Try path-style endpoint (dailyStress/{date}) — falls back to yesterday
     let stress = null;
-    const stressObj = Array.isArray(stressData) ? stressData[0] : stressData;
-    if (stressObj && !stressObj._error) {
+    const stressRaw = (stressData && !stressData._error) ? stressData
+                    : (stressYest && !stressYest._error) ? stressYest
+                    : null;
+    const stressObj = Array.isArray(stressRaw) ? stressRaw[0] : stressRaw;
+    if (stressObj) {
       stress =
         stressObj.overallStressLevel ??
         stressObj.avgStressLevel ??
@@ -125,10 +139,10 @@ exports.handler = async () => {
       headers,
       body: JSON.stringify({
         date: today, yesterday,
-        restingHR, hrv, hrvBaseline,
+        restingHR, hrv, hrvStatus, hrvBaseline,
         bodyBattery, sleepScore, sleepDurationMin, stress,
         // Raw kept for debugging — remove once shapes confirmed
-        raw: { hrv: hrvData, sleepToday, sleepYest, battery: batteryData, stress: stressData, hr: hrData, summary: summaryToday }
+        raw: { hrv: hrvData, sleepToday, sleepYest, sleepWellness, battery: batteryData, stress: stressData, stressYest, hr: hrData, summary: summaryToday }
       }),
     };
   } catch (err) {
