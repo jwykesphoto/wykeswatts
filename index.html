@@ -514,32 +514,11 @@ function StrengthCard({session,weekNum,shortenPct,setShortenPct,strMod}){
 
 // ─── Morning Check-in ─────────────────────────────────────────────────────────
 function MorningCheckin({readiness,setReadiness,restingHR,setRestingHR,legsScore,setLegsScore,onSave}){
-  const rdColor=readiness>=80?"#16a34a":readiness>=65?"#22c55e":readiness>=50?"#ca8a04":readiness>=35?"#ea580c":"#dc2626";
-  const hrColor=restingHR>ATHLETE.restingHR+4?"#dc2626":restingHR>ATHLETE.restingHR+2?"#ea580c":"#16a34a";
   const legsLabels=["","Very heavy","Heavy","Normal","Good","Fresh"];
   const legsColors=["","#dc2626","#ea580c","#ca8a04","#22c55e","#16a34a"];
   const legsColor=legsColors[legsScore]||"#ca8a04";
   return(
     <div>
-      <div style={{marginBottom:20}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-          <span style={{fontSize:13,fontWeight:600,color:"var(--text-secondary)"}}>Training Readiness</span>
-          <span style={{fontSize:24,fontWeight:800,color:rdColor}}>{readiness}</span>
-        </div>
-        <input type="range" min={0} max={100} value={readiness} onChange={e=>setReadiness(Number(e.target.value))} style={{accentColor:rdColor}}/>
-        <div style={{fontSize:11,color:"var(--text-faint)",marginTop:4}}>From your Garmin Connect app</div>
-      </div>
-      <div style={{marginBottom:20}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-          <span style={{fontSize:13,fontWeight:600,color:"var(--text-secondary)"}}>Resting Heart Rate</span>
-          <span style={{fontSize:24,fontWeight:800,color:hrColor}}>{restingHR} <span style={{fontSize:13,fontWeight:400}}>bpm</span></span>
-        </div>
-        <input type="range" min={30} max={80} value={restingHR} onChange={e=>setRestingHR(Number(e.target.value))} style={{accentColor:hrColor}}/>
-        <div style={{display:"flex",justifyContent:"space-between",fontSize:11,color:"var(--text-faint)",marginTop:4}}>
-          <span>Baseline: {ATHLETE.restingHR}bpm</span>
-          <span>{restingHR>ATHLETE.restingHR+4?`⚠ ${restingHR-ATHLETE.restingHR}bpm above baseline`:restingHR>ATHLETE.restingHR+2?`↑ ${restingHR-ATHLETE.restingHR}bpm above baseline`:"✓ Normal range"}</span>
-        </div>
-      </div>
       <div style={{marginBottom:24}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
           <span style={{fontSize:13,fontWeight:600,color:"var(--text-secondary)"}}>How do your legs feel?</span>
@@ -782,7 +761,7 @@ function App(){
     const saved=loadState("ww_checkin_date","");
     return saved===new Date().toDateString();
   });
-  const [tab,setTab]=useState("today");
+  const [tab,setTab]=useState("checkin");
   const [currentDay,setCurrentDay]=useState(todayIdx); // starts on today
   const [overrides,setOverrides]=useState(()=>loadState("ww_overrides",{}));
   const [blockMode,setBlockMode]=useState(null);
@@ -990,7 +969,7 @@ function App(){
 
       {/* Nav */}
       <div style={S.nav}>
-        {[["today","Today"],["checkin","Check-in"],["plan","Plan"],["progress","Progress"],["zones","Zones"]].map(([v,l])=>(
+        {[["checkin","Check-in"],["today","Today"],["plan","Plan"],["progress","Progress"],["zones","Zones"]].map(([v,l])=>(
           <button key={v} style={S.navBtn(tab===v)} onClick={()=>setTab(v)}>
             {l}{v==="checkin"&&!checkinDone?<span style={{marginLeft:5,width:7,height:7,borderRadius:4,background:"#ef4444",display:"inline-block",verticalAlign:"middle"}}/>:null}
           </button>
@@ -1016,7 +995,7 @@ function App(){
               </button>
             </div>
 
-            {/* Garmin morning data */}
+            {/* ── GARMIN HEALTH ── */}
             <div style={{marginBottom:20,paddingBottom:20,borderBottom:"1px solid var(--border)"}}>
               <div style={{fontSize:13,fontWeight:700,color:"var(--text-secondary)",marginBottom:10}}>Garmin health data</div>
               {garminError&&<div style={{fontSize:12,color:"#ef4444",marginBottom:8}}>{garminError}</div>}
@@ -1038,22 +1017,31 @@ function App(){
                   ))}
                 </div>
               ):(
-                !garminLoading&&<div style={{fontSize:12,color:"var(--text-faint)"}}>Fetching last night's data…</div>
+                !garminLoading&&<div style={{fontSize:12,color:"var(--text-faint)"}}>No Garmin data yet — tap Sync.</div>
               )}
             </div>
 
-            {/* Yesterday's ride */}
-            {stravaTokens&&(
-              <div style={{marginBottom:20,paddingBottom:20,borderBottom:"1px solid var(--border)"}}>
-                <div style={{fontSize:13,fontWeight:700,color:"var(--text-secondary)",marginBottom:10}}>Yesterday's ride</div>
-                <YesterdayAnalysis data={yesterdayData} plannedId={entry.workoutId} ftp={ftp} loading={yesterdayLoading}/>
-              </div>
-            )}
+            {/* ── TRAINING READINESS (from Garmin) ── */}
+            <div style={{marginBottom:20,paddingBottom:20,borderBottom:"1px solid var(--border)"}}>
+              {(()=>{
+                const rdColor=readiness>=80?"#16a34a":readiness>=65?"#22c55e":readiness>=50?"#ca8a04":readiness>=35?"#ea580c":"#dc2626";
+                return(
+                  <>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                      <span style={{fontSize:13,fontWeight:600,color:"var(--text-secondary)"}}>Training Readiness</span>
+                      <span style={{fontSize:24,fontWeight:800,color:rdColor}}>{readiness}</span>
+                    </div>
+                    <input type="range" min={0} max={100} value={readiness} onChange={e=>setReadiness(Number(e.target.value))} style={{accentColor:rdColor,width:"100%"}}/>
+                    <div style={{fontSize:11,color:"var(--text-faint)",marginTop:4}}>From your Garmin Connect app</div>
+                  </>
+                );
+              })()}
+            </div>
 
-            {/* Strava data */}
+            {/* ── STRAVA ── */}
             <div style={{marginBottom:20,paddingBottom:20,borderBottom:"1px solid var(--border)"}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-                <div style={{fontSize:13,fontWeight:700,color:"var(--text-secondary)"}}>Strava fitness data</div>
+                <div style={{fontSize:13,fontWeight:700,color:"var(--text-secondary)"}}>Strava</div>
                 {!stravaTokens&&(
                   <button onClick={handleStravaConnect}
                     style={{padding:"6px 14px",borderRadius:8,border:"none",background:"#fc4c02",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
@@ -1061,21 +1049,35 @@ function App(){
                   </button>
                 )}
               </div>
-              {stravaError&&<div style={{padding:"8px 12px",background:"#fef2f2",border:"1px solid #fecaca",borderRadius:8,fontSize:13,color:"#dc2626",marginBottom:10}}>{stravaError}</div>}
-              {stravaData&&(
-                <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:8}}>
-                  {[["CTL",stravaData.ctl,"Fitness","#16a34a"],["ATL",stravaData.atl,"Fatigue","#ea580c"],["TSB",stravaData.tsb,"Form",stravaData.tsb>=0?"#16a34a":"#dc2626"]].map(([key,val,label,color])=>(
-                    <div key={key} style={{background:"var(--bg-input)",border:"1px solid var(--border)",borderRadius:8,padding:"10px 12px",textAlign:"center"}}>
-                      <div style={{fontSize:11,color:"var(--text-faint)"}}>{label}</div>
-                      <div style={{fontSize:24,fontWeight:800,color}}>{val}</div>
-                      <div style={{fontSize:11,fontWeight:700,color:"var(--text-muted)"}}>{key}</div>
-                    </div>
-                  ))}
+
+              {/* Yesterday's ride */}
+              {stravaTokens&&(
+                <div style={{marginBottom:16}}>
+                  <div style={{fontSize:11,fontWeight:600,color:"var(--text-faint)",textTransform:"uppercase",letterSpacing:.5,marginBottom:8}}>Yesterday's ride</div>
+                  <YesterdayAnalysis data={yesterdayData} plannedId={entry.workoutId} ftp={ftp} loading={yesterdayLoading}/>
                 </div>
               )}
-              {stravaData&&<div style={{padding:"8px 12px",background:"var(--bg-input)",border:"1px solid var(--border)",borderRadius:8,fontSize:13,color:"var(--text-secondary)"}}>{stravaData.form} · {stravaData.ridesLast7} rides last 7 days · {stravaData.weeklyTSS} TSS</div>}
+
+              {/* Fitness metrics */}
+              {stravaError&&<div style={{padding:"8px 12px",background:"#fef2f2",border:"1px solid #fecaca",borderRadius:8,fontSize:13,color:"#dc2626",marginBottom:10}}>{stravaError}</div>}
+              {stravaData&&(
+                <>
+                  <div style={{fontSize:11,fontWeight:600,color:"var(--text-faint)",textTransform:"uppercase",letterSpacing:.5,marginBottom:8}}>Fitness metrics</div>
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:8}}>
+                    {[["CTL",stravaData.ctl,"Fitness","#16a34a"],["ATL",stravaData.atl,"Fatigue","#ea580c"],["TSB",stravaData.tsb,"Form",stravaData.tsb>=0?"#16a34a":"#dc2626"]].map(([key,val,label,color])=>(
+                      <div key={key} style={{background:"var(--bg-input)",border:"1px solid var(--border)",borderRadius:8,padding:"10px 12px",textAlign:"center"}}>
+                        <div style={{fontSize:11,color:"var(--text-faint)"}}>{label}</div>
+                        <div style={{fontSize:24,fontWeight:800,color}}>{val}</div>
+                        <div style={{fontSize:11,fontWeight:700,color:"var(--text-muted)"}}>{key}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{padding:"8px 12px",background:"var(--bg-input)",border:"1px solid var(--border)",borderRadius:8,fontSize:13,color:"var(--text-secondary)"}}>{stravaData.form} · {stravaData.ridesLast7} rides last 7 days · {stravaData.weeklyTSS} TSS</div>
+                </>
+              )}
             </div>
 
+            {/* ── LEG FEEL + SAVE ── */}
             <MorningCheckin readiness={readiness} setReadiness={setReadiness} restingHR={restingHR} setRestingHR={setRestingHR} legsScore={legsScore} setLegsScore={setLegsScore} onSave={handleCheckinSave}/>
           </div>
         )}
