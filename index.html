@@ -763,7 +763,6 @@ function App(){
     try{sessionStorage.setItem("ww_pin","ok");}catch{}
     setPinUnlocked(true);
   };
-  if(!pinUnlocked) return <PinLock onUnlock={handlePinUnlock}/>;
 
   const todayIdx=getTodayIndex();
 
@@ -940,6 +939,8 @@ function App(){
     btnP:{padding:"10px 20px",borderRadius:8,border:"none",background:"#0f172a",color:"#f8fafc",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit"},
     card12:{background:"var(--bg-card)",border:"1px solid var(--border)",borderRadius:12,padding:20,marginBottom:16,boxShadow:"var(--shadow)"},
   };
+
+  if(!pinUnlocked) return <PinLock onUnlock={handlePinUnlock}/>;
 
   return(
     <div style={S.page}>
