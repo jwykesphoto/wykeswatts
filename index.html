@@ -327,6 +327,9 @@ function adjustForReadiness(wId,readiness,restingHR,legsScore,tsb){
   const isZ2=w&&w.type==="Z2";
   const isStr=w&&w.type==="STRENGTH";
 
+  // REST and FREE days are never overridden by readiness
+  if(wId==="REST"||wId==="FREE") return {id:wId,note:null,adjusted:false,eff,strMod:null};
+
   if(eff>=80) return {id:wId,note:null,adjusted:false,eff,strMod:null};
   if(eff>=65){
     if(isZ2){
