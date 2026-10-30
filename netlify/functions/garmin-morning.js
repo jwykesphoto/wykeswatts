@@ -1,5 +1,4 @@
 // Garmin Personal API — morning health snapshot
-// Returns: restingHR, hrv, bodyBattery, sleepScore, stress for today/last night
 
 const BASE = "https://personal.connectapi.garmin.com";
 
@@ -10,12 +9,11 @@ async function getToken(apiKey) {
   );
   if (!res.ok) throw new Error(`Token exchange failed: ${res.status}`);
   const text = await res.text();
-  // Garmin returns the JWT as a plain string, not JSON
   try {
     const data = JSON.parse(text);
     return data.access_token || data.accessToken || data.token || text.trim();
   } catch {
-    return text.trim(); // plain JWT string
+    return text.trim();
   }
 }
 
@@ -23,152 +21,117 @@ async function garminGet(token, path) {
   const res = await fetch(`${BASE}${path}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
-  if (!res.ok) {
-    return { _error: res.status, _path: path };
-  }
-  try {
-    return await res.json();
-  } catch {
-    return { _parseError: true, _path: path };
-  }
+  if (!res.ok) return { _error: res.status, _path: path };
+  try { return await res.json(); }
+  catch { return { _parseError: true, _path: path }; }
 }
 
-function todayStr() {
-  // Use Berlin time (UTC+1 in autumn / UTC+2 in summer)
-  const offset = 1; // CET
-  const d = new Date(Date.now() + offset * 3600 * 1000);
-  return d.toISOString().slice(0, 10);
+// Deep search for a key anywhere in an object (handles unknown nesting)
+function deepFind(obj, key, maxDepth = 6) {
+  if (!obj || typeof obj !== "object" || maxDepth === 0) return undefined;
+  if (key in obj) return obj[key];
+  for (const v of Object.values(obj)) {
+    const found = deepFind(v, key, maxDepth - 1);
+    if (found !== undefined) return found;
+  }
+  return undefined;
 }
 
-function yesterdayStr() {
-  const offset = 1;
-  const d = new Date(Date.now() + offset * 3600 * 1000 - 86400000);
+function berlinDate(offsetDays = 0) {
+  // CET = UTC+1 (autumn), CEST = UTC+2 (summer). Use +1 conservatively.
+  const d = new Date(Date.now() + 3600 * 1000 + offsetDays * 86400000);
   return d.toISOString().slice(0, 10);
 }
 
 exports.handler = async () => {
-  const headers = {
-    "Content-Type": "application/json",
-    "Access-Control-Allow-Origin": "*",
-  };
-
+  const headers = { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" };
   const apiKey = process.env.GARMIN_API_KEY;
-  if (!apiKey) {
-    return { statusCode: 500, headers, body: JSON.stringify({ error: "No Garmin API key configured" }) };
-  }
+  if (!apiKey) return { statusCode: 500, headers, body: JSON.stringify({ error: "No GARMIN_API_KEY" }) };
 
   try {
     const token = await getToken(apiKey);
-    const today = todayStr();
-    const yesterday = yesterdayStr();
+    const today = berlinDate(0);
+    const yesterday = berlinDate(-1);
 
-    // Fetch in parallel — try multiple endpoint variants for HRV/sleep
-    const [
-      hrvData,
-      sleepData,
-      sleepData2,
-      batteryData,
-      stressData,
-      hrData,
-      userSummary,
-    ] = await Promise.all([
-      garminGet(token, `/hrv-service/hrv/${today}`),           // HRV for today (may include last night)
-      garminGet(token, `/sleep-service/sleep/${today}`),        // alternate sleep endpoint
-      garminGet(token, `/sleep-service/sleep/${yesterday}`),    // sleep for yesterday night
+    const [hrvData, sleepToday, sleepYest, batteryData, stressData, hrData, summaryToday] = await Promise.all([
+      garminGet(token, `/hrv-service/hrv/${today}`),
+      garminGet(token, `/sleep-service/sleep/${today}`),
+      garminGet(token, `/sleep-service/sleep/${yesterday}`),
       garminGet(token, `/wellness-service/wellness/bodyBattery/reports/daily?startDate=${yesterday}&endDate=${today}`),
       garminGet(token, `/wellness-service/wellness/dailyStress?date=${today}`),
       garminGet(token, `/wellness-service/wellness/dailyHeartRate?date=${today}`),
       garminGet(token, `/usersummary-service/usersummary/daily/${today}`),
     ]);
 
-    // --- HRV ---
-    // Try today first (morning reading), fall back to yesterday
-    const hrv =
-      hrvData?.hrvSummary?.lastNight ??
-      hrvData?.lastNight ??
-      hrvData?.hrvSummary?.weekly?.lastNight ??
-      null;
-    const hrvBaseline =
-      hrvData?.hrvSummary?.baseline?.balancedLow ??
-      hrvData?.baseline?.balancedLow ??
-      null;
+    // ── HRV ──
+    // Garmin HRV structure: hrvData.hrvSummary.lastNight (number, ms)
+    //                    or hrvData.hrvSummary.lastNight5MinHigh
+    // Baseline: hrvData.hrvSummary.baseline.balancedLow / balancedHigh
+    const hrvSummary = hrvData?.hrvSummary ?? {};
+    const hrv = hrvSummary.lastNight ?? deepFind(hrvData, "lastNight") ?? null;
+    const hrvBaseline = hrvSummary.baseline?.balancedLow
+      ?? hrvSummary.baseline?.low
+      ?? deepFind(hrvData, "balancedLow")
+      ?? null;
 
-    // --- Sleep ---
-    // Try both endpoints; Garmin sleep API often uses different path per region
-    const sleepRaw = sleepData2?._error ? sleepData : (sleepData || sleepData2);
+    // ── SLEEP ──
+    // Pick whichever endpoint returned real data (not an error marker)
+    const sleepRaw = (sleepToday && !sleepToday._error) ? sleepToday
+                   : (sleepYest && !sleepYest._error) ? sleepYest
+                   : null;
+    // Garmin sleep: sleepRaw.dailySleepDTO.sleepScores.overall.value  OR  sleepRaw.sleepScore
+    const sleepDTO = sleepRaw?.dailySleepDTO ?? sleepRaw ?? {};
     const sleepScore =
-      sleepRaw?.dailySleepDTO?.sleepScores?.overall?.value ??
-      sleepRaw?.sleepScores?.overall?.value ??
-      sleepRaw?.overallScore ??
-      sleepRaw?.score ??
+      sleepDTO?.sleepScores?.overall?.value ??
+      sleepDTO?.sleepScore ??
+      deepFind(sleepRaw, "overallSleepScore") ??
+      deepFind(sleepRaw, "sleepScore") ??
       null;
-    const sleepDurationSec =
-      sleepRaw?.dailySleepDTO?.sleepTimeSeconds ??
-      sleepRaw?.sleepTimeSeconds ??
-      null;
+    const sleepDurationSec = sleepDTO?.sleepTimeSeconds ?? deepFind(sleepRaw, "sleepTimeSeconds") ?? null;
     const sleepDurationMin = sleepDurationSec ? Math.round(sleepDurationSec / 60) : null;
 
-    // --- Body Battery ---
+    // ── BODY BATTERY ──
     let bodyBattery = null;
     if (Array.isArray(batteryData)) {
-      // Find today's entry (charged = level when you woke up)
-      const entry = batteryData.find(d => d.date === today || d.calendarDate === today)
-        || batteryData.find(d => d.date === yesterday || d.calendarDate === yesterday);
+      const entry = batteryData.find(d => d.calendarDate === today || d.date === today)
+                 ?? batteryData.find(d => d.calendarDate === yesterday || d.date === yesterday)
+                 ?? batteryData[batteryData.length - 1];
       bodyBattery = entry?.charged ?? entry?.endLevel ?? entry?.startLevel ?? null;
     } else if (batteryData && !batteryData._error) {
-      bodyBattery = batteryData.startLevel ?? batteryData.charged ?? null;
+      bodyBattery = deepFind(batteryData, "charged") ?? deepFind(batteryData, "endLevel") ?? null;
     }
 
-    // --- Resting HR ---
+    // ── RESTING HR ──
     const restingHR =
       hrData?.restingHeartRate ??
-      userSummary?.restingHeartRate ??
+      summaryToday?.restingHeartRate ??
+      deepFind(hrData, "restingHeartRate") ??
       null;
 
-    // --- Stress ---
+    // ── STRESS ──
     let stress = null;
-    if (stressData && !stressData._error) {
-      if (Array.isArray(stressData)) {
-        stress = stressData[0]?.overallStressLevel ?? stressData[0]?.avgStressLevel ?? null;
-      } else {
-        stress =
-          stressData?.overallStressLevel ??
-          stressData?.avgStressLevel ??
-          stressData?.stressLevel ??
-          null;
-      }
+    const stressObj = Array.isArray(stressData) ? stressData[0] : stressData;
+    if (stressObj && !stressObj._error) {
+      stress =
+        stressObj.overallStressLevel ??
+        stressObj.avgStressLevel ??
+        stressObj.stressLevel ??
+        deepFind(stressObj, "overallStressLevel") ??
+        null;
     }
 
     return {
       statusCode: 200,
       headers,
       body: JSON.stringify({
-        date: today,
-        yesterday,
-        restingHR,
-        hrv,
-        hrvBaseline,
-        bodyBattery,
-        sleepScore,
-        sleepDurationMin,
-        stress,
-        // Keep raw for debugging — can remove once shapes confirmed
-        raw: {
-          hrv: hrvData,
-          sleep: sleepData,
-          sleep2: sleepData2,
-          battery: batteryData,
-          stress: stressData,
-          hr: hrData,
-          summary: userSummary,
-        }
+        date: today, yesterday,
+        restingHR, hrv, hrvBaseline,
+        bodyBattery, sleepScore, sleepDurationMin, stress,
+        // Raw kept for debugging — remove once shapes confirmed
+        raw: { hrv: hrvData, sleepToday, sleepYest, battery: batteryData, stress: stressData, hr: hrData, summary: summaryToday }
       }),
     };
   } catch (err) {
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({ error: err.message }),
-    };
+    return { statusCode: 500, headers, body: JSON.stringify({ error: err.message }) };
   }
 };
