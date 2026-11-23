@@ -461,53 +461,6 @@ function StrengthCard({session,weekNum,shortenPct,setShortenPct,strMod}){
         📋 Open Full Strength Plan
       </a>
 
-      {/* Short on time */}
-      <div style={{marginBottom:14}}>
-        <div style={{fontSize:13,fontWeight:600,color:"var(--text-secondary)",marginBottom:8}}>Short on time?</div>
-        <div style={{display:"flex",gap:6}}>
-          {pctOptions.map(p=>(
-            <button key={String(p)} onClick={()=>setShortenPct(p)}
-              style={{flex:1,padding:"9px 4px",borderRadius:8,border:shortenPct===p?"2px solid #0f172a":"1px solid var(--border)",background:shortenPct===p?"#0f172a":"var(--bg-input)",color:shortenPct===p?"#f8fafc":"var(--text-secondary)",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit",lineHeight:1.4,transition:"all .15s"}}>
-              <div>{pctLabel[p]}</div>
-              <div style={{fontSize:10,fontWeight:400,opacity:.8}}>{p===null?session.exercises.length:Math.max(1,Math.round(session.exercises.length*p))} exercises</div>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <button onClick={()=>setExpanded(!expanded)}
-        style={{width:"100%",padding:"10px",borderRadius:8,border:"1px solid var(--border)",background:"var(--bg-input)",color:"var(--text-secondary)",fontSize:13,fontWeight:600,display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:expanded?12:0}}>
-        <span>Exercises ({shortenPct===null||shortenPct===undefined?session.exercises.length:Math.max(1,Math.round(session.exercises.length*shortenPct))})</span>
-        <span>{expanded?"▲":"▼"}</span>
-      </button>
-
-      {expanded&&(
-        <div>
-          {session.exercises
-            .slice(0,shortenPct===null||shortenPct===undefined?undefined:Math.max(1,Math.round(session.exercises.length*shortenPct)))
-            .map((ex,i,arr)=>(
-            <div key={i} style={{padding:"12px 0",borderBottom:i<arr.length-1?"1px solid var(--divider)":"none"}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:4}}>
-                <span style={{fontSize:15,fontWeight:700,color:"var(--text-primary)",flex:1}}>{ex.name}</span>
-                <div style={{display:"flex",gap:6,flexShrink:0,marginLeft:8,alignItems:"center",flexWrap:"wrap",justifyContent:"flex-end"}}>
-                  <span style={{fontSize:12,fontWeight:600,color:"#8b5cf6",background:"#f5f3ff",padding:"2px 8px",borderRadius:20}}>
-                    {strMod==="reduced"?shortenSets(ex.sets,0.67):strMod==="warmup"?shortenSets(ex.sets,0.5):ex.sets}
-                  </span>
-                  <span style={{fontSize:12,fontWeight:600,color:"#64748b",background:"var(--bg-input)",padding:"2px 8px",borderRadius:20}}>{ex.rpe}</span>
-                  {ex.video&&<a href={ex.video} target="_blank" rel="noopener noreferrer"
-                    style={{fontSize:11,fontWeight:600,color:"#ef4444",background:"#fff1f2",padding:"2px 8px",borderRadius:20,textDecoration:"none",display:"inline-flex",alignItems:"center",gap:3}}>
-                    ▶ Video
-                  </a>}
-                </div>
-              </div>
-              <p style={{fontSize:13,color:"var(--text-muted)",lineHeight:1.6}}>{ex.cue}</p>
-            </div>
-          ))}
-          <div style={{marginTop:12,padding:"10px 14px",background:"#f5f3ff",border:"1px solid #8b5cf630",borderRadius:8,fontSize:12,color:"#6d28d9",lineHeight:1.6}}>
-            💡 <strong>Weight guidance:</strong> Choose a weight where the last 2 reps of each set feel genuinely hard but your form holds. If it feels easy, go heavier. If your form breaks before the last rep, drop the weight. Track your weights and aim to increase them between sets of the same exercise each week.
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -732,22 +685,6 @@ function PinLock({onUnlock}){
   );
 }
 
-// ─── Debug Panel (temporary) ──────────────────────────────────────────────────
-function DebugPanel({data}){
-  const [open,setOpen]=React.useState(false);
-  return(
-    <div style={{marginTop:10}}>
-      <div onClick={()=>setOpen(o=>!o)} style={{fontSize:11,color:"var(--text-faint)",cursor:"pointer",userSelect:"none"}}>
-        {open?"▾":"▸"} Debug: raw Garmin response
-      </div>
-      {open&&(
-        <pre style={{fontSize:9,color:"var(--text-faint)",overflowX:"auto",marginTop:6,padding:8,background:"var(--bg-input)",borderRadius:6,whiteSpace:"pre-wrap",wordBreak:"break-all"}}>
-          {JSON.stringify(data,null,2)}
-        </pre>
-      )}
-    </div>
-  );
-}
 
 // ─── Main App ─────────────────────────────────────────────────────────────────
 function App(){
@@ -1025,7 +962,6 @@ function App(){
                       {label:"Body Battery",value:garminData.bodyBattery!=null?`${garminData.bodyBattery}%`:null},
                       {label:"Sleep score",value:garminData.sleepScore!=null?`${garminData.sleepScore}/100`:null},
                       {label:"Sleep",value:garminData.sleepDurationMin?`${Math.floor(garminData.sleepDurationMin/60)}h ${garminData.sleepDurationMin%60}m`:null},
-                      {label:"Stress",value:garminData.stress!=null?`${garminData.stress}/100`:null},
                     ].map(({label,value,sub})=>(
                       <div key={label} style={{background:"var(--bg-input)",border:"1px solid var(--border)",borderRadius:8,padding:"6px 8px",textAlign:"center"}}>
                         <div style={{fontSize:9,color:"var(--text-faint)",marginBottom:2}}>{label}</div>
@@ -1043,8 +979,6 @@ function App(){
                       />
                     </div>
                   </div>
-                  {/* TEMP DEBUG — remove once Garmin fields confirmed */}
-                  {garminData.raw&&<DebugPanel data={garminData.raw}/>}
                 </>
               ):(
                 <>
