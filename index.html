@@ -13,69 +13,71 @@
 <link rel="apple-touch-icon" href="/icons/icon-192.png"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet"/>
 <style>
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
   :root{
-    --font: 'Inter', system-ui, -apple-system, sans-serif;
-    --bg-page: #f8fafc;
+    --font: 'DM Sans', system-ui, -apple-system, sans-serif;
+    --bg-page: #f5f5f5;
     --bg-card: #ffffff;
-    --bg-input: #f1f5f9;
+    --bg-input: #efefef;
     --bg-elevated: #ffffff;
-    --border: #e2e8f0;
-    --border-strong: #cbd5e1;
-    --divider: #f1f5f9;
-    --text-primary: #0f172a;
-    --text-secondary: #334155;
-    --text-muted: #64748b;
-    --text-faint: #94a3b8;
-    --hdr-bg: #0f172a;
-    --hdr-border: #1e293b;
-    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-    --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
-    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --border: #e0e0e0;
+    --border-strong: #c8c8c8;
+    --divider: #efefef;
+    --text-primary: #0a0a0a;
+    --text-secondary: #333333;
+    --text-muted: #666666;
+    --text-faint: #999999;
+    --hdr-bg: #0a0a0a;
+    --hdr-border: #1a1a1a;
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.06);
+    --shadow: 0 1px 4px 0 rgb(0 0 0 / 0.08), 0 1px 2px -1px rgb(0 0 0 / 0.06);
+    --shadow-md: 0 4px 12px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.06);
     --radius: 12px;
     --radius-sm: 8px;
-    --accent: #3b82f6;
+    --accent: #0a0a0a;
     --accent-green: #16a34a;
     --accent-orange: #ea580c;
     --accent-red: #dc2626;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-      --bg-page: #0f172a;
-      --bg-card: #1e293b;
-      --bg-input: #0f172a;
-      --bg-elevated: #1e293b;
-      --border: #334155;
-      --border-strong: #475569;
-      --divider: #1e293b;
-      --text-primary: #f8fafc;
-      --text-secondary: #e2e8f0;
-      --text-muted: #94a3b8;
-      --text-faint: #64748b;
-      --hdr-bg: #020617;
-      --hdr-border: #1e293b;
+      --bg-page: #0a0a0a;
+      --bg-card: #141414;
+      --bg-input: #1a1a1a;
+      --bg-elevated: #1a1a1a;
+      --border: #2a2a2a;
+      --border-strong: #3a3a3a;
+      --divider: #1a1a1a;
+      --text-primary: #f5f5f5;
+      --text-secondary: #d0d0d0;
+      --text-muted: #888888;
+      --text-faint: #555555;
+      --hdr-bg: #000000;
+      --hdr-border: #1a1a1a;
+      --accent: #f5f5f5;
     }
   }
   :root[data-theme="dark"] {
-    --bg-page: #0f172a;
-    --bg-card: #1e293b;
-    --bg-input: #0f172a;
-    --bg-elevated: #1e293b;
-    --border: #334155;
-    --border-strong: #475569;
-    --divider: #1e293b;
-    --text-primary: #f8fafc;
-    --text-secondary: #e2e8f0;
-    --text-muted: #94a3b8;
-    --text-faint: #64748b;
-    --hdr-bg: #020617;
-    --hdr-border: #1e293b;
+    --bg-page: #0a0a0a;
+    --bg-card: #141414;
+    --bg-input: #1a1a1a;
+    --bg-elevated: #1a1a1a;
+    --border: #2a2a2a;
+    --border-strong: #3a3a3a;
+    --divider: #1a1a1a;
+    --text-primary: #f5f5f5;
+    --text-secondary: #d0d0d0;
+    --text-muted: #888888;
+    --text-faint: #555555;
+    --hdr-bg: #000000;
+    --hdr-border: #1a1a1a;
+    --accent: #f5f5f5;
   }
   html,body{height:100%;font-family:var(--font);background:var(--bg-page);color:var(--text-primary);-webkit-font-smoothing:antialiased}
-  input[type=range]{width:100%;height:4px;border-radius:4px;appearance:none;-webkit-appearance:none;background:#e2e8f0;outline:none}
-  input[type=range]::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:#0f172a;cursor:pointer;box-shadow:0 2px 4px rgb(0 0 0/0.2)}
+  input[type=range]{width:100%;height:4px;border-radius:4px;appearance:none;-webkit-appearance:none;background:var(--border);outline:none}
+  input[type=range]::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:var(--text-primary);cursor:pointer;box-shadow:0 2px 4px rgb(0 0 0/0.2)}
   button{font-family:var(--font);cursor:pointer}
   ::-webkit-scrollbar{width:4px}
   ::-webkit-scrollbar-track{background:transparent}
@@ -110,16 +112,16 @@ const ivLabel=(iv,ftp)=>iv.ramp?`${calcW(iv.ramp[0],ftp)}–${calcW(iv.ramp[1],f
 
 // ─── Session Types ────────────────────────────────────────────────────────────
 const SESSION_TYPES={
-  Z2:     {label:"Zone 2",color:"#22c55e",bg:"#f0fdf4"},
-  TEMPO:  {label:"Tempo",color:"#f59e0b",bg:"#fffbeb"},
-  SS:     {label:"Sweet Spot",color:"#ef4444",bg:"#fef2f2"},
-  STRENGTH:{label:"Strength",color:"#8b5cf6",bg:"#f5f3ff"},
-  RECOVERY:{label:"Recovery",color:"#64748b",bg:"#f8fafc"},
-  REST:   {label:"Rest",color:"#94a3b8",bg:"#f8fafc"},
-  FREE:   {label:"Free ride",color:"#6366f1",bg:"#eef2ff"},
-  HOLIDAY:{label:"Holiday",color:"#0ea5e9",bg:"#f0f9ff"},
-  SICK:   {label:"Sick",color:"#be185d",bg:"#fdf2f8"},
-  TEST:   {label:"Test",color:"#7c3aed",bg:"#faf5ff"},
+  Z2:     {label:"Zone 2",color:"#22c55e",bg:"transparent"},
+  TEMPO:  {label:"Tempo",color:"#f59e0b",bg:"transparent"},
+  SS:     {label:"Sweet Spot",color:"#ef4444",bg:"transparent"},
+  STRENGTH:{label:"Strength",color:"#a78bfa",bg:"transparent"},
+  RECOVERY:{label:"Recovery",color:"#888888",bg:"transparent"},
+  REST:   {label:"Rest",color:"#555555",bg:"transparent"},
+  FREE:   {label:"Free ride",color:"#818cf8",bg:"transparent"},
+  HOLIDAY:{label:"Holiday",color:"#38bdf8",bg:"transparent"},
+  SICK:   {label:"Sick",color:"#f472b6",bg:"transparent"},
+  TEST:   {label:"Test",color:"#c084fc",bg:"transparent"},
 };
 
 // ─── State helpers ────────────────────────────────────────────────────────────
@@ -787,7 +789,7 @@ function ProgressTab({ftp,stravaData,todayIdx}){
         <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6}}>
           {[
             {name:"Foundation",weeks:"1–3",color:"#22c55e",done:weekNum>3},
-            {name:"Load",weeks:"4–6",color:"#3b82f6",done:weekNum>6},
+            {name:"Load",weeks:"4–6",color:"#888888",done:weekNum>6},
             {name:"Progressive",weeks:"7–9",color:"#8b5cf6",done:weekNum>9},
             {name:"Peak",weeks:"10–12",color:"#ea580c",done:weekNum>=12},
           ].map(p=>(
@@ -826,7 +828,7 @@ function PinLock({onUnlock}){
       </div>
       <div style={{display:"flex",gap:14,marginBottom:32,transition:err?"transform .05s":"none",transform:err?"translateX(8px)":"none"}}>
         {[0,1,2,3].map(i=>(
-          <div key={i} style={{width:16,height:16,borderRadius:"50%",background:val.length>i?"#3b82f6":"#1e293b",border:"2px solid",borderColor:val.length>i?"#3b82f6":"#334155",transition:"background .1s"}}/>
+          <div key={i} style={{width:16,height:16,borderRadius:"50%",background:val.length>i?"var(--text-primary)":"var(--bg-input)",border:"2px solid",borderColor:val.length>i?"var(--text-primary)":"var(--border)",transition:"background .1s"}}/>
         ))}
       </div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(3,80px)",gap:10}}>
@@ -1474,9 +1476,9 @@ function App(){
                           onDragOver={e=>{if(isDragTarget)e.preventDefault();}}
                           onDrop={e=>{e.preventDefault();handleDrop(idx);}}
                           onClick={()=>handleCalendarClick(idx)}
-                          style={{background:isDragging?"#1e40af":isToday?"#0f172a":isBStart?"#dbeafe":isDragTarget?"#dbeafe":st.bg,border:isDragging?"2px solid #3b82f6":isToday?"2px solid #0f172a":isSel?"2px solid #64748b":isBStart?"2px solid #3b82f6":isDragTarget?"2px dashed #3b82f6":`1px solid ${st.color}20`,borderRadius:8,padding:"5px 2px",cursor:blockMode?"crosshair":"grab",textAlign:"center",opacity:isPast&&!isToday?.5:1,transition:"all .15s"}}>
-                          <div style={{fontSize:8,color:isToday||isDragging?"#64748b":"var(--text-faint)",marginBottom:1}}>{DAY_NAMES[d]}</div>
-                          <div style={{fontSize:10,fontWeight:800,color:isDragging?"#bfdbfe":isToday?"#f8fafc":isPast?"var(--text-faint)":st.color}}>{lbl}</div>
+                          style={{background:isDragging?"#333333":isToday?"var(--text-primary)":isBStart?"var(--bg-input)":isDragTarget?"var(--bg-input)":st.bg,border:isDragging?"2px solid var(--text-primary)":isToday?"2px solid var(--text-primary)":isSel?"2px solid var(--border-strong)":isBStart?"2px solid var(--border-strong)":isDragTarget?"2px dashed var(--border-strong)":`1px solid ${st.color}20`,borderRadius:8,padding:"5px 2px",cursor:blockMode?"crosshair":"grab",textAlign:"center",opacity:isPast&&!isToday?.5:1,transition:"all .15s"}}>
+                          <div style={{fontSize:8,color:isToday||isDragging?"var(--text-faint)":"var(--text-faint)",marginBottom:1}}>{DAY_NAMES[d]}</div>
+                          <div style={{fontSize:10,fontWeight:800,color:isDragging?"var(--text-primary)":isToday?"var(--bg-page)":isPast?"var(--text-faint)":st.color}}>{lbl}</div>
                           <div style={{fontSize:7,color:isToday||isDragging?"#475569":"var(--text-faint)",marginTop:1}}>{pd.getDate()}</div>
                         </button>
                       );
