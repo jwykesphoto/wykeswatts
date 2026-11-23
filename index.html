@@ -13,69 +13,71 @@
 <link rel="apple-touch-icon" href="/icons/icon-192.png"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>@font-face{font-family:'Geist';src:url('https://cdn.jsdelivr.net/npm/geist@1.3.1/dist/fonts/geist-sans/Geist-Light.woff2') format('woff2');font-weight:300;font-style:normal;font-display:swap}@font-face{font-family:'Geist';src:url('https://cdn.jsdelivr.net/npm/geist@1.3.1/dist/fonts/geist-sans/Geist-Regular.woff2') format('woff2');font-weight:400;font-style:normal;font-display:swap}@font-face{font-family:'Geist';src:url('https://cdn.jsdelivr.net/npm/geist@1.3.1/dist/fonts/geist-sans/Geist-Medium.woff2') format('woff2');font-weight:500;font-style:normal;font-display:swap}@font-face{font-family:'Geist';src:url('https://cdn.jsdelivr.net/npm/geist@1.3.1/dist/fonts/geist-sans/Geist-SemiBold.woff2') format('woff2');font-weight:600;font-style:normal;font-display:swap}@font-face{font-family:'Geist';src:url('https://cdn.jsdelivr.net/npm/geist@1.3.1/dist/fonts/geist-sans/Geist-Bold.woff2') format('woff2');font-weight:700;font-style:normal;font-display:swap}@font-face{font-family:'Geist';src:url('https://cdn.jsdelivr.net/npm/geist@1.3.1/dist/fonts/geist-sans/Geist-Black.woff2') format('woff2');font-weight:900;font-style:normal;font-display:swap}</style>
 <style>
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
   :root{
-    --font: 'Inter', system-ui, -apple-system, sans-serif;
-    --bg-page: #f8fafc;
+    --font: 'Geist', system-ui, -apple-system, sans-serif;
+    --bg-page: #f5f5f5;
     --bg-card: #ffffff;
-    --bg-input: #f1f5f9;
+    --bg-input: #efefef;
     --bg-elevated: #ffffff;
-    --border: #e2e8f0;
-    --border-strong: #cbd5e1;
-    --divider: #f1f5f9;
-    --text-primary: #0f172a;
-    --text-secondary: #334155;
-    --text-muted: #64748b;
-    --text-faint: #94a3b8;
-    --hdr-bg: #0f172a;
-    --hdr-border: #1e293b;
-    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-    --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
-    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --border: #e0e0e0;
+    --border-strong: #c8c8c8;
+    --divider: #efefef;
+    --text-primary: #0a0a0a;
+    --text-secondary: #333333;
+    --text-muted: #666666;
+    --text-faint: #999999;
+    --hdr-bg: #0a0a0a;
+    --hdr-border: #1a1a1a;
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.06);
+    --shadow: 0 1px 4px 0 rgb(0 0 0 / 0.08), 0 1px 2px -1px rgb(0 0 0 / 0.06);
+    --shadow-md: 0 4px 12px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.06);
     --radius: 12px;
     --radius-sm: 8px;
-    --accent: #3b82f6;
+    --accent: #0a0a0a;
     --accent-green: #16a34a;
     --accent-orange: #ea580c;
     --accent-red: #dc2626;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-      --bg-page: #0f172a;
-      --bg-card: #1e293b;
-      --bg-input: #0f172a;
-      --bg-elevated: #1e293b;
-      --border: #334155;
-      --border-strong: #475569;
-      --divider: #1e293b;
-      --text-primary: #f8fafc;
-      --text-secondary: #e2e8f0;
-      --text-muted: #94a3b8;
-      --text-faint: #64748b;
-      --hdr-bg: #020617;
-      --hdr-border: #1e293b;
+      --bg-page: #0a0a0a;
+      --bg-card: #141414;
+      --bg-input: #1a1a1a;
+      --bg-elevated: #1a1a1a;
+      --border: #2a2a2a;
+      --border-strong: #3a3a3a;
+      --divider: #1a1a1a;
+      --text-primary: #f5f5f5;
+      --text-secondary: #d0d0d0;
+      --text-muted: #888888;
+      --text-faint: #555555;
+      --hdr-bg: #000000;
+      --hdr-border: #1a1a1a;
+      --accent: #f5f5f5;
     }
   }
   :root[data-theme="dark"] {
-    --bg-page: #0f172a;
-    --bg-card: #1e293b;
-    --bg-input: #0f172a;
-    --bg-elevated: #1e293b;
-    --border: #334155;
-    --border-strong: #475569;
-    --divider: #1e293b;
-    --text-primary: #f8fafc;
-    --text-secondary: #e2e8f0;
-    --text-muted: #94a3b8;
-    --text-faint: #64748b;
-    --hdr-bg: #020617;
-    --hdr-border: #1e293b;
+    --bg-page: #0a0a0a;
+    --bg-card: #141414;
+    --bg-input: #1a1a1a;
+    --bg-elevated: #1a1a1a;
+    --border: #2a2a2a;
+    --border-strong: #3a3a3a;
+    --divider: #1a1a1a;
+    --text-primary: #f5f5f5;
+    --text-secondary: #d0d0d0;
+    --text-muted: #888888;
+    --text-faint: #555555;
+    --hdr-bg: #000000;
+    --hdr-border: #1a1a1a;
+    --accent: #f5f5f5;
   }
   html,body{height:100%;font-family:var(--font);background:var(--bg-page);color:var(--text-primary);-webkit-font-smoothing:antialiased}
-  input[type=range]{width:100%;height:4px;border-radius:4px;appearance:none;-webkit-appearance:none;background:#e2e8f0;outline:none}
-  input[type=range]::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:#0f172a;cursor:pointer;box-shadow:0 2px 4px rgb(0 0 0/0.2)}
+  input[type=range]{width:100%;height:4px;border-radius:4px;appearance:none;-webkit-appearance:none;background:var(--border);outline:none}
+  input[type=range]::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:var(--text-primary);cursor:pointer;box-shadow:0 2px 4px rgb(0 0 0/0.2)}
   button{font-family:var(--font);cursor:pointer}
   ::-webkit-scrollbar{width:4px}
   ::-webkit-scrollbar-track{background:transparent}
@@ -110,14 +112,16 @@ const ivLabel=(iv,ftp)=>iv.ramp?`${calcW(iv.ramp[0],ftp)}–${calcW(iv.ramp[1],f
 
 // ─── Session Types ────────────────────────────────────────────────────────────
 const SESSION_TYPES={
-  Z2:     {label:"Zone 2",color:"#22c55e",bg:"#f0fdf4"},
-  STRENGTH:{label:"Strength",color:"#8b5cf6",bg:"#f5f3ff"},
-  RECOVERY:{label:"Recovery",color:"#64748b",bg:"#f8fafc"},
-  REST:   {label:"Rest",color:"#94a3b8",bg:"#f8fafc"},
-  FREE:   {label:"Free ride",color:"#6366f1",bg:"#eef2ff"},
-  HOLIDAY:{label:"Holiday",color:"#0ea5e9",bg:"#f0f9ff"},
-  SICK:   {label:"Sick",color:"#be185d",bg:"#fdf2f8"},
-  TEST:   {label:"Test",color:"#7c3aed",bg:"#faf5ff"},
+  Z2:     {label:"Zone 2",color:"#22c55e",bg:"transparent"},
+  TEMPO:  {label:"Tempo",color:"#f59e0b",bg:"transparent"},
+  SS:     {label:"Sweet Spot",color:"#ef4444",bg:"transparent"},
+  STRENGTH:{label:"Strength",color:"#a78bfa",bg:"transparent"},
+  RECOVERY:{label:"Recovery",color:"#888888",bg:"transparent"},
+  REST:   {label:"Rest",color:"#555555",bg:"transparent"},
+  FREE:   {label:"Free ride",color:"#818cf8",bg:"transparent"},
+  HOLIDAY:{label:"Holiday",color:"#38bdf8",bg:"transparent"},
+  SICK:   {label:"Sick",color:"#f472b6",bg:"transparent"},
+  TEST:   {label:"Test",color:"#c084fc",bg:"transparent"},
 };
 
 // ─── State helpers ────────────────────────────────────────────────────────────
@@ -240,14 +244,169 @@ function getStrengthSession(weekNum){
   return STRENGTH_SESSIONS.STR_PEAK;
 }
 
-// ─── Cycling Workouts ─────────────────────────────────────────────────────────
+// ─── Cycling Workouts (defined after all variant objects) ────────────────────
 // Merge strength sessions into WORKOUTS lookup so they resolve correctly
 const STRENGTH_WORKOUT_MAP=Object.fromEntries(
   Object.values(STRENGTH_SESSIONS).map(s=>[s.id,s])
 );
 
+// ─── Tempo Variants ───────────────────────────────────────────────────────────
+const TEMPO_VARIANTS={
+  TEMPO_BLOCKS:{
+    id:"TEMPO_BLOCKS",name:"Tempo — Blocks",type:"TEMPO",duration:60,tss:68,
+    description:"Classic tempo: two long sustained blocks at 80–85% FTP. Builds lactate threshold tolerance. Breathing should be controlled but clearly elevated — you can speak in short sentences.",
+    intervals:[
+      {label:"Warm-up",ramp:[30,65],dur:10},
+      {label:"Tempo block 1",pct:82,dur:20},
+      {label:"Easy spin",pct:55,dur:5},
+      {label:"Tempo block 2",pct:82,dur:20},
+      {label:"Cool-down",ramp:[65,40],dur:5},
+    ]
+  },
+  TEMPO_PYRAMID:{
+    id:"TEMPO_PYRAMID",name:"Tempo — Pyramid",type:"TEMPO",duration:65,tss:70,
+    description:"Pyramid structure: intervals build to a 20-min peak then come back down. Psychologically easier than two flat 20s — the first half feels manageable, the second half you're already on the way home.",
+    intervals:[
+      {label:"Warm-up",ramp:[30,65],dur:10},
+      {label:"Tempo 10 min",pct:80,dur:10},
+      {label:"Easy",pct:55,dur:3},
+      {label:"Tempo 15 min",pct:82,dur:15},
+      {label:"Easy",pct:55,dur:3},
+      {label:"Tempo 20 min",pct:84,dur:20},
+      {label:"Cool-down",ramp:[65,40],dur:4},
+    ]
+  },
+  TEMPO_CRUISE:{
+    id:"TEMPO_CRUISE",name:"Tempo — Cruise Intervals",type:"TEMPO",duration:60,tss:72,
+    description:"Four shorter tempo blocks at the top of the zone. Higher density than the classic 2×20 — the shorter recoveries keep your heart rate elevated throughout. Good mid-block progression.",
+    intervals:[
+      {label:"Warm-up",ramp:[30,65],dur:10},
+      {label:"Tempo cruise 1",pct:86,dur:10},
+      {label:"Easy",pct:55,dur:3},
+      {label:"Tempo cruise 2",pct:86,dur:10},
+      {label:"Easy",pct:55,dur:3},
+      {label:"Tempo cruise 3",pct:87,dur:10},
+      {label:"Easy",pct:55,dur:3},
+      {label:"Tempo cruise 4",pct:88,dur:10},
+      {label:"Cool-down",ramp:[65,40],dur:1},
+    ]
+  },
+  TEMPO_OVER_UNDER_SOFT:{
+    id:"TEMPO_OVER_UNDER_SOFT",name:"Tempo — Over-Unders (soft)",type:"TEMPO",duration:65,tss:74,
+    description:"Three 15-min blocks alternating 2 min at 88% and 1 min at 98% FTP. The 'over' pushes you into slight lactate debt; the 'under' forces you to clear it without fully recovering. Harder than it looks on paper.",
+    intervals:[
+      {label:"Warm-up",ramp:[30,65],dur:10},
+      {label:"Under 88%",pct:88,dur:2},{label:"Over 98%",pct:98,dur:1},{label:"Under 88%",pct:88,dur:2},{label:"Over 98%",pct:98,dur:1},{label:"Under 88%",pct:88,dur:2},{label:"Over 98%",pct:98,dur:1},{label:"Under 88%",pct:88,dur:2},{label:"Over 98%",pct:98,dur:1},{label:"Under 88%",pct:88,dur:2},{label:"Over 98%",pct:98,dur:1},
+      {label:"Easy",pct:55,dur:5},
+      {label:"Under 88%",pct:88,dur:2},{label:"Over 98%",pct:98,dur:1},{label:"Under 88%",pct:88,dur:2},{label:"Over 98%",pct:98,dur:1},{label:"Under 88%",pct:88,dur:2},{label:"Over 98%",pct:98,dur:1},{label:"Under 88%",pct:88,dur:2},{label:"Over 98%",pct:98,dur:1},{label:"Under 88%",pct:88,dur:2},{label:"Over 98%",pct:98,dur:1},
+      {label:"Easy",pct:55,dur:5},
+      {label:"Under 88%",pct:88,dur:2},{label:"Over 98%",pct:98,dur:1},{label:"Under 88%",pct:88,dur:2},{label:"Over 98%",pct:98,dur:1},{label:"Under 88%",pct:88,dur:2},{label:"Over 98%",pct:98,dur:1},{label:"Under 88%",pct:88,dur:2},{label:"Over 98%",pct:98,dur:1},{label:"Under 88%",pct:88,dur:2},{label:"Over 98%",pct:98,dur:1},
+      {label:"Cool-down",ramp:[65,40],dur:5},
+    ]
+  },
+  TEMPO_EXTENDED:{
+    id:"TEMPO_EXTENDED",name:"Tempo — Extended",type:"TEMPO",duration:70,tss:80,
+    description:"One long sustained tempo block at 80–83% FTP. No interval structure — just hold the power and manage the discomfort. Mental durability is as much the goal as physiological adaptation.",
+    intervals:[
+      {label:"Warm-up",ramp:[30,65],dur:10},
+      {label:"Extended tempo",pct:81,dur:50},
+      {label:"Cool-down",ramp:[65,40],dur:10},
+    ]
+  },
+};
+
+// ─── Sweet Spot Variants ──────────────────────────────────────────────────────
+const SS_VARIANTS={
+  SS_CLASSIC:{
+    id:"SS_CLASSIC",name:"Sweet Spot — Classic",type:"SS",duration:60,tss:76,
+    description:"The reference sweet spot workout: 2×20 min at 90% FTP. Best return on investment in cycling training. Hard enough to build FTP, easy enough to repeat weekly. Cadence 85–90rpm.",
+    intervals:[
+      {label:"Warm-up",ramp:[30,65],dur:10},
+      {label:"Sweet spot 1",pct:90,dur:20},
+      {label:"Easy spin",pct:55,dur:5},
+      {label:"Sweet spot 2",pct:90,dur:20},
+      {label:"Cool-down",ramp:[65,40],dur:5},
+    ]
+  },
+  SS_PROGRESSION:{
+    id:"SS_PROGRESSION",name:"Sweet Spot — Progression",type:"SS",duration:65,tss:78,
+    description:"Three 15-min blocks at 88–92% FTP, each slightly harder than the last. Same total volume as 2×20 but broken into three chunks — more manageable, still a serious stimulus.",
+    intervals:[
+      {label:"Warm-up",ramp:[30,65],dur:10},
+      {label:"Sweet spot 1",pct:88,dur:15},
+      {label:"Easy",pct:55,dur:5},
+      {label:"Sweet spot 2",pct:90,dur:15},
+      {label:"Easy",pct:55,dur:5},
+      {label:"Sweet spot 3",pct:92,dur:15},
+      {label:"Cool-down",ramp:[65,40],dur:0},
+    ]
+  },
+  SS_LADDER:{
+    id:"SS_LADDER",name:"Sweet Spot — Ladder",type:"SS",duration:65,tss:80,
+    description:"Ascending ladder: 10–15–20 min at 90% FTP, 5 min easy between. Each effort is longer than the last — your legs are more fatigued going into the hardest one. Builds mental toughness.",
+    intervals:[
+      {label:"Warm-up",ramp:[30,65],dur:10},
+      {label:"Sweet spot 10 min",pct:90,dur:10},
+      {label:"Easy",pct:55,dur:5},
+      {label:"Sweet spot 15 min",pct:90,dur:15},
+      {label:"Easy",pct:55,dur:5},
+      {label:"Sweet spot 20 min",pct:90,dur:20},
+      {label:"Cool-down",ramp:[65,40],dur:0},
+    ]
+  },
+  SS_OVER_UNDERS:{
+    id:"SS_OVER_UNDERS",name:"Sweet Spot — Over-Unders",type:"SS",duration:65,tss:84,
+    description:"Three 15-min blocks alternating 2 min at 95% and 1 min at 105% FTP. The over forces lactate accumulation; the under demands clearance while still working. Similar to TrainerRoad's Palisade or Carpathian Peak.",
+    intervals:[
+      {label:"Warm-up",ramp:[30,65],dur:10},
+      {label:"Under 95%",pct:95,dur:2},{label:"Over 105%",pct:105,dur:1},{label:"Under 95%",pct:95,dur:2},{label:"Over 105%",pct:105,dur:1},{label:"Under 95%",pct:95,dur:2},{label:"Over 105%",pct:105,dur:1},{label:"Under 95%",pct:95,dur:2},{label:"Over 105%",pct:105,dur:1},{label:"Under 95%",pct:95,dur:2},{label:"Over 105%",pct:105,dur:1},
+      {label:"Easy",pct:55,dur:5},
+      {label:"Under 95%",pct:95,dur:2},{label:"Over 105%",pct:105,dur:1},{label:"Under 95%",pct:95,dur:2},{label:"Over 105%",pct:105,dur:1},{label:"Under 95%",pct:95,dur:2},{label:"Over 105%",pct:105,dur:1},{label:"Under 95%",pct:95,dur:2},{label:"Over 105%",pct:105,dur:1},{label:"Under 95%",pct:95,dur:2},{label:"Over 105%",pct:105,dur:1},
+      {label:"Easy",pct:55,dur:5},
+      {label:"Under 95%",pct:95,dur:2},{label:"Over 105%",pct:105,dur:1},{label:"Under 95%",pct:95,dur:2},{label:"Over 105%",pct:105,dur:1},{label:"Under 95%",pct:95,dur:2},{label:"Over 105%",pct:105,dur:1},{label:"Under 95%",pct:95,dur:2},{label:"Over 105%",pct:105,dur:1},{label:"Under 95%",pct:95,dur:2},{label:"Over 105%",pct:105,dur:1},
+      {label:"Cool-down",ramp:[65,40],dur:5},
+    ]
+  },
+  SS_BURSTS:{
+    id:"SS_BURSTS",name:"Sweet Spot — Bursts",type:"SS",duration:65,tss:82,
+    description:"2×20 min at 88% FTP with a 10-second neuromuscular burst at 130% every 5 minutes. The base trains your aerobic system; the bursts keep fast-twitch fibres active. Similar to TrainerRoad's Tallac +1.",
+    intervals:[
+      {label:"Warm-up",ramp:[30,65],dur:10},
+      {label:"Sweet spot",pct:88,dur:5},{label:"Burst",pct:130,dur:0.17},{label:"Sweet spot",pct:88,dur:4.83},{label:"Burst",pct:130,dur:0.17},{label:"Sweet spot",pct:88,dur:4.83},{label:"Burst",pct:130,dur:0.17},{label:"Sweet spot",pct:88,dur:4.83},
+      {label:"Easy",pct:55,dur:5},
+      {label:"Sweet spot",pct:88,dur:5},{label:"Burst",pct:130,dur:0.17},{label:"Sweet spot",pct:88,dur:4.83},{label:"Burst",pct:130,dur:0.17},{label:"Sweet spot",pct:88,dur:4.83},{label:"Burst",pct:130,dur:0.17},{label:"Sweet spot",pct:88,dur:4.83},
+      {label:"Cool-down",ramp:[65,40],dur:5},
+    ]
+  },
+  SS_THRESHOLD:{
+    id:"SS_THRESHOLD",name:"Threshold Approach",type:"SS",duration:65,tss:88,
+    description:"Three 10-min blocks at 95–100% FTP. Bridges sweet spot toward proper FTP work — reserved for weeks 10–12 when you've built sufficient base. This is the hardest structured session in the block.",
+    intervals:[
+      {label:"Warm-up",ramp:[30,65],dur:10},
+      {label:"Threshold 1",pct:97,dur:10},
+      {label:"Easy",pct:55,dur:5},
+      {label:"Threshold 2",pct:98,dur:10},
+      {label:"Easy",pct:55,dur:5},
+      {label:"Threshold 3",pct:100,dur:10},
+      {label:"Cool-down",ramp:[65,40],dur:15},
+    ]
+  },
+};
+
+// Week-by-week assignment: progressive overload across the block
+// Wks 1–3: establish the pattern (classic variants)
+// Wks 4–6: more volume / density
+// Wks 7–9: quality up (over-unders, bursts)
+// Wks 10–11: peak phase (threshold approach)
+// Wk 12: test week — taper
+const TEMPO_BY_WEEK=["TEMPO_BLOCKS","TEMPO_BLOCKS","TEMPO_PYRAMID","RECOVERY","TEMPO_CRUISE","TEMPO_CRUISE","TEMPO_OVER_UNDER_SOFT","RECOVERY","TEMPO_EXTENDED","TEMPO_EXTENDED","TEMPO_BLOCKS","Z2_STEADY_60"];
+const SS_BY_WEEK=["SS_CLASSIC","SS_PROGRESSION","SS_LADDER","RECOVERY","SS_CLASSIC","SS_OVER_UNDERS","SS_BURSTS","RECOVERY","SS_OVER_UNDERS","SS_THRESHOLD","SS_THRESHOLD","Z2_STEADY_60"];
+
+// ─── Combined WORKOUTS lookup (all variants now defined) ──────────────────────
 const WORKOUTS={
   ...Z2_VARIANTS,
+  ...TEMPO_VARIANTS,
+  ...SS_VARIANTS,
   ...STRENGTH_WORKOUT_MAP,
   RECOVERY:{
     id:"RECOVERY",name:"Active Recovery",type:"RECOVERY",duration:30,tss:12,
@@ -271,37 +430,35 @@ const WORKOUTS={
   },
 };
 
-// ─── Base Plan — 12-week Zone 2 + Strength, no VO2/threshold/peak ────────────
-// Structure per week:
-// Mon: Z2 60 | Tue: Strength | Wed: Z2 90 | Thu: Strength | Fri: Z2 60 | Sat: Free (outdoor) | Sun: Rest
-// Recovery weeks (4 & 8): volume -30%, no 90-min sessions
-// Week 12: FTP test midweek, taper around it
+// ─── Base Plan — 12-week: Mon=Z2 | Tue=Strength | Wed=Tempo | Thu=Strength | Fri=Sweet Spot ──
+// Recovery weeks (4 & 8): all cycling → RECOVERY spin
+// Week 12: FTP test Wed, taper around it
 
 const buildPlan=(overrides={})=>{
   const plan=[];
-  const z2_60=Z2_60_IDS;
-  const z2_90=Z2_90_IDS;
-  let z60i=0, z90i=0;
+  let z60i=0;
 
   for(let wk=0;wk<12;wk++){
     const weekNum=wk+1;
     const isRecovery=weekNum===4||weekNum===8;
     const isTestWeek=weekNum===12;
     const strSession=getStrengthSession(weekNum);
+    const tempoId=TEMPO_BY_WEEK[wk];
+    const ssId=SS_BY_WEEK[wk];
 
     // Days: 0=Mon 1=Tue 2=Wed 3=Thu 4=Fri 5=Sat 6=Sun
     const week=[
-      isRecovery ? "RECOVERY" : z2_60[z60i%4],                  // Mon: Z2 60 (recovery spin in recovery week)
-      isTestWeek ? "Z2_STEADY_60" : strSession.id,               // Tue: Strength (or easy Z2 in test week)
-      isTestWeek ? "FTP_TEST" : (isRecovery ? "Z2_STEADY_60" : z2_90[z90i%2]), // Wed: Z2 90 (FTP test in week 12, Z2 60 in recovery)
-      isTestWeek ? "RECOVERY" : (isRecovery ? "RECOVERY" : strSession.id), // Thu: Strength (recovery in recovery/test weeks)
-      isRecovery ? "RECOVERY" : z2_60[(z60i+2)%4],              // Fri: Z2 60 (recovery in recovery week)
-      "FREE",                                                     // Sat: Free outdoor ride
-      "REST",                                                     // Sun: Rest
+      isRecovery ? "RECOVERY" : Z2_60_IDS[z60i%4],               // Mon: Z2 60
+      isTestWeek ? "Z2_STEADY_60" : strSession.id,                // Tue: Strength (easy Z2 in test week)
+      isTestWeek ? "FTP_TEST" : (isRecovery ? "RECOVERY" : tempoId), // Wed: Tempo (FTP test wk 12, recovery spin in recovery wk)
+      isTestWeek ? "RECOVERY" : (isRecovery ? "RECOVERY" : strSession.id), // Thu: Strength
+      isTestWeek ? "RECOVERY" : (isRecovery ? "RECOVERY" : ssId), // Fri: Sweet Spot
+      "FREE",                                                      // Sat: Free outdoor ride
+      "REST",                                                      // Sun: Rest
     ];
 
-    // Increment rotation counters
-    if(!isRecovery&&!isTestWeek){ z60i++; z90i++; }
+    // Increment Z2 rotation counter on active weeks
+    if(!isRecovery&&!isTestWeek){ z60i++; }
 
     for(let d=0;d<7;d++){
       const idx=wk*7+d;
@@ -326,6 +483,8 @@ function adjustForReadiness(wId,readiness,restingHR,legsScore,tsb){
   const w=WORKOUTS[wId];
   const isZ2=w&&w.type==="Z2";
   const isStr=w&&w.type==="STRENGTH";
+  const isTempo=w&&w.type==="TEMPO";
+  const isSS=w&&w.type==="SS";
 
   // REST and FREE days are never overridden by readiness
   if(wId==="REST"||wId==="FREE") return {id:wId,note:null,adjusted:false,eff,strMod:null};
@@ -338,6 +497,8 @@ function adjustForReadiness(wId,readiness,restingHR,legsScore,tsb){
       return {id:changed?lighter:wId,note:changed?"Readiness slightly reduced — switching to 60-min Z2.":null,adjusted:changed,eff,strMod:null};
     }
     if(isStr) return {id:wId,note:"Readiness slightly reduced — take extra rest between sets and drop RPE by 1 if needed.",adjusted:false,eff,strMod:"easy"};
+    // Tempo/SS: slight dip — keep the session but note it
+    if(isTempo||isSS) return {id:wId,note:"Readiness slightly reduced — start the session and assess after the warm-up. Bail to Zone 2 if it doesn't feel right.",adjusted:false,eff,strMod:null};
     return {id:wId,note:null,adjusted:false,eff,strMod:null};
   }
   if(eff>=50){
@@ -346,6 +507,8 @@ function adjustForReadiness(wId,readiness,restingHR,legsScore,tsb){
       const lighter=Z2_60_IDS[0];
       return {id:lighter,note:"Moderate readiness — keeping it to 60 min Zone 2.",adjusted:wId!==lighter,eff,strMod:null};
     }
+    // Tempo/SS: moderate dip — step down to Z2
+    if(isTempo||isSS) return {id:"Z2_STEADY_60",note:`Moderate readiness — stepping down from ${w.name} to Zone 2 today. The harder work will be here when you're fresh.`,adjusted:true,eff,strMod:null};
     return {id:"Z2_STEADY_60",note:"Stepped down to Zone 2 today.",adjusted:true,eff,strMod:null};
   }
   if(eff>=35){
@@ -461,53 +624,6 @@ function StrengthCard({session,weekNum,shortenPct,setShortenPct,strMod}){
         📋 Open Full Strength Plan
       </a>
 
-      {/* Short on time */}
-      <div style={{marginBottom:14}}>
-        <div style={{fontSize:13,fontWeight:600,color:"var(--text-secondary)",marginBottom:8}}>Short on time?</div>
-        <div style={{display:"flex",gap:6}}>
-          {pctOptions.map(p=>(
-            <button key={String(p)} onClick={()=>setShortenPct(p)}
-              style={{flex:1,padding:"9px 4px",borderRadius:8,border:shortenPct===p?"2px solid #0f172a":"1px solid var(--border)",background:shortenPct===p?"#0f172a":"var(--bg-input)",color:shortenPct===p?"#f8fafc":"var(--text-secondary)",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit",lineHeight:1.4,transition:"all .15s"}}>
-              <div>{pctLabel[p]}</div>
-              <div style={{fontSize:10,fontWeight:400,opacity:.8}}>{p===null?session.exercises.length:Math.max(1,Math.round(session.exercises.length*p))} exercises</div>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <button onClick={()=>setExpanded(!expanded)}
-        style={{width:"100%",padding:"10px",borderRadius:8,border:"1px solid var(--border)",background:"var(--bg-input)",color:"var(--text-secondary)",fontSize:13,fontWeight:600,display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:expanded?12:0}}>
-        <span>Exercises ({shortenPct===null||shortenPct===undefined?session.exercises.length:Math.max(1,Math.round(session.exercises.length*shortenPct))})</span>
-        <span>{expanded?"▲":"▼"}</span>
-      </button>
-
-      {expanded&&(
-        <div>
-          {session.exercises
-            .slice(0,shortenPct===null||shortenPct===undefined?undefined:Math.max(1,Math.round(session.exercises.length*shortenPct)))
-            .map((ex,i,arr)=>(
-            <div key={i} style={{padding:"12px 0",borderBottom:i<arr.length-1?"1px solid var(--divider)":"none"}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:4}}>
-                <span style={{fontSize:15,fontWeight:700,color:"var(--text-primary)",flex:1}}>{ex.name}</span>
-                <div style={{display:"flex",gap:6,flexShrink:0,marginLeft:8,alignItems:"center",flexWrap:"wrap",justifyContent:"flex-end"}}>
-                  <span style={{fontSize:12,fontWeight:600,color:"#8b5cf6",background:"#f5f3ff",padding:"2px 8px",borderRadius:20}}>
-                    {strMod==="reduced"?shortenSets(ex.sets,0.67):strMod==="warmup"?shortenSets(ex.sets,0.5):ex.sets}
-                  </span>
-                  <span style={{fontSize:12,fontWeight:600,color:"#64748b",background:"var(--bg-input)",padding:"2px 8px",borderRadius:20}}>{ex.rpe}</span>
-                  {ex.video&&<a href={ex.video} target="_blank" rel="noopener noreferrer"
-                    style={{fontSize:11,fontWeight:600,color:"#ef4444",background:"#fff1f2",padding:"2px 8px",borderRadius:20,textDecoration:"none",display:"inline-flex",alignItems:"center",gap:3}}>
-                    ▶ Video
-                  </a>}
-                </div>
-              </div>
-              <p style={{fontSize:13,color:"var(--text-muted)",lineHeight:1.6}}>{ex.cue}</p>
-            </div>
-          ))}
-          <div style={{marginTop:12,padding:"10px 14px",background:"#f5f3ff",border:"1px solid #8b5cf630",borderRadius:8,fontSize:12,color:"#6d28d9",lineHeight:1.6}}>
-            💡 <strong>Weight guidance:</strong> Choose a weight where the last 2 reps of each set feel genuinely hard but your form holds. If it feels easy, go heavier. If your form breaks before the last rep, drop the weight. Track your weights and aim to increase them between sets of the same exercise each week.
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -673,7 +789,7 @@ function ProgressTab({ftp,stravaData,todayIdx}){
         <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6}}>
           {[
             {name:"Foundation",weeks:"1–3",color:"#22c55e",done:weekNum>3},
-            {name:"Load",weeks:"4–6",color:"#3b82f6",done:weekNum>6},
+            {name:"Load",weeks:"4–6",color:"#888888",done:weekNum>6},
             {name:"Progressive",weeks:"7–9",color:"#8b5cf6",done:weekNum>9},
             {name:"Peak",weeks:"10–12",color:"#ea580c",done:weekNum>=12},
           ].map(p=>(
@@ -712,7 +828,7 @@ function PinLock({onUnlock}){
       </div>
       <div style={{display:"flex",gap:14,marginBottom:32,transition:err?"transform .05s":"none",transform:err?"translateX(8px)":"none"}}>
         {[0,1,2,3].map(i=>(
-          <div key={i} style={{width:16,height:16,borderRadius:"50%",background:val.length>i?"#3b82f6":"#1e293b",border:"2px solid",borderColor:val.length>i?"#3b82f6":"#334155",transition:"background .1s"}}/>
+          <div key={i} style={{width:16,height:16,borderRadius:"50%",background:val.length>i?"var(--text-primary)":"var(--bg-input)",border:"2px solid",borderColor:val.length>i?"var(--text-primary)":"var(--border)",transition:"background .1s"}}/>
         ))}
       </div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(3,80px)",gap:10}}>
@@ -732,22 +848,6 @@ function PinLock({onUnlock}){
   );
 }
 
-// ─── Debug Panel (temporary) ──────────────────────────────────────────────────
-function DebugPanel({data}){
-  const [open,setOpen]=React.useState(false);
-  return(
-    <div style={{marginTop:10}}>
-      <div onClick={()=>setOpen(o=>!o)} style={{fontSize:11,color:"var(--text-faint)",cursor:"pointer",userSelect:"none"}}>
-        {open?"▾":"▸"} Debug: raw Garmin response
-      </div>
-      {open&&(
-        <pre style={{fontSize:9,color:"var(--text-faint)",overflowX:"auto",marginTop:6,padding:8,background:"var(--bg-input)",borderRadius:6,whiteSpace:"pre-wrap",wordBreak:"break-all"}}>
-          {JSON.stringify(data,null,2)}
-        </pre>
-      )}
-    </div>
-  );
-}
 
 // ─── Main App ─────────────────────────────────────────────────────────────────
 function App(){
@@ -1025,7 +1125,6 @@ function App(){
                       {label:"Body Battery",value:garminData.bodyBattery!=null?`${garminData.bodyBattery}%`:null},
                       {label:"Sleep score",value:garminData.sleepScore!=null?`${garminData.sleepScore}/100`:null},
                       {label:"Sleep",value:garminData.sleepDurationMin?`${Math.floor(garminData.sleepDurationMin/60)}h ${garminData.sleepDurationMin%60}m`:null},
-                      {label:"Stress",value:garminData.stress!=null?`${garminData.stress}/100`:null},
                     ].map(({label,value,sub})=>(
                       <div key={label} style={{background:"var(--bg-input)",border:"1px solid var(--border)",borderRadius:8,padding:"6px 8px",textAlign:"center"}}>
                         <div style={{fontSize:9,color:"var(--text-faint)",marginBottom:2}}>{label}</div>
@@ -1043,8 +1142,6 @@ function App(){
                       />
                     </div>
                   </div>
-                  {/* TEMP DEBUG — remove once Garmin fields confirmed */}
-                  {garminData.raw&&<DebugPanel data={garminData.raw}/>}
                 </>
               ):(
                 <>
@@ -1367,7 +1464,7 @@ function App(){
                       const isStr=STRENGTH_SESSIONS[wId];
                       const type=wId==="HOLIDAY"?"HOLIDAY":wId==="SICK"?"SICK":isStr?"STRENGTH":w?.type||"REST";
                       const st=SESSION_TYPES[type]||SESSION_TYPES.REST;
-                      const lbl=wId==="REST"?"–":wId==="RECOVERY"?"EZ":wId==="FREE"?"🚴":wId==="HOLIDAY"?"✈":wId==="SICK"?"🤒":STRENGTH_SESSIONS[wId]?"💪":wId.includes("90")||wId.includes("PYRAMID")?"Z2+":"Z2";
+                      const lbl=wId==="REST"?"–":wId==="RECOVERY"?"EZ":wId==="FREE"?"🚴":wId==="HOLIDAY"?"✈":wId==="SICK"?"🤒":STRENGTH_SESSIONS[wId]?"💪":TEMPO_VARIANTS[wId]?"T":SS_VARIANTS[wId]?"SS":wId.includes("90")||wId.includes("PYRAMID")?"Z2+":"Z2";
                       const pd=getPlanDate(idx);
                       const isDragTarget=dragFrom!==null&&dragFrom!==idx&&Math.floor(dragFrom/7)===Math.floor(idx/7);
                       const isDragging=dragFrom===idx;
@@ -1379,10 +1476,10 @@ function App(){
                           onDragOver={e=>{if(isDragTarget)e.preventDefault();}}
                           onDrop={e=>{e.preventDefault();handleDrop(idx);}}
                           onClick={()=>handleCalendarClick(idx)}
-                          style={{background:isDragging?"#1e40af":isToday?"#0f172a":isBStart?"#dbeafe":isDragTarget?"#dbeafe":st.bg,border:isDragging?"2px solid #3b82f6":isToday?"2px solid #0f172a":isSel?"2px solid #64748b":isBStart?"2px solid #3b82f6":isDragTarget?"2px dashed #3b82f6":`1px solid ${st.color}20`,borderRadius:8,padding:"5px 2px",cursor:blockMode?"crosshair":"grab",textAlign:"center",opacity:isPast&&!isToday?.5:1,transition:"all .15s"}}>
-                          <div style={{fontSize:8,color:isToday||isDragging?"#64748b":"var(--text-faint)",marginBottom:1}}>{DAY_NAMES[d]}</div>
-                          <div style={{fontSize:10,fontWeight:800,color:isDragging?"#bfdbfe":isToday?"#f8fafc":isPast?"var(--text-faint)":st.color}}>{lbl}</div>
-                          <div style={{fontSize:7,color:isToday||isDragging?"#475569":"var(--text-faint)",marginTop:1}}>{pd.getDate()}</div>
+                          style={{background:isDragging?"var(--bg-elevated)":isToday?"var(--text-primary)":isBStart?"var(--bg-elevated)":isDragTarget?"var(--bg-elevated)":"var(--bg-card)",border:isDragging?"2px solid var(--border-strong)":isToday?"2px solid var(--text-primary)":isSel?"2px solid var(--border-strong)":isBStart?"2px solid var(--border-strong)":isDragTarget?"2px dashed var(--border-strong)":`1px solid var(--border)`,borderRadius:8,padding:"5px 2px",cursor:blockMode?"crosshair":"grab",textAlign:"center",opacity:isPast&&!isToday?.5:1,transition:"all .15s"}}>
+                          <div style={{fontSize:8,color:"var(--text-faint)",marginBottom:1}}>{DAY_NAMES[d]}</div>
+                          <div style={{fontSize:10,fontWeight:800,color:isToday?"var(--bg-page)":isPast?"var(--text-faint)":st.color}}>{lbl}</div>
+                          <div style={{fontSize:7,color:"var(--text-faint)",marginTop:1}}>{pd.getDate()}</div>
                         </button>
                       );
                     })}
