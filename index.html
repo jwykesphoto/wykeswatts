@@ -240,14 +240,169 @@ function getStrengthSession(weekNum){
   return STRENGTH_SESSIONS.STR_PEAK;
 }
 
-// ─── Cycling Workouts ─────────────────────────────────────────────────────────
+// ─── Cycling Workouts (defined after all variant objects) ────────────────────
 // Merge strength sessions into WORKOUTS lookup so they resolve correctly
 const STRENGTH_WORKOUT_MAP=Object.fromEntries(
   Object.values(STRENGTH_SESSIONS).map(s=>[s.id,s])
 );
 
+// ─── Tempo Variants ───────────────────────────────────────────────────────────
+const TEMPO_VARIANTS={
+  TEMPO_BLOCKS:{
+    id:"TEMPO_BLOCKS",name:"Tempo — Blocks",type:"TEMPO",duration:60,tss:68,
+    description:"Classic tempo: two long sustained blocks at 80–85% FTP. Builds lactate threshold tolerance. Breathing should be controlled but clearly elevated — you can speak in short sentences.",
+    intervals:[
+      {label:"Warm-up",ramp:[30,65],dur:10},
+      {label:"Tempo block 1",pct:82,dur:20},
+      {label:"Easy spin",pct:55,dur:5},
+      {label:"Tempo block 2",pct:82,dur:20},
+      {label:"Cool-down",ramp:[65,40],dur:5},
+    ]
+  },
+  TEMPO_PYRAMID:{
+    id:"TEMPO_PYRAMID",name:"Tempo — Pyramid",type:"TEMPO",duration:65,tss:70,
+    description:"Pyramid structure: intervals build to a 20-min peak then come back down. Psychologically easier than two flat 20s — the first half feels manageable, the second half you're already on the way home.",
+    intervals:[
+      {label:"Warm-up",ramp:[30,65],dur:10},
+      {label:"Tempo 10 min",pct:80,dur:10},
+      {label:"Easy",pct:55,dur:3},
+      {label:"Tempo 15 min",pct:82,dur:15},
+      {label:"Easy",pct:55,dur:3},
+      {label:"Tempo 20 min",pct:84,dur:20},
+      {label:"Cool-down",ramp:[65,40],dur:4},
+    ]
+  },
+  TEMPO_CRUISE:{
+    id:"TEMPO_CRUISE",name:"Tempo — Cruise Intervals",type:"TEMPO",duration:60,tss:72,
+    description:"Four shorter tempo blocks at the top of the zone. Higher density than the classic 2×20 — the shorter recoveries keep your heart rate elevated throughout. Good mid-block progression.",
+    intervals:[
+      {label:"Warm-up",ramp:[30,65],dur:10},
+      {label:"Tempo cruise 1",pct:86,dur:10},
+      {label:"Easy",pct:55,dur:3},
+      {label:"Tempo cruise 2",pct:86,dur:10},
+      {label:"Easy",pct:55,dur:3},
+      {label:"Tempo cruise 3",pct:87,dur:10},
+      {label:"Easy",pct:55,dur:3},
+      {label:"Tempo cruise 4",pct:88,dur:10},
+      {label:"Cool-down",ramp:[65,40],dur:1},
+    ]
+  },
+  TEMPO_OVER_UNDER_SOFT:{
+    id:"TEMPO_OVER_UNDER_SOFT",name:"Tempo — Over-Unders (soft)",type:"TEMPO",duration:65,tss:74,
+    description:"Three 15-min blocks alternating 2 min at 88% and 1 min at 98% FTP. The 'over' pushes you into slight lactate debt; the 'under' forces you to clear it without fully recovering. Harder than it looks on paper.",
+    intervals:[
+      {label:"Warm-up",ramp:[30,65],dur:10},
+      {label:"Under 88%",pct:88,dur:2},{label:"Over 98%",pct:98,dur:1},{label:"Under 88%",pct:88,dur:2},{label:"Over 98%",pct:98,dur:1},{label:"Under 88%",pct:88,dur:2},{label:"Over 98%",pct:98,dur:1},{label:"Under 88%",pct:88,dur:2},{label:"Over 98%",pct:98,dur:1},{label:"Under 88%",pct:88,dur:2},{label:"Over 98%",pct:98,dur:1},
+      {label:"Easy",pct:55,dur:5},
+      {label:"Under 88%",pct:88,dur:2},{label:"Over 98%",pct:98,dur:1},{label:"Under 88%",pct:88,dur:2},{label:"Over 98%",pct:98,dur:1},{label:"Under 88%",pct:88,dur:2},{label:"Over 98%",pct:98,dur:1},{label:"Under 88%",pct:88,dur:2},{label:"Over 98%",pct:98,dur:1},{label:"Under 88%",pct:88,dur:2},{label:"Over 98%",pct:98,dur:1},
+      {label:"Easy",pct:55,dur:5},
+      {label:"Under 88%",pct:88,dur:2},{label:"Over 98%",pct:98,dur:1},{label:"Under 88%",pct:88,dur:2},{label:"Over 98%",pct:98,dur:1},{label:"Under 88%",pct:88,dur:2},{label:"Over 98%",pct:98,dur:1},{label:"Under 88%",pct:88,dur:2},{label:"Over 98%",pct:98,dur:1},{label:"Under 88%",pct:88,dur:2},{label:"Over 98%",pct:98,dur:1},
+      {label:"Cool-down",ramp:[65,40],dur:5},
+    ]
+  },
+  TEMPO_EXTENDED:{
+    id:"TEMPO_EXTENDED",name:"Tempo — Extended",type:"TEMPO",duration:70,tss:80,
+    description:"One long sustained tempo block at 80–83% FTP. No interval structure — just hold the power and manage the discomfort. Mental durability is as much the goal as physiological adaptation.",
+    intervals:[
+      {label:"Warm-up",ramp:[30,65],dur:10},
+      {label:"Extended tempo",pct:81,dur:50},
+      {label:"Cool-down",ramp:[65,40],dur:10},
+    ]
+  },
+};
+
+// ─── Sweet Spot Variants ──────────────────────────────────────────────────────
+const SS_VARIANTS={
+  SS_CLASSIC:{
+    id:"SS_CLASSIC",name:"Sweet Spot — Classic",type:"SS",duration:60,tss:76,
+    description:"The reference sweet spot workout: 2×20 min at 90% FTP. Best return on investment in cycling training. Hard enough to build FTP, easy enough to repeat weekly. Cadence 85–90rpm.",
+    intervals:[
+      {label:"Warm-up",ramp:[30,65],dur:10},
+      {label:"Sweet spot 1",pct:90,dur:20},
+      {label:"Easy spin",pct:55,dur:5},
+      {label:"Sweet spot 2",pct:90,dur:20},
+      {label:"Cool-down",ramp:[65,40],dur:5},
+    ]
+  },
+  SS_PROGRESSION:{
+    id:"SS_PROGRESSION",name:"Sweet Spot — Progression",type:"SS",duration:65,tss:78,
+    description:"Three 15-min blocks at 88–92% FTP, each slightly harder than the last. Same total volume as 2×20 but broken into three chunks — more manageable, still a serious stimulus.",
+    intervals:[
+      {label:"Warm-up",ramp:[30,65],dur:10},
+      {label:"Sweet spot 1",pct:88,dur:15},
+      {label:"Easy",pct:55,dur:5},
+      {label:"Sweet spot 2",pct:90,dur:15},
+      {label:"Easy",pct:55,dur:5},
+      {label:"Sweet spot 3",pct:92,dur:15},
+      {label:"Cool-down",ramp:[65,40],dur:0},
+    ]
+  },
+  SS_LADDER:{
+    id:"SS_LADDER",name:"Sweet Spot — Ladder",type:"SS",duration:65,tss:80,
+    description:"Ascending ladder: 10–15–20 min at 90% FTP, 5 min easy between. Each effort is longer than the last — your legs are more fatigued going into the hardest one. Builds mental toughness.",
+    intervals:[
+      {label:"Warm-up",ramp:[30,65],dur:10},
+      {label:"Sweet spot 10 min",pct:90,dur:10},
+      {label:"Easy",pct:55,dur:5},
+      {label:"Sweet spot 15 min",pct:90,dur:15},
+      {label:"Easy",pct:55,dur:5},
+      {label:"Sweet spot 20 min",pct:90,dur:20},
+      {label:"Cool-down",ramp:[65,40],dur:0},
+    ]
+  },
+  SS_OVER_UNDERS:{
+    id:"SS_OVER_UNDERS",name:"Sweet Spot — Over-Unders",type:"SS",duration:65,tss:84,
+    description:"Three 15-min blocks alternating 2 min at 95% and 1 min at 105% FTP. The over forces lactate accumulation; the under demands clearance while still working. Similar to TrainerRoad's Palisade or Carpathian Peak.",
+    intervals:[
+      {label:"Warm-up",ramp:[30,65],dur:10},
+      {label:"Under 95%",pct:95,dur:2},{label:"Over 105%",pct:105,dur:1},{label:"Under 95%",pct:95,dur:2},{label:"Over 105%",pct:105,dur:1},{label:"Under 95%",pct:95,dur:2},{label:"Over 105%",pct:105,dur:1},{label:"Under 95%",pct:95,dur:2},{label:"Over 105%",pct:105,dur:1},{label:"Under 95%",pct:95,dur:2},{label:"Over 105%",pct:105,dur:1},
+      {label:"Easy",pct:55,dur:5},
+      {label:"Under 95%",pct:95,dur:2},{label:"Over 105%",pct:105,dur:1},{label:"Under 95%",pct:95,dur:2},{label:"Over 105%",pct:105,dur:1},{label:"Under 95%",pct:95,dur:2},{label:"Over 105%",pct:105,dur:1},{label:"Under 95%",pct:95,dur:2},{label:"Over 105%",pct:105,dur:1},{label:"Under 95%",pct:95,dur:2},{label:"Over 105%",pct:105,dur:1},
+      {label:"Easy",pct:55,dur:5},
+      {label:"Under 95%",pct:95,dur:2},{label:"Over 105%",pct:105,dur:1},{label:"Under 95%",pct:95,dur:2},{label:"Over 105%",pct:105,dur:1},{label:"Under 95%",pct:95,dur:2},{label:"Over 105%",pct:105,dur:1},{label:"Under 95%",pct:95,dur:2},{label:"Over 105%",pct:105,dur:1},{label:"Under 95%",pct:95,dur:2},{label:"Over 105%",pct:105,dur:1},
+      {label:"Cool-down",ramp:[65,40],dur:5},
+    ]
+  },
+  SS_BURSTS:{
+    id:"SS_BURSTS",name:"Sweet Spot — Bursts",type:"SS",duration:65,tss:82,
+    description:"2×20 min at 88% FTP with a 10-second neuromuscular burst at 130% every 5 minutes. The base trains your aerobic system; the bursts keep fast-twitch fibres active. Similar to TrainerRoad's Tallac +1.",
+    intervals:[
+      {label:"Warm-up",ramp:[30,65],dur:10},
+      {label:"Sweet spot",pct:88,dur:5},{label:"Burst",pct:130,dur:0.17},{label:"Sweet spot",pct:88,dur:4.83},{label:"Burst",pct:130,dur:0.17},{label:"Sweet spot",pct:88,dur:4.83},{label:"Burst",pct:130,dur:0.17},{label:"Sweet spot",pct:88,dur:4.83},
+      {label:"Easy",pct:55,dur:5},
+      {label:"Sweet spot",pct:88,dur:5},{label:"Burst",pct:130,dur:0.17},{label:"Sweet spot",pct:88,dur:4.83},{label:"Burst",pct:130,dur:0.17},{label:"Sweet spot",pct:88,dur:4.83},{label:"Burst",pct:130,dur:0.17},{label:"Sweet spot",pct:88,dur:4.83},
+      {label:"Cool-down",ramp:[65,40],dur:5},
+    ]
+  },
+  SS_THRESHOLD:{
+    id:"SS_THRESHOLD",name:"Threshold Approach",type:"SS",duration:65,tss:88,
+    description:"Three 10-min blocks at 95–100% FTP. Bridges sweet spot toward proper FTP work — reserved for weeks 10–12 when you've built sufficient base. This is the hardest structured session in the block.",
+    intervals:[
+      {label:"Warm-up",ramp:[30,65],dur:10},
+      {label:"Threshold 1",pct:97,dur:10},
+      {label:"Easy",pct:55,dur:5},
+      {label:"Threshold 2",pct:98,dur:10},
+      {label:"Easy",pct:55,dur:5},
+      {label:"Threshold 3",pct:100,dur:10},
+      {label:"Cool-down",ramp:[65,40],dur:15},
+    ]
+  },
+};
+
+// Week-by-week assignment: progressive overload across the block
+// Wks 1–3: establish the pattern (classic variants)
+// Wks 4–6: more volume / density
+// Wks 7–9: quality up (over-unders, bursts)
+// Wks 10–11: peak phase (threshold approach)
+// Wk 12: test week — taper
+const TEMPO_BY_WEEK=["TEMPO_BLOCKS","TEMPO_BLOCKS","TEMPO_PYRAMID","RECOVERY","TEMPO_CRUISE","TEMPO_CRUISE","TEMPO_OVER_UNDER_SOFT","RECOVERY","TEMPO_EXTENDED","TEMPO_EXTENDED","TEMPO_BLOCKS","Z2_STEADY_60"];
+const SS_BY_WEEK=["SS_CLASSIC","SS_PROGRESSION","SS_LADDER","RECOVERY","SS_CLASSIC","SS_OVER_UNDERS","SS_BURSTS","RECOVERY","SS_OVER_UNDERS","SS_THRESHOLD","SS_THRESHOLD","Z2_STEADY_60"];
+
+// ─── Combined WORKOUTS lookup (all variants now defined) ──────────────────────
 const WORKOUTS={
   ...Z2_VARIANTS,
+  ...TEMPO_VARIANTS,
+  ...SS_VARIANTS,
   ...STRENGTH_WORKOUT_MAP,
   RECOVERY:{
     id:"RECOVERY",name:"Active Recovery",type:"RECOVERY",duration:30,tss:12,
@@ -271,37 +426,35 @@ const WORKOUTS={
   },
 };
 
-// ─── Base Plan — 12-week Zone 2 + Strength, no VO2/threshold/peak ────────────
-// Structure per week:
-// Mon: Z2 60 | Tue: Strength | Wed: Z2 90 | Thu: Strength | Fri: Z2 60 | Sat: Free (outdoor) | Sun: Rest
-// Recovery weeks (4 & 8): volume -30%, no 90-min sessions
-// Week 12: FTP test midweek, taper around it
+// ─── Base Plan — 12-week: Mon=Z2 | Tue=Strength | Wed=Tempo | Thu=Strength | Fri=Sweet Spot ──
+// Recovery weeks (4 & 8): all cycling → RECOVERY spin
+// Week 12: FTP test Wed, taper around it
 
 const buildPlan=(overrides={})=>{
   const plan=[];
-  const z2_60=Z2_60_IDS;
-  const z2_90=Z2_90_IDS;
-  let z60i=0, z90i=0;
+  let z60i=0;
 
   for(let wk=0;wk<12;wk++){
     const weekNum=wk+1;
     const isRecovery=weekNum===4||weekNum===8;
     const isTestWeek=weekNum===12;
     const strSession=getStrengthSession(weekNum);
+    const tempoId=TEMPO_BY_WEEK[wk];
+    const ssId=SS_BY_WEEK[wk];
 
     // Days: 0=Mon 1=Tue 2=Wed 3=Thu 4=Fri 5=Sat 6=Sun
     const week=[
-      isRecovery ? "RECOVERY" : z2_60[z60i%4],                  // Mon: Z2 60 (recovery spin in recovery week)
-      isTestWeek ? "Z2_STEADY_60" : strSession.id,               // Tue: Strength (or easy Z2 in test week)
-      isTestWeek ? "FTP_TEST" : (isRecovery ? "Z2_STEADY_60" : z2_90[z90i%2]), // Wed: Z2 90 (FTP test in week 12, Z2 60 in recovery)
-      isTestWeek ? "RECOVERY" : (isRecovery ? "RECOVERY" : strSession.id), // Thu: Strength (recovery in recovery/test weeks)
-      isRecovery ? "RECOVERY" : z2_60[(z60i+2)%4],              // Fri: Z2 60 (recovery in recovery week)
-      "FREE",                                                     // Sat: Free outdoor ride
-      "REST",                                                     // Sun: Rest
+      isRecovery ? "RECOVERY" : Z2_60_IDS[z60i%4],               // Mon: Z2 60
+      isTestWeek ? "Z2_STEADY_60" : strSession.id,                // Tue: Strength (easy Z2 in test week)
+      isTestWeek ? "FTP_TEST" : (isRecovery ? "RECOVERY" : tempoId), // Wed: Tempo (FTP test wk 12, recovery spin in recovery wk)
+      isTestWeek ? "RECOVERY" : (isRecovery ? "RECOVERY" : strSession.id), // Thu: Strength
+      isTestWeek ? "RECOVERY" : (isRecovery ? "RECOVERY" : ssId), // Fri: Sweet Spot
+      "FREE",                                                      // Sat: Free outdoor ride
+      "REST",                                                      // Sun: Rest
     ];
 
-    // Increment rotation counters
-    if(!isRecovery&&!isTestWeek){ z60i++; z90i++; }
+    // Increment Z2 rotation counter on active weeks
+    if(!isRecovery&&!isTestWeek){ z60i++; }
 
     for(let d=0;d<7;d++){
       const idx=wk*7+d;
@@ -326,6 +479,8 @@ function adjustForReadiness(wId,readiness,restingHR,legsScore,tsb){
   const w=WORKOUTS[wId];
   const isZ2=w&&w.type==="Z2";
   const isStr=w&&w.type==="STRENGTH";
+  const isTempo=w&&w.type==="TEMPO";
+  const isSS=w&&w.type==="SS";
 
   // REST and FREE days are never overridden by readiness
   if(wId==="REST"||wId==="FREE") return {id:wId,note:null,adjusted:false,eff,strMod:null};
@@ -338,6 +493,8 @@ function adjustForReadiness(wId,readiness,restingHR,legsScore,tsb){
       return {id:changed?lighter:wId,note:changed?"Readiness slightly reduced — switching to 60-min Z2.":null,adjusted:changed,eff,strMod:null};
     }
     if(isStr) return {id:wId,note:"Readiness slightly reduced — take extra rest between sets and drop RPE by 1 if needed.",adjusted:false,eff,strMod:"easy"};
+    // Tempo/SS: slight dip — keep the session but note it
+    if(isTempo||isSS) return {id:wId,note:"Readiness slightly reduced — start the session and assess after the warm-up. Bail to Zone 2 if it doesn't feel right.",adjusted:false,eff,strMod:null};
     return {id:wId,note:null,adjusted:false,eff,strMod:null};
   }
   if(eff>=50){
@@ -346,6 +503,8 @@ function adjustForReadiness(wId,readiness,restingHR,legsScore,tsb){
       const lighter=Z2_60_IDS[0];
       return {id:lighter,note:"Moderate readiness — keeping it to 60 min Zone 2.",adjusted:wId!==lighter,eff,strMod:null};
     }
+    // Tempo/SS: moderate dip — step down to Z2
+    if(isTempo||isSS) return {id:"Z2_STEADY_60",note:`Moderate readiness — stepping down from ${w.name} to Zone 2 today. The harder work will be here when you're fresh.`,adjusted:true,eff,strMod:null};
     return {id:"Z2_STEADY_60",note:"Stepped down to Zone 2 today.",adjusted:true,eff,strMod:null};
   }
   if(eff>=35){
