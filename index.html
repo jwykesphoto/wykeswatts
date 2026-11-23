@@ -111,6 +111,8 @@ const ivLabel=(iv,ftp)=>iv.ramp?`${calcW(iv.ramp[0],ftp)}–${calcW(iv.ramp[1],f
 // ─── Session Types ────────────────────────────────────────────────────────────
 const SESSION_TYPES={
   Z2:     {label:"Zone 2",color:"#22c55e",bg:"#f0fdf4"},
+  TEMPO:  {label:"Tempo",color:"#f59e0b",bg:"#fffbeb"},
+  SS:     {label:"Sweet Spot",color:"#ef4444",bg:"#fef2f2"},
   STRENGTH:{label:"Strength",color:"#8b5cf6",bg:"#f5f3ff"},
   RECOVERY:{label:"Recovery",color:"#64748b",bg:"#f8fafc"},
   REST:   {label:"Rest",color:"#94a3b8",bg:"#f8fafc"},
@@ -1460,7 +1462,7 @@ function App(){
                       const isStr=STRENGTH_SESSIONS[wId];
                       const type=wId==="HOLIDAY"?"HOLIDAY":wId==="SICK"?"SICK":isStr?"STRENGTH":w?.type||"REST";
                       const st=SESSION_TYPES[type]||SESSION_TYPES.REST;
-                      const lbl=wId==="REST"?"–":wId==="RECOVERY"?"EZ":wId==="FREE"?"🚴":wId==="HOLIDAY"?"✈":wId==="SICK"?"🤒":STRENGTH_SESSIONS[wId]?"💪":wId.includes("90")||wId.includes("PYRAMID")?"Z2+":"Z2";
+                      const lbl=wId==="REST"?"–":wId==="RECOVERY"?"EZ":wId==="FREE"?"🚴":wId==="HOLIDAY"?"✈":wId==="SICK"?"🤒":STRENGTH_SESSIONS[wId]?"💪":TEMPO_VARIANTS[wId]?"T":SS_VARIANTS[wId]?"SS":wId.includes("90")||wId.includes("PYRAMID")?"Z2+":"Z2";
                       const pd=getPlanDate(idx);
                       const isDragTarget=dragFrom!==null&&dragFrom!==idx&&Math.floor(dragFrom/7)===Math.floor(idx/7);
                       const isDragging=dragFrom===idx;
