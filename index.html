@@ -1476,10 +1476,10 @@ function App(){
                           onDragOver={e=>{if(isDragTarget)e.preventDefault();}}
                           onDrop={e=>{e.preventDefault();handleDrop(idx);}}
                           onClick={()=>handleCalendarClick(idx)}
-                          style={{background:isDragging?"#333333":isToday?"var(--text-primary)":isBStart?"var(--bg-input)":isDragTarget?"var(--bg-input)":st.bg,border:isDragging?"2px solid var(--text-primary)":isToday?"2px solid var(--text-primary)":isSel?"2px solid var(--border-strong)":isBStart?"2px solid var(--border-strong)":isDragTarget?"2px dashed var(--border-strong)":`1px solid ${st.color}20`,borderRadius:8,padding:"5px 2px",cursor:blockMode?"crosshair":"grab",textAlign:"center",opacity:isPast&&!isToday?.5:1,transition:"all .15s"}}>
-                          <div style={{fontSize:8,color:isToday||isDragging?"var(--text-faint)":"var(--text-faint)",marginBottom:1}}>{DAY_NAMES[d]}</div>
-                          <div style={{fontSize:10,fontWeight:800,color:isDragging?"var(--text-primary)":isToday?"var(--bg-page)":isPast?"var(--text-faint)":st.color}}>{lbl}</div>
-                          <div style={{fontSize:7,color:isToday||isDragging?"#475569":"var(--text-faint)",marginTop:1}}>{pd.getDate()}</div>
+                          style={{background:isDragging?"var(--bg-elevated)":isToday?"var(--text-primary)":isBStart?"var(--bg-elevated)":isDragTarget?"var(--bg-elevated)":"var(--bg-card)",border:isDragging?"2px solid var(--border-strong)":isToday?"2px solid var(--text-primary)":isSel?"2px solid var(--border-strong)":isBStart?"2px solid var(--border-strong)":isDragTarget?"2px dashed var(--border-strong)":`1px solid var(--border)`,borderRadius:8,padding:"5px 2px",cursor:blockMode?"crosshair":"grab",textAlign:"center",opacity:isPast&&!isToday?.5:1,transition:"all .15s"}}>
+                          <div style={{fontSize:8,color:"var(--text-faint)",marginBottom:1}}>{DAY_NAMES[d]}</div>
+                          <div style={{fontSize:10,fontWeight:800,color:isToday?"var(--bg-page)":isPast?"var(--text-faint)":st.color}}>{lbl}</div>
+                          <div style={{fontSize:7,color:"var(--text-faint)",marginTop:1}}>{pd.getDate()}</div>
                         </button>
                       );
                     })}
