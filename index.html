@@ -850,6 +850,14 @@ function PinLock({onUnlock}){
 
 
 // ─── Main App ─────────────────────────────────────────────────────────────────
+// ─── WORKOUT PLAYER STYLES (module-level so WorkoutPlayer can access them) ────
+const WS={
+  card:{background:"var(--bg-card)",border:"1px solid var(--border)",borderRadius:12,padding:20,marginBottom:16,boxShadow:"var(--shadow)"},
+  btnP:{padding:"10px 20px",borderRadius:8,border:"none",background:"var(--accent)",color:"var(--bg-page)",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit"},
+  btnS:{padding:"8px 14px",borderRadius:8,border:"1px solid var(--border)",background:"var(--bg-input)",color:"var(--text-primary)",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit"},
+  lbl:{fontSize:11,fontWeight:700,letterSpacing:1,color:"var(--text-muted)",textTransform:"uppercase",marginBottom:4},
+};
+
 // ─── WORKOUT PLAYER ───────────────────────────────────────────────────────────
 function WorkoutPlayer({ftp,plan,todayIdx,currentDay}){
   const workout=useMemo(()=>{
@@ -1136,7 +1144,7 @@ function WorkoutPlayer({ftp,plan,todayIdx,currentDay}){
   // No cycling workout today
   if(!workout){
     return(
-      <div style={S.card12}>
+      <div style={WS.card}>
         <div style={{fontSize:16,fontWeight:700,color:"var(--text-primary)",marginBottom:8}}>No cycling session today</div>
         <div style={{fontSize:13,color:"var(--text-muted)"}}>Today is a rest, strength, or free ride day. Check the Plan tab to see your next cycling session.</div>
       </div>
@@ -1151,7 +1159,7 @@ function WorkoutPlayer({ftp,plan,todayIdx,currentDay}){
   return(
     <div>
       {/* Header card */}
-      <div style={S.card12}>
+      <div style={WS.card}>
         <div style={{fontSize:11,fontWeight:700,letterSpacing:1,color:"var(--text-muted)",marginBottom:4,textTransform:"uppercase"}}>{workout.type}</div>
         <div style={{fontSize:18,fontWeight:800,color:"var(--text-primary)",marginBottom:4}}>{workout.name}</div>
         <div style={{fontSize:12,color:"var(--text-muted)",marginBottom:12,lineHeight:1.5}}>{workout.description}</div>
@@ -1164,7 +1172,7 @@ function WorkoutPlayer({ftp,plan,todayIdx,currentDay}){
       </div>
 
       {/* BT Connection */}
-      <div style={{...S.card12,display:"flex",gap:12,alignItems:"center",flexWrap:"wrap"}}>
+      <div style={{...WS.card,display:"flex",gap:12,alignItems:"center",flexWrap:"wrap"}}>
         <div style={{flex:1}}>
           <div style={{fontSize:12,fontWeight:700,color:"var(--text-primary)",marginBottom:2}}>Trainer</div>
           <div style={{fontSize:11,color:btStatus==="connected"?"#22c55e":btStatus==="error"?"#ef4444":"var(--text-muted)"}}>
@@ -1172,12 +1180,12 @@ function WorkoutPlayer({ftp,plan,todayIdx,currentDay}){
           </div>
         </div>
         {btStatus!=="connected"&&(
-          <button style={{...S.btnP,fontSize:12,padding:"8px 14px"}} onClick={connectTrainer}>
+          <button style={{...WS.btnP,fontSize:12,padding:"8px 14px"}} onClick={connectTrainer}>
             {btStatus==="connecting"?"…":"🔗 Connect Trainer"}
           </button>
         )}
         {btStatus==="connected"&&!btHRDevice&&(
-          <button style={{...S.btnS,fontSize:12,padding:"8px 14px"}} onClick={connectHR}>
+          <button style={{...WS.btnS,fontSize:12,padding:"8px 14px"}} onClick={connectHR}>
             ❤️ HR Monitor
           </button>
         )}
@@ -1188,7 +1196,7 @@ function WorkoutPlayer({ftp,plan,todayIdx,currentDay}){
 
       {/* Live metrics */}
       {phase!=="idle"&&(
-        <div style={{...S.card12,display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,textAlign:"center"}}>
+        <div style={{...WS.card,display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,textAlign:"center"}}>
           {[
             ["Power",livePower!=null?`${livePower}w`:"–","⚡",curTargetW?`Target: ${curTargetW}w`:""],
             ["Cadence",liveCadence!=null?`${liveCadence}`:"–","🔄","rpm"],
@@ -1205,7 +1213,7 @@ function WorkoutPlayer({ftp,plan,todayIdx,currentDay}){
 
       {/* Current interval */}
       {phase!=="idle"&&curIv&&(
-        <div style={{...S.card12,borderColor:zoneColor(curIv.ramp?(curIv.ramp[0]+curIv.ramp[1])/2:curIv.pct)}}>
+        <div style={{...WS.card,borderColor:zoneColor(curIv.ramp?(curIv.ramp[0]+curIv.ramp[1])/2:curIv.pct)}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
             <div>
               <div style={{fontSize:11,fontWeight:700,color:"var(--text-muted)",textTransform:"uppercase",letterSpacing:1,marginBottom:2}}>{curIv.label}</div>
@@ -1222,7 +1230,7 @@ function WorkoutPlayer({ftp,plan,todayIdx,currentDay}){
             <div style={{marginTop:12,display:"flex",alignItems:"center",gap:8}}>
               <span style={{fontSize:12,color:"var(--text-muted)"}}>Extend cool-down:</span>
               {[2,5,10].map(m=>(
-                <button key={m} style={{...S.btnS,fontSize:11,padding:"4px 10px"}} onClick={()=>setCooldownExtra(e=>e+m*60)}>+{m}m</button>
+                <button key={m} style={{...WS.btnS,fontSize:11,padding:"4px 10px"}} onClick={()=>setCooldownExtra(e=>e+m*60)}>+{m}m</button>
               ))}
               {cooldownExtra>0&&<span style={{fontSize:11,color:"#22c55e"}}>+{cooldownExtra/60}m added</span>}
             </div>
@@ -1238,10 +1246,10 @@ function WorkoutPlayer({ftp,plan,todayIdx,currentDay}){
       )}
 
       {/* Controls */}
-      <div style={{...S.card12}}>
+      <div style={{...WS.card}}>
         {phase==="idle"&&(
           <div>
-            <button style={{...S.btnP,width:"100%",marginBottom:12}} onClick={startWorkout}>
+            <button style={{...WS.btnP,width:"100%",marginBottom:12}} onClick={startWorkout}>
               ▶ Start Workout
             </button>
             <div style={{display:"flex",gap:8,alignItems:"center"}}>
@@ -1255,15 +1263,15 @@ function WorkoutPlayer({ftp,plan,todayIdx,currentDay}){
           <div style={{display:"flex",flexDirection:"column",gap:12}}>
             <div style={{display:"flex",gap:8}}>
               {phase==="riding"
-                ?<button style={{...S.btnP,flex:1}} onClick={pauseWorkout}>⏸ Pause</button>
-                :<button style={{...S.btnP,flex:1}} onClick={resumeWorkout}>▶ Resume</button>}
-              <button style={{...S.btnS,flex:1}} onClick={stopWorkout}>■ Stop</button>
+                ?<button style={{...WS.btnP,flex:1}} onClick={pauseWorkout}>⏸ Pause</button>
+                :<button style={{...WS.btnP,flex:1}} onClick={resumeWorkout}>▶ Resume</button>}
+              <button style={{...WS.btnS,flex:1}} onClick={stopWorkout}>■ Stop</button>
             </div>
             <div style={{display:"flex",gap:8,alignItems:"center"}}>
               <span style={{fontSize:12,color:"var(--text-muted)"}}>Intensity:</span>
-              <button style={{...S.btnS,padding:"4px 10px",fontSize:13}} onClick={()=>setBiasPct(p=>Math.max(70,p-5))}>−5%</button>
+              <button style={{...WS.btnS,padding:"4px 10px",fontSize:13}} onClick={()=>setBiasPct(p=>Math.max(70,p-5))}>−5%</button>
               <span style={{fontSize:14,fontWeight:700,minWidth:40,textAlign:"center"}}>{biasPct}%</span>
-              <button style={{...S.btnS,padding:"4px 10px",fontSize:13}} onClick={()=>setBiasPct(p=>Math.min(120,p+5))}>+5%</button>
+              <button style={{...WS.btnS,padding:"4px 10px",fontSize:13}} onClick={()=>setBiasPct(p=>Math.min(120,p+5))}>+5%</button>
               <span style={{fontSize:11,color:"var(--text-muted)",marginLeft:4}}>of target</span>
             </div>
             <div style={{fontSize:11,color:"var(--text-muted)",textAlign:"center"}}>Total: {fmt(totalElapsed)} / {fmt(totalWorkoutSec)}</div>
@@ -1274,7 +1282,7 @@ function WorkoutPlayer({ftp,plan,todayIdx,currentDay}){
             <div style={{fontSize:16,fontWeight:800,color:"#22c55e",marginBottom:8,textAlign:"center"}}>✓ Workout complete!</div>
             <div style={{fontSize:13,color:"var(--text-muted)",marginBottom:16,textAlign:"center"}}>Duration: {fmt(totalElapsed)}</div>
             {uploadStatus===null&&(
-              <button style={{...S.btnP,width:"100%",marginBottom:8}} onClick={uploadToStrava}>
+              <button style={{...WS.btnP,width:"100%",marginBottom:8}} onClick={uploadToStrava}>
                 Upload to Strava
               </button>
             )}
@@ -1282,7 +1290,7 @@ function WorkoutPlayer({ftp,plan,todayIdx,currentDay}){
             {uploadStatus==="done"&&<div style={{textAlign:"center",color:"#22c55e",fontSize:13,fontWeight:700}}>✓ Saved to Strava</div>}
             {uploadStatus==="error"&&<div style={{textAlign:"center",color:"#ef4444",fontSize:13}}>Upload failed — save manually in Strava</div>}
             {uploadStatus==="no_token"&&<div style={{textAlign:"center",color:"#f59e0b",fontSize:13}}>Connect Strava in Check-in tab first</div>}
-            <button style={{...S.btnS,width:"100%",marginTop:8}} onClick={()=>{setPhase("idle");setTotalElapsed(0);globalElapsed.current=0;setBiasPct(100);setCooldownExtra(0);setUploadStatus(null);}}>
+            <button style={{...WS.btnS,width:"100%",marginTop:8}} onClick={()=>{setPhase("idle");setTotalElapsed(0);globalElapsed.current=0;setBiasPct(100);setCooldownExtra(0);setUploadStatus(null);}}>
               Reset
             </button>
           </div>
