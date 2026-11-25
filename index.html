@@ -889,7 +889,7 @@ function WorkoutPlayer({ftp,plan,todayIdx,currentDay}){
 
   // Expand intervals to seconds for ramp support
   const expandedIntervals=useMemo(()=>{
-    if(!workout)return[];
+    if(!workout||!Array.isArray(workout.intervals))return[];
     const out=[];
     for(const iv of workout.intervals){
       const durSec=Math.round(iv.dur*60);
@@ -909,7 +909,7 @@ function WorkoutPlayer({ftp,plan,todayIdx,currentDay}){
 
   // Merge consecutive same-label segments for display
   const displayIntervals=useMemo(()=>{
-    if(!workout)return[];
+    if(!workout||!Array.isArray(workout.intervals))return[];
     return workout.intervals.map(iv=>({
       ...iv,
       durSec:Math.round(iv.dur*60),
@@ -923,6 +923,7 @@ function WorkoutPlayer({ftp,plan,todayIdx,currentDay}){
 
   // Find which display interval we're in
   const currentDisplayInterval=useMemo(()=>{
+    if(!displayIntervals.length)return null;
     if(phase==="idle"||phase==="done")return displayIntervals[0]||null;
     let acc=0;
     for(const iv of displayIntervals){
@@ -1054,6 +1055,7 @@ function WorkoutPlayer({ftp,plan,todayIdx,currentDay}){
 
   // Interval remaining
   const intervalRemaining=useMemo(()=>{
+    if(!displayIntervals.length)return 0;
     let acc=0;
     for(const iv of displayIntervals){
       const dur=iv===displayIntervals[displayIntervals.length-1]?iv.durSec+cooldownExtra:iv.durSec;
