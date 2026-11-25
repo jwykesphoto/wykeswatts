@@ -988,13 +988,19 @@ function WorkoutPlayer({ftp,plan,todayIdx,currentDay}){
     return()=>clearInterval(timerRef.current);
   },[phase,biasPct,cooldownExtra,totalExpandedSec,sendERG,displayIntervals,livePower,liveCadence,liveHR]);
 
-  // Connect trainer (FTMS)
+  // Connect trainer (FTMS) — full UUID for broader compatibility
+  const FTMS_UUID="00001826-0000-1000-8000-00805f9b34fb";
   const connectTrainer=async()=>{
     setBtStatus("connecting");
     try{
       const device=await navigator.bluetooth.requestDevice({
-        filters:[{services:["fitness_machine"]}],
-        optionalServices:["fitness_machine","heart_rate","cycling_power","cycling_speed_and_cadence"],
+        filters:[
+          {services:["fitness_machine"]},
+          {services:[FTMS_UUID]},
+          {namePrefix:"Tacx"},
+          {namePrefix:"NEO"},
+        ],
+        optionalServices:[FTMS_UUID,"fitness_machine","heart_rate","cycling_power","cycling_speed_and_cadence"],
       });
       device.addEventListener("gattserverdisconnected",()=>{
         setBtStatus("disconnected");setBtPowerChar(null);setBtControlChar(null);
@@ -1002,31 +1008,31 @@ function WorkoutPlayer({ftp,plan,todayIdx,currentDay}){
       const server=await device.gatt.connect();
       setBtDevice(device);
 
-      // FTMS service
-      try{
-        const ftms=await server.getPrimaryService("fitness_machine");
-        // Indoor Bike Data characteristic for power + cadence
+      // FTMS service — try short name then full UUID
+      let ftms=null;
+      try{ftms=await server.getPrimaryService("fitness_machine");}catch{}
+      if(!ftms){try{ftms=await server.getPrimaryService(FTMS_UUID);}catch{}}
+
+      if(ftms){
+        // Indoor Bike Data 0x2AD2 — power + cadence
         try{
           const bikeData=await ftms.getCharacteristic(0x2AD2);
           bikeData.addEventListener("characteristicvaluechanged",(e)=>{
             const dv=e.target.value;
-            // flags: byte 0-1; cadence at byte 2-3 (0.5rpm res); power at byte 6-7 (sint16, watts)
-            const flags=dv.getUint16(0,true);
+            // flags word at 0; cadence at bytes 2-3 (0.5 rpm/bit); power at bytes 6-7 (sint16 watts)
             if(dv.byteLength>=4){const c=dv.getUint16(2,true);setLiveCadence(Math.round(c*0.5));}
             if(dv.byteLength>=8){const p=dv.getInt16(6,true);setLivePower(p);}
           });
           await bikeData.startNotifications();
         }catch(e){console.warn("No bike data char",e);}
 
-        // Control point for ERG
+        // Control point 0x2AD9 — ERG mode
         try{
           const ctrl=await ftms.getCharacteristic(0x2AD9);
-          // Request control
-          await ctrl.writeValueWithResponse(new Uint8Array([0x00]));
+          await ctrl.writeValueWithResponse(new Uint8Array([0x00])); // request control
           setBtControlChar(ctrl);
         }catch(e){console.warn("No control point",e);}
-
-      }catch(e){console.warn("No FTMS",e);}
+      }else{console.warn("FTMS service not found");}
 
       setBtStatus("connected");
     }catch(e){
@@ -1172,26 +1178,29 @@ function WorkoutPlayer({ftp,plan,todayIdx,currentDay}){
       </div>
 
       {/* BT Connection */}
-      <div style={{...WS.card,display:"flex",gap:12,alignItems:"center",flexWrap:"wrap"}}>
-        <div style={{flex:1}}>
-          <div style={{fontSize:12,fontWeight:700,color:"var(--text-primary)",marginBottom:2}}>Trainer</div>
-          <div style={{fontSize:11,color:btStatus==="connected"?"#22c55e":btStatus==="error"?"#ef4444":"var(--text-muted)"}}>
-            {btStatus==="connected"?(btDevice?.name||"Connected"):btStatus==="connecting"?"Connecting…":btStatus==="error"?"Connection failed":"Not connected"}
+      <div style={{...WS.card,display:"flex",flexDirection:"column",gap:10}}>
+        <div style={{display:"flex",gap:12,alignItems:"center",flexWrap:"wrap"}}>
+          <div style={{flex:1}}>
+            <div style={{fontSize:12,fontWeight:700,color:"var(--text-primary)",marginBottom:2}}>🚲 Trainer</div>
+            <div style={{fontSize:11,color:btStatus==="connected"?"#22c55e":btStatus==="error"?"#ef4444":"var(--text-muted)"}}>
+              {btStatus==="connected"?(btDevice?.name||"Connected"):btStatus==="connecting"?"Connecting…":btStatus==="error"?"Not found — is it on?":"Not connected"}
+            </div>
           </div>
+          <button style={{...WS.btnP,fontSize:12,padding:"8px 14px",opacity:btStatus==="connecting"?.6:1}} onClick={connectTrainer} disabled={btStatus==="connecting"}>
+            {btStatus==="connecting"?"Searching…":btStatus==="connected"?"✓ Reconnect":"🔗 Connect Trainer"}
+          </button>
         </div>
-        {btStatus!=="connected"&&(
-          <button style={{...WS.btnP,fontSize:12,padding:"8px 14px"}} onClick={connectTrainer}>
-            {btStatus==="connecting"?"…":"🔗 Connect Trainer"}
-          </button>
-        )}
-        {btStatus==="connected"&&!btHRDevice&&(
+        <div style={{display:"flex",gap:12,alignItems:"center",flexWrap:"wrap"}}>
+          <div style={{flex:1}}>
+            <div style={{fontSize:12,fontWeight:700,color:"var(--text-primary)",marginBottom:2}}>❤️ Heart Rate</div>
+            <div style={{fontSize:11,color:btHRDevice?"#22c55e":"var(--text-muted)"}}>
+              {btHRDevice?(btHRDevice.name||"Connected"):"Not connected"}
+            </div>
+          </div>
           <button style={{...WS.btnS,fontSize:12,padding:"8px 14px"}} onClick={connectHR}>
-            ❤️ HR Monitor
+            {btHRDevice?"✓ Reconnect":"🔗 Connect HR Strap"}
           </button>
-        )}
-        {btStatus==="connected"&&(
-          <div style={{fontSize:11,color:"var(--text-muted)"}}>✓ Ready</div>
-        )}
+        </div>
       </div>
 
       {/* Live metrics */}
