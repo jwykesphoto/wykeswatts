@@ -853,20 +853,12 @@ function PinLock({onUnlock}){
 // ─── WORKOUT PLAYER ───────────────────────────────────────────────────────────
 function WorkoutPlayer({ftp,plan,todayIdx,currentDay}){
   const workout=useMemo(()=>{
-    const dayPlan=plan[currentDay]||plan[todayIdx];
-    if(!dayPlan)return null;
-    // find first cycling workout for today
-    const cyclingIds=["Mon","Wed","Fri"].map((_,i)=>i*2); // indices 0,2,4
-    for(const idx of [0,2,4]){
-      const wId=dayPlan[idx];
-      if(wId&&WORKOUTS[wId]&&WORKOUTS[wId].intervals){
-        return WORKOUTS[wId];
-      }
-    }
-    // fallback: check all slots
-    for(const wId of dayPlan){
-      if(wId&&WORKOUTS[wId]&&WORKOUTS[wId].intervals)return WORKOUTS[wId];
-    }
+    // plan is a flat array of {workoutId, weekNum, dayOfWeek}
+    // find today's entry with a cycling workout (has intervals)
+    const entry=plan[currentDay]||plan[todayIdx];
+    if(!entry)return null;
+    const wId=entry.workoutId;
+    if(wId&&WORKOUTS[wId]&&WORKOUTS[wId].intervals)return WORKOUTS[wId];
     return null;
   },[plan,currentDay,todayIdx]);
 
