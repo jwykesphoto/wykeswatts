@@ -850,6 +850,454 @@ function PinLock({onUnlock}){
 
 
 // ─── Main App ─────────────────────────────────────────────────────────────────
+// ─── WORKOUT PLAYER ───────────────────────────────────────────────────────────
+function WorkoutPlayer({ftp,plan,todayIdx,currentDay}){
+  const workout=useMemo(()=>{
+    const dayPlan=plan[currentDay]||plan[todayIdx];
+    if(!dayPlan)return null;
+    // find first cycling workout for today
+    const cyclingIds=["Mon","Wed","Fri"].map((_,i)=>i*2); // indices 0,2,4
+    for(const idx of [0,2,4]){
+      const wId=dayPlan[idx];
+      if(wId&&WORKOUTS[wId]&&WORKOUTS[wId].intervals){
+        return WORKOUTS[wId];
+      }
+    }
+    // fallback: check all slots
+    for(const wId of dayPlan){
+      if(wId&&WORKOUTS[wId]&&WORKOUTS[wId].intervals)return WORKOUTS[wId];
+    }
+    return null;
+  },[plan,currentDay,todayIdx]);
+
+  // Player state
+  const [phase,setPhase]=useState("idle"); // idle | countdown | riding | paused | done
+  const [intervalIdx,setIntervalIdx]=useState(0);
+  const [elapsed,setElapsed]=useState(0); // seconds elapsed in current interval
+  const [biasPct,setBiasPct]=useState(100); // intensity bias %
+  const [cooldownExtra,setCooldownExtra]=useState(0); // extra seconds added to cool-down
+  const [totalElapsed,setTotalElapsed]=useState(0);
+
+  // BT state
+  const [btStatus,setBtStatus]=useState("disconnected"); // disconnected | connecting | connected | error
+  const [btDevice,setBtDevice]=useState(null);
+  const [btPowerChar,setBtPowerChar]=useState(null);
+  const [btControlChar,setBtControlChar]=useState(null);
+  const [livePower,setLivePower]=useState(null);
+  const [liveCadence,setLiveCadence]=useState(null);
+  const [liveHR,setLiveHR]=useState(null);
+  const [btHRDevice,setBtHRDevice]=useState(null);
+
+  // Strava upload state
+  const [uploadStatus,setUploadStatus]=useState(null); // null | uploading | done | error
+  const activityLog=useRef([]); // [{t, power, cadence, hr}]
+  const timerRef=useRef(null);
+  const controlCharRef=useRef(null);
+  controlCharRef.current=btControlChar;
+
+  // Expand intervals to seconds for ramp support
+  const expandedIntervals=useMemo(()=>{
+    if(!workout)return[];
+    const out=[];
+    for(const iv of workout.intervals){
+      const durSec=Math.round(iv.dur*60);
+      if(durSec<=0)continue;
+      if(iv.ramp){
+        // linear ramp
+        for(let s=0;s<durSec;s++){
+          const pct=iv.ramp[0]+(iv.ramp[1]-iv.ramp[0])*(s/Math.max(durSec-1,1));
+          out.push({label:iv.label,pct:Math.round(pct),durSec:1,ramp:true});
+        }
+      }else{
+        out.push({label:iv.label,pct:iv.pct,durSec});
+      }
+    }
+    return out;
+  },[workout]);
+
+  // Merge consecutive same-label segments for display
+  const displayIntervals=useMemo(()=>{
+    if(!workout)return[];
+    return workout.intervals.map(iv=>({
+      ...iv,
+      durSec:Math.round(iv.dur*60),
+      targetW:iv.ramp?null:Math.round(iv.pct*(ftp/100)),
+    }));
+  },[workout,ftp]);
+
+  // Current expanded second pointer
+  const totalExpandedSec=expandedIntervals.length;
+  const globalElapsed=useRef(0);
+
+  // Find which display interval we're in
+  const currentDisplayInterval=useMemo(()=>{
+    if(phase==="idle"||phase==="done")return displayIntervals[0]||null;
+    let acc=0;
+    for(const iv of displayIntervals){
+      const dur=iv.label===displayIntervals[displayIntervals.length-1].label
+        ?iv.durSec+cooldownExtra:iv.durSec;
+      if(globalElapsed.current<acc+dur)return iv;
+      acc+=dur;
+    }
+    return displayIntervals[displayIntervals.length-1]||null;
+  },[displayIntervals,phase,elapsed,cooldownExtra]);
+
+  // Target watts this second (with bias)
+  const getTargetW=(expandedIdx)=>{
+    const seg=expandedIntervals[expandedIdx];
+    if(!seg)return 0;
+    return Math.round(seg.pct*(ftp/100)*(biasPct/100));
+  };
+
+  // Send ERG target to trainer via FTMS Control Point
+  const sendERG=useCallback(async(watts)=>{
+    const ctrl=controlCharRef.current;
+    if(!ctrl)return;
+    try{
+      // FTMS Set Target Power: op 0x05, watts as int16 LE
+      const w=Math.max(0,Math.min(watts,2000));
+      const buf=new Uint8Array([0x05,w&0xff,(w>>8)&0xff]);
+      await ctrl.writeValueWithResponse(buf);
+    }catch(e){console.warn("ERG write fail",e);}
+  },[]);
+
+  // Timer tick
+  useEffect(()=>{
+    if(phase!=="riding")return;
+    timerRef.current=setInterval(()=>{
+      globalElapsed.current+=1;
+      setTotalElapsed(t=>t+1);
+      // figure out which expanded second we're on
+      const idx=Math.min(globalElapsed.current,totalExpandedSec-1);
+      const targetW=getTargetW(idx);
+      sendERG(targetW);
+      // log
+      activityLog.current.push({t:globalElapsed.current,power:livePower,cadence:liveCadence,hr:liveHR});
+      // check done
+      const totalDur=displayIntervals.reduce((a,iv,i)=>{
+        const extra=i===displayIntervals.length-1?cooldownExtra:0;
+        return a+iv.durSec+extra;
+      },0);
+      if(globalElapsed.current>=totalDur){
+        clearInterval(timerRef.current);
+        sendERG(0);
+        setPhase("done");
+      }
+    },1000);
+    return()=>clearInterval(timerRef.current);
+  },[phase,biasPct,cooldownExtra,totalExpandedSec,sendERG,displayIntervals,livePower,liveCadence,liveHR]);
+
+  // Connect trainer (FTMS)
+  const connectTrainer=async()=>{
+    setBtStatus("connecting");
+    try{
+      const device=await navigator.bluetooth.requestDevice({
+        filters:[{services:["fitness_machine"]}],
+        optionalServices:["fitness_machine","heart_rate","cycling_power","cycling_speed_and_cadence"],
+      });
+      device.addEventListener("gattserverdisconnected",()=>{
+        setBtStatus("disconnected");setBtPowerChar(null);setBtControlChar(null);
+      });
+      const server=await device.gatt.connect();
+      setBtDevice(device);
+
+      // FTMS service
+      try{
+        const ftms=await server.getPrimaryService("fitness_machine");
+        // Indoor Bike Data characteristic for power + cadence
+        try{
+          const bikeData=await ftms.getCharacteristic(0x2AD2);
+          bikeData.addEventListener("characteristicvaluechanged",(e)=>{
+            const dv=e.target.value;
+            // flags: byte 0-1; cadence at byte 2-3 (0.5rpm res); power at byte 6-7 (sint16, watts)
+            const flags=dv.getUint16(0,true);
+            if(dv.byteLength>=4){const c=dv.getUint16(2,true);setLiveCadence(Math.round(c*0.5));}
+            if(dv.byteLength>=8){const p=dv.getInt16(6,true);setLivePower(p);}
+          });
+          await bikeData.startNotifications();
+        }catch(e){console.warn("No bike data char",e);}
+
+        // Control point for ERG
+        try{
+          const ctrl=await ftms.getCharacteristic(0x2AD9);
+          // Request control
+          await ctrl.writeValueWithResponse(new Uint8Array([0x00]));
+          setBtControlChar(ctrl);
+        }catch(e){console.warn("No control point",e);}
+
+      }catch(e){console.warn("No FTMS",e);}
+
+      setBtStatus("connected");
+    }catch(e){
+      console.error("BT connect fail",e);
+      setBtStatus("error");
+    }
+  };
+
+  // Connect HR monitor separately
+  const connectHR=async()=>{
+    try{
+      const dev=await navigator.bluetooth.requestDevice({filters:[{services:["heart_rate"]}]});
+      const server=await dev.gatt.connect();
+      setBtHRDevice(dev);
+      const svc=await server.getPrimaryService("heart_rate");
+      const ch=await svc.getCharacteristic("heart_rate_measurement");
+      ch.addEventListener("characteristicvaluechanged",(e)=>{
+        const dv=e.target.value;
+        const flags=dv.getUint8(0);
+        setLiveHR(flags&0x01?dv.getUint16(1,true):dv.getUint8(1));
+      });
+      await ch.startNotifications();
+    }catch(e){console.warn("HR connect fail",e);}
+  };
+
+  // Start / pause / resume
+  const startWorkout=()=>{globalElapsed.current=0;activityLog.current=[];setTotalElapsed(0);setPhase("riding");};
+  const pauseWorkout=()=>{clearInterval(timerRef.current);setPhase("paused");sendERG(0);};
+  const resumeWorkout=()=>setPhase("riding");
+  const stopWorkout=()=>{clearInterval(timerRef.current);sendERG(0);setPhase("done");};
+
+  // Format seconds
+  const fmt=(s)=>`${String(Math.floor(s/60)).padStart(2,"0")}:${String(s%60).padStart(2,"0")}`;
+
+  // Interval remaining
+  const intervalRemaining=useMemo(()=>{
+    let acc=0;
+    for(const iv of displayIntervals){
+      const dur=iv===displayIntervals[displayIntervals.length-1]?iv.durSec+cooldownExtra:iv.durSec;
+      if(globalElapsed.current<acc+dur)return acc+dur-globalElapsed.current;
+      acc+=dur;
+    }
+    return 0;
+  },[displayIntervals,elapsed,cooldownExtra]);
+
+  // Strava upload after done
+  const uploadToStrava=useCallback(async()=>{
+    const tokens=null; // will read from localStorage same key WW uses
+    let tok;
+    try{tok=JSON.parse(localStorage.getItem("ww_strava_tokens"));}catch{}
+    if(!tok){setUploadStatus("no_token");return;}
+    setUploadStatus("uploading");
+    // Build a simple TCX-like data URL or use Strava manual upload API
+    // Build FIT-lite: just use Strava's "Create Activity" endpoint with lap splits
+    const startTime=new Date(Date.now()-totalElapsed*1000).toISOString();
+    const avgPower=activityLog.current.length?Math.round(activityLog.current.reduce((a,l)=>a+(l.power||0),0)/activityLog.current.length):0;
+    const body={
+      name:workout?workout.name:"WykesWatts Ride",
+      type:"VirtualRide",
+      sport_type:"VirtualRide",
+      start_date_local:startTime,
+      elapsed_time:totalElapsed,
+      description:`WykesWatts structured session. Avg power: ${avgPower}w.`,
+      trainer:1,
+      commute:0,
+    };
+    try{
+      const res=await fetch("https://www.strava.com/api/v3/activities",{
+        method:"POST",
+        headers:{"Authorization":`Bearer ${tok.access_token}`,"Content-Type":"application/json"},
+        body:JSON.stringify(body),
+      });
+      if(res.ok){setUploadStatus("done");}
+      else{const err=await res.json();console.error(err);setUploadStatus("error");}
+    }catch(e){setUploadStatus("error");}
+  },[totalElapsed,workout]);
+
+  // ─── Zone colour for current interval ───
+  const zoneColor=(pct)=>{
+    if(!pct)return"var(--text-muted)";
+    if(pct<56)return"#60a5fa";
+    if(pct<76)return"#22c55e";
+    if(pct<88)return"#f59e0b";
+    if(pct<95)return"#f97316";
+    if(pct<106)return"#ef4444";
+    return"#c026d3";
+  };
+
+  // ─── Interval graph ───
+  const IntervalGraph=()=>{
+    if(!displayIntervals.length)return null;
+    const totalSec=displayIntervals.reduce((a,iv)=>a+iv.durSec,0);
+    const maxPct=displayIntervals.reduce((a,iv)=>{
+      if(iv.ramp)return Math.max(a,iv.ramp[1]);
+      return Math.max(a,iv.pct||0);
+    },0);
+    const graphH=90;
+    return(
+      <div style={{display:"flex",alignItems:"flex-end",gap:1,height:graphH,marginBottom:8}}>
+        {displayIntervals.map((iv,i)=>{
+          const w=`${(iv.durSec/totalSec)*100}%`;
+          const pct=iv.ramp?((iv.ramp[0]+iv.ramp[1])/2):iv.pct||0;
+          const h=`${Math.max(4,(pct/Math.max(maxPct,100))*graphH)}px`;
+          const isActive=iv===currentDisplayInterval;
+          const col=zoneColor(pct);
+          return(
+            <div key={i} style={{width:w,height:h,background:isActive?col:col+"66",borderRadius:"2px 2px 0 0",transition:"height 0.3s",flexShrink:0}}/>
+          );
+        })}
+      </div>
+    );
+  };
+
+  // No cycling workout today
+  if(!workout){
+    return(
+      <div style={S.card12}>
+        <div style={{fontSize:16,fontWeight:700,color:"var(--text-primary)",marginBottom:8}}>No cycling session today</div>
+        <div style={{fontSize:13,color:"var(--text-muted)"}}>Today is a rest, strength, or free ride day. Check the Plan tab to see your next cycling session.</div>
+      </div>
+    );
+  }
+
+  const curIv=currentDisplayInterval;
+  const curTargetW=curIv&&!curIv.ramp?Math.round(curIv.pct*(ftp/100)*(biasPct/100)):null;
+  const isCooldown=curIv&&curIv.label&&curIv.label.toLowerCase().includes("cool");
+  const totalWorkoutSec=displayIntervals.reduce((a,iv)=>a+iv.durSec,0)+cooldownExtra;
+
+  return(
+    <div>
+      {/* Header card */}
+      <div style={S.card12}>
+        <div style={{fontSize:11,fontWeight:700,letterSpacing:1,color:"var(--text-muted)",marginBottom:4,textTransform:"uppercase"}}>{workout.type}</div>
+        <div style={{fontSize:18,fontWeight:800,color:"var(--text-primary)",marginBottom:4}}>{workout.name}</div>
+        <div style={{fontSize:12,color:"var(--text-muted)",marginBottom:12,lineHeight:1.5}}>{workout.description}</div>
+        <IntervalGraph/>
+        <div style={{display:"flex",gap:16,fontSize:12,color:"var(--text-muted)"}}>
+          <span>⏱ {workout.duration} min</span>
+          <span>📊 ~{workout.tss} TSS</span>
+          <span>⚡ FTP {ftp}w</span>
+        </div>
+      </div>
+
+      {/* BT Connection */}
+      <div style={{...S.card12,display:"flex",gap:12,alignItems:"center",flexWrap:"wrap"}}>
+        <div style={{flex:1}}>
+          <div style={{fontSize:12,fontWeight:700,color:"var(--text-primary)",marginBottom:2}}>Trainer</div>
+          <div style={{fontSize:11,color:btStatus==="connected"?"#22c55e":btStatus==="error"?"#ef4444":"var(--text-muted)"}}>
+            {btStatus==="connected"?(btDevice?.name||"Connected"):btStatus==="connecting"?"Connecting…":btStatus==="error"?"Connection failed":"Not connected"}
+          </div>
+        </div>
+        {btStatus!=="connected"&&(
+          <button style={{...S.btnP,fontSize:12,padding:"8px 14px"}} onClick={connectTrainer}>
+            {btStatus==="connecting"?"…":"🔗 Connect Trainer"}
+          </button>
+        )}
+        {btStatus==="connected"&&!btHRDevice&&(
+          <button style={{...S.btnS,fontSize:12,padding:"8px 14px"}} onClick={connectHR}>
+            ❤️ HR Monitor
+          </button>
+        )}
+        {btStatus==="connected"&&(
+          <div style={{fontSize:11,color:"var(--text-muted)"}}>✓ Ready</div>
+        )}
+      </div>
+
+      {/* Live metrics */}
+      {phase!=="idle"&&(
+        <div style={{...S.card12,display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,textAlign:"center"}}>
+          {[
+            ["Power",livePower!=null?`${livePower}w`:"–","⚡",curTargetW?`Target: ${curTargetW}w`:""],
+            ["Cadence",liveCadence!=null?`${liveCadence}`:"–","🔄","rpm"],
+            ["HR",liveHR!=null?`${liveHR}`:"–","❤️","bpm"],
+          ].map(([lbl,val,icon,sub])=>(
+            <div key={lbl}>
+              <div style={{fontSize:11,color:"var(--text-muted)",marginBottom:2}}>{icon} {lbl}</div>
+              <div style={{fontSize:28,fontWeight:900,color:"var(--text-primary)",lineHeight:1}}>{val}</div>
+              {sub&&<div style={{fontSize:10,color:"var(--text-muted)",marginTop:2}}>{sub}</div>}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Current interval */}
+      {phase!=="idle"&&curIv&&(
+        <div style={{...S.card12,borderColor:zoneColor(curIv.ramp?(curIv.ramp[0]+curIv.ramp[1])/2:curIv.pct)}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <div>
+              <div style={{fontSize:11,fontWeight:700,color:"var(--text-muted)",textTransform:"uppercase",letterSpacing:1,marginBottom:2}}>{curIv.label}</div>
+              {curTargetW&&<div style={{fontSize:32,fontWeight:900,color:zoneColor(curIv.pct)}}>{curTargetW}w</div>}
+              {curIv.ramp&&<div style={{fontSize:16,fontWeight:700,color:"var(--text-muted)"}}>Ramp</div>}
+            </div>
+            <div style={{textAlign:"right"}}>
+              <div style={{fontSize:11,color:"var(--text-muted)",marginBottom:2}}>Remaining</div>
+              <div style={{fontSize:28,fontWeight:900,color:"var(--text-primary)",fontVariantNumeric:"tabular-nums"}}>{fmt(intervalRemaining)}</div>
+            </div>
+          </div>
+          {/* Cool-down extend */}
+          {isCooldown&&(
+            <div style={{marginTop:12,display:"flex",alignItems:"center",gap:8}}>
+              <span style={{fontSize:12,color:"var(--text-muted)"}}>Extend cool-down:</span>
+              {[2,5,10].map(m=>(
+                <button key={m} style={{...S.btnS,fontSize:11,padding:"4px 10px"}} onClick={()=>setCooldownExtra(e=>e+m*60)}>+{m}m</button>
+              ))}
+              {cooldownExtra>0&&<span style={{fontSize:11,color:"#22c55e"}}>+{cooldownExtra/60}m added</span>}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Progress bar */}
+      {phase!=="idle"&&(
+        <div style={{height:4,background:"var(--bg-input)",borderRadius:2,margin:"0 0 12px"}}>
+          <div style={{height:4,background:"var(--accent)",borderRadius:2,width:`${Math.min(100,(totalElapsed/totalWorkoutSec)*100)}%`,transition:"width 1s linear"}}/>
+        </div>
+      )}
+
+      {/* Controls */}
+      <div style={{...S.card12}}>
+        {phase==="idle"&&(
+          <div>
+            <button style={{...S.btnP,width:"100%",marginBottom:12}} onClick={startWorkout}>
+              ▶ Start Workout
+            </button>
+            <div style={{display:"flex",gap:8,alignItems:"center"}}>
+              <span style={{fontSize:12,color:"var(--text-muted)"}}>Intensity:</span>
+              <input type="range" min={70} max={120} value={biasPct} onChange={e=>setBiasPct(Number(e.target.value))} style={{flex:1,accentColor:"var(--accent)"}}/>
+              <span style={{fontSize:13,fontWeight:700,minWidth:36}}>{biasPct}%</span>
+            </div>
+          </div>
+        )}
+        {(phase==="riding"||phase==="paused")&&(
+          <div style={{display:"flex",flexDirection:"column",gap:12}}>
+            <div style={{display:"flex",gap:8}}>
+              {phase==="riding"
+                ?<button style={{...S.btnP,flex:1}} onClick={pauseWorkout}>⏸ Pause</button>
+                :<button style={{...S.btnP,flex:1}} onClick={resumeWorkout}>▶ Resume</button>}
+              <button style={{...S.btnS,flex:1}} onClick={stopWorkout}>■ Stop</button>
+            </div>
+            <div style={{display:"flex",gap:8,alignItems:"center"}}>
+              <span style={{fontSize:12,color:"var(--text-muted)"}}>Intensity:</span>
+              <button style={{...S.btnS,padding:"4px 10px",fontSize:13}} onClick={()=>setBiasPct(p=>Math.max(70,p-5))}>−5%</button>
+              <span style={{fontSize:14,fontWeight:700,minWidth:40,textAlign:"center"}}>{biasPct}%</span>
+              <button style={{...S.btnS,padding:"4px 10px",fontSize:13}} onClick={()=>setBiasPct(p=>Math.min(120,p+5))}>+5%</button>
+              <span style={{fontSize:11,color:"var(--text-muted)",marginLeft:4}}>of target</span>
+            </div>
+            <div style={{fontSize:11,color:"var(--text-muted)",textAlign:"center"}}>Total: {fmt(totalElapsed)} / {fmt(totalWorkoutSec)}</div>
+          </div>
+        )}
+        {phase==="done"&&(
+          <div>
+            <div style={{fontSize:16,fontWeight:800,color:"#22c55e",marginBottom:8,textAlign:"center"}}>✓ Workout complete!</div>
+            <div style={{fontSize:13,color:"var(--text-muted)",marginBottom:16,textAlign:"center"}}>Duration: {fmt(totalElapsed)}</div>
+            {uploadStatus===null&&(
+              <button style={{...S.btnP,width:"100%",marginBottom:8}} onClick={uploadToStrava}>
+                Upload to Strava
+              </button>
+            )}
+            {uploadStatus==="uploading"&&<div style={{textAlign:"center",color:"var(--text-muted)",fontSize:13}}>Uploading…</div>}
+            {uploadStatus==="done"&&<div style={{textAlign:"center",color:"#22c55e",fontSize:13,fontWeight:700}}>✓ Saved to Strava</div>}
+            {uploadStatus==="error"&&<div style={{textAlign:"center",color:"#ef4444",fontSize:13}}>Upload failed — save manually in Strava</div>}
+            {uploadStatus==="no_token"&&<div style={{textAlign:"center",color:"#f59e0b",fontSize:13}}>Connect Strava in Check-in tab first</div>}
+            <button style={{...S.btnS,width:"100%",marginTop:8}} onClick={()=>{setPhase("idle");setTotalElapsed(0);globalElapsed.current=0;setBiasPct(100);setCooldownExtra(0);setUploadStatus(null);}}>
+              Reset
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function App(){
   // PIN gate — only once per browser session
   const [pinUnlocked,setPinUnlocked]=useState(()=>{
@@ -1086,7 +1534,7 @@ function App(){
 
       {/* Nav */}
       <div style={S.nav}>
-        {[["checkin","Check-in"],["today","Today"],["plan","Plan"],["progress","Progress"],["zones","Zones"]].map(([v,l])=>(
+        {[["checkin","Check-in"],["today","Today"],["ride","Ride"],["plan","Plan"],["progress","Progress"],["zones","Zones"]].map(([v,l])=>(
           <button key={v} style={S.navBtn(tab===v)} onClick={()=>setTab(v)}>
             {l}{v==="checkin"&&!checkinDone?<span style={{marginLeft:5,width:7,height:7,borderRadius:4,background:"#ef4444",display:"inline-block",verticalAlign:"middle"}}/>:null}
           </button>
@@ -1499,6 +1947,11 @@ function App(){
               <div style={{marginTop:4,fontSize:11,color:"var(--text-faint)"}}>↔ Drag days within a week to swap workouts</div>
             </div>
           </>
+        )}
+
+        {/* ── RIDE TAB ─────────────────────────────────────────────────────── */}
+        {tab==="ride"&&(
+          <WorkoutPlayer ftp={ftp} plan={plan} todayIdx={todayIdx} currentDay={currentDay}/>
         )}
 
         {/* ── PROGRESS TAB ─────────────────────────────────────────────────── */}
