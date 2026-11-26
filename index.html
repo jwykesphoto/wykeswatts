@@ -1122,27 +1122,34 @@ function WorkoutPlayer({ftp,plan,todayIdx,currentDay}){
     return"#c026d3";
   };
 
-  // ─── Interval graph ───
+  // ─── Interval graph with progress needle ───
   const IntervalGraph=()=>{
     if(!displayIntervals.length)return null;
-    const totalSec=displayIntervals.reduce((a,iv)=>a+iv.durSec,0);
+    const totalSec=displayIntervals.reduce((a,iv)=>a+iv.durSec,0)+cooldownExtra;
     const maxPct=displayIntervals.reduce((a,iv)=>{
       if(iv.ramp)return Math.max(a,iv.ramp[1]);
       return Math.max(a,iv.pct||0);
     },0);
     const graphH=90;
+    const progressPct=phase==="idle"?0:Math.min(100,(globalElapsed.current/Math.max(totalSec,1))*100);
     return(
-      <div style={{display:"flex",alignItems:"flex-end",gap:1,height:graphH,marginBottom:8}}>
-        {displayIntervals.map((iv,i)=>{
-          const w=`${(iv.durSec/totalSec)*100}%`;
-          const pct=iv.ramp?((iv.ramp[0]+iv.ramp[1])/2):iv.pct||0;
-          const h=`${Math.max(4,(pct/Math.max(maxPct,100))*graphH)}px`;
-          const isActive=iv===currentDisplayInterval;
-          const col=zoneColor(pct);
-          return(
-            <div key={i} style={{width:w,height:h,background:isActive?col:col+"66",borderRadius:"2px 2px 0 0",transition:"height 0.3s",flexShrink:0}}/>
-          );
-        })}
+      <div style={{position:"relative",marginBottom:8}}>
+        <div style={{display:"flex",alignItems:"flex-end",gap:1,height:graphH}}>
+          {displayIntervals.map((iv,i)=>{
+            const w=`${(iv.durSec/totalSec)*100}%`;
+            const pct=iv.ramp?((iv.ramp[0]+iv.ramp[1])/2):iv.pct||0;
+            const h=`${Math.max(4,(pct/Math.max(maxPct,100))*graphH)}px`;
+            const isActive=iv===currentDisplayInterval;
+            const col=zoneColor(pct);
+            return(
+              <div key={i} style={{width:w,height:h,background:isActive?col:col+"66",borderRadius:"2px 2px 0 0",transition:"background 0.3s",flexShrink:0}}/>
+            );
+          })}
+        </div>
+        {/* Progress needle */}
+        {phase!=="idle"&&(
+          <div style={{position:"absolute",top:0,left:`${progressPct}%`,width:2,height:graphH,background:"#fff",borderRadius:1,opacity:0.9,transform:"translateX(-1px)",transition:"left 1s linear",pointerEvents:"none"}}/>
+        )}
       </div>
     );
   };
@@ -1206,17 +1213,31 @@ function WorkoutPlayer({ftp,plan,todayIdx,currentDay}){
       {/* Live metrics */}
       {phase!=="idle"&&(
         <div style={{...WS.card,display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,textAlign:"center"}}>
-          {[
-            ["Power",livePower!=null?`${livePower}w`:"–","⚡",curTargetW?`Target: ${curTargetW}w`:""],
-            ["Cadence",liveCadence!=null?`${liveCadence}`:"–","🔄","rpm"],
-            ["HR",liveHR!=null?`${liveHR}`:"–","❤️","bpm"],
-          ].map(([lbl,val,icon,sub])=>(
-            <div key={lbl}>
-              <div style={{fontSize:11,color:"var(--text-muted)",marginBottom:2}}>{icon} {lbl}</div>
-              <div style={{fontSize:28,fontWeight:900,color:"var(--text-primary)",lineHeight:1}}>{val}</div>
-              {sub&&<div style={{fontSize:10,color:"var(--text-muted)",marginTop:2}}>{sub}</div>}
+          {/* Power — actual / target */}
+          <div>
+            <div style={{fontSize:11,color:"var(--text-muted)",marginBottom:2}}>⚡ Power</div>
+            <div style={{fontSize:28,fontWeight:900,color:"var(--text-primary)",lineHeight:1}}>
+              {livePower!=null?`${livePower}w`:"–"}
             </div>
-          ))}
+            {curTargetW&&<div style={{fontSize:10,color:"var(--text-muted)",marginTop:2}}>Target: {curTargetW}w</div>}
+            {curTargetW&&livePower!=null&&(
+              <div style={{fontSize:10,marginTop:1,color:Math.abs(livePower-curTargetW)<=5?"#22c55e":Math.abs(livePower-curTargetW)<=15?"#f59e0b":"#ef4444"}}>
+                {livePower>curTargetW?`+${livePower-curTargetW}`:livePower-curTargetW}w
+              </div>
+            )}
+          </div>
+          {/* Cadence */}
+          <div>
+            <div style={{fontSize:11,color:"var(--text-muted)",marginBottom:2}}>🔄 Cadence</div>
+            <div style={{fontSize:28,fontWeight:900,color:"var(--text-primary)",lineHeight:1}}>{liveCadence!=null?liveCadence:"–"}</div>
+            <div style={{fontSize:10,color:"var(--text-muted)",marginTop:2}}>rpm</div>
+          </div>
+          {/* HR */}
+          <div>
+            <div style={{fontSize:11,color:"var(--text-muted)",marginBottom:2}}>❤️ HR</div>
+            <div style={{fontSize:28,fontWeight:900,color:"var(--text-primary)",lineHeight:1}}>{liveHR!=null?liveHR:"–"}</div>
+            <div style={{fontSize:10,color:"var(--text-muted)",marginTop:2}}>bpm</div>
+          </div>
         </div>
       )}
 
@@ -1234,14 +1255,14 @@ function WorkoutPlayer({ftp,plan,todayIdx,currentDay}){
               <div style={{fontSize:28,fontWeight:900,color:"var(--text-primary)",fontVariantNumeric:"tabular-nums"}}>{fmt(intervalRemaining)}</div>
             </div>
           </div>
-          {/* Cool-down extend */}
-          {isCooldown&&(
-            <div style={{marginTop:12,display:"flex",alignItems:"center",gap:8}}>
+          {/* Cool-down extend — always visible during last interval or when already in cooldown */}
+          {(isCooldown||curIv===displayIntervals[displayIntervals.length-1])&&(
+            <div style={{marginTop:12,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
               <span style={{fontSize:12,color:"var(--text-muted)"}}>Extend cool-down:</span>
               {[2,5,10].map(m=>(
                 <button key={m} style={{...WS.btnS,fontSize:11,padding:"4px 10px"}} onClick={()=>setCooldownExtra(e=>e+m*60)}>+{m}m</button>
               ))}
-              {cooldownExtra>0&&<span style={{fontSize:11,color:"#22c55e"}}>+{cooldownExtra/60}m added</span>}
+              {cooldownExtra>0&&<span style={{fontSize:11,color:"#22c55e"}}>+{Math.round(cooldownExtra/60)}m added</span>}
             </div>
           )}
         </div>
