@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy — WykesWatts</title>
+  <style>
+    :root {
+      --bg: #0f0f0f;
+      --card: #1a1a1a;
+      --border: #2a2a2a;
+      --text: #e5e5e5;
+      --muted: #888;
+      --accent: #22c55e;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      padding: 40px 20px;
+    }
+    .wrap { max-width: 720px; margin: 0 auto; }
+    header { margin-bottom: 48px; }
+    header a { color: var(--accent); text-decoration: none; font-size: 14px; }
+    header a:hover { text-decoration: underline; }
+    h1 { font-size: 28px; font-weight: 800; margin: 16px 0 8px; }
+    .updated { color: var(--muted); font-size: 13px; margin-bottom: 32px; }
+    h2 { font-size: 16px; font-weight: 700; margin: 32px 0 10px; color: var(--accent); letter-spacing: 0.5px; text-transform: uppercase; }
+    p { margin-bottom: 14px; color: #ccc; font-size: 15px; }
+    ul { margin: 0 0 14px 20px; color: #ccc; font-size: 15px; }
+    ul li { margin-bottom: 6px; }
+    a { color: var(--accent); }
+    footer { margin-top: 60px; padding-top: 24px; border-top: 1px solid var(--border); color: var(--muted); font-size: 13px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <a href="/">← WykesWatts</a>
+      <h1>Privacy Policy</h1>
+      <div class="updated">Last updated: 26 November 2026</div>
+    </header>
+
+    <h2>Overview</h2>
+    <p>WykesWatts is a personal cycling training application built for private use by a single individual. It is not a commercial product and has no registered users other than its owner.</p>
+    <p>This privacy policy describes how the application handles data, in compliance with the requirements of the Garmin Connect Developer Program and applicable data protection regulations.</p>
+
+    <h2>Data Controller</h2>
+    <p>This application is operated by James Wykes, Frankfurt am Main, Germany. For any privacy-related enquiries, contact: <a href="mailto:privacy@wykeswatts.com">privacy@wykeswatts.com</a></p>
+
+    <h2>Data Collected</h2>
+    <p>WykesWatts may access and process the following categories of data, all belonging to the application owner:</p>
+    <ul>
+      <li><strong>Garmin Connect health data</strong> — heart rate variability (HRV), resting heart rate, sleep duration and score, body battery, stress score. Retrieved via the Garmin Health API for personal training monitoring.</li>
+      <li><strong>Garmin Connect activity data</strong> — completed workout records including power, cadence, heart rate, duration, and distance. Used to track training load and performance.</li>
+      <li><strong>Strava activity data</strong> — cycling activities, training stress scores (TSS), and fitness metrics. Retrieved via the Strava API for training load analysis.</li>
+      <li><strong>Live sensor data</strong> — real-time power, cadence, and heart rate from connected Bluetooth devices (smart trainer, heart rate strap) during active workout sessions. Processed locally in the browser only.</li>
+    </ul>
+
+    <h2>How Data Is Used</h2>
+    <ul>
+      <li>To display daily health and readiness metrics on the application dashboard</li>
+      <li>To plan and execute structured cycling workouts via ERG mode control of a smart trainer</li>
+      <li>To upload completed workout files to Garmin Connect and Strava for record-keeping</li>
+      <li>To calculate training load, fitness trends, and readiness scores</li>
+    </ul>
+    <p>Data is never sold, shared with third parties, or used for any commercial purpose.</p>
+
+    <h2>Data Storage</h2>
+    <p>No personal data is stored on external servers operated by this application. API tokens (Garmin, Strava) are stored in the user's own browser local storage and transmitted only to the respective authorised API endpoints. No database or backend data store is maintained by WykesWatts.</p>
+    <p>Serverless functions hosted on Netlify act as OAuth relay endpoints only; they do not log or retain any health or activity data.</p>
+
+    <h2>Third-Party Services</h2>
+    <ul>
+      <li><strong>Garmin Connect API</strong> — governed by <a href="https://www.garmin.com/en-US/privacy/connect/policy/" target="_blank">Garmin's Privacy Policy</a></li>
+      <li><strong>Strava API</strong> — governed by <a href="https://www.strava.com/legal/privacy" target="_blank">Strava's Privacy Policy</a></li>
+      <li><strong>Netlify</strong> — hosting and serverless functions, governed by <a href="https://www.netlify.com/privacy/" target="_blank">Netlify's Privacy Policy</a></li>
+    </ul>
+
+    <h2>Your Rights</h2>
+    <p>As this application is used exclusively by its owner, all data accessed belongs to the operator. Rights to access, correction, and deletion are exercised directly through the respective third-party platforms (Garmin Connect, Strava).</p>
+
+    <h2>Changes to This Policy</h2>
+    <p>This policy may be updated to reflect changes in the application's functionality or applicable regulations. The date at the top of this page indicates when it was last revised.</p>
+
+    <footer>
+      &copy; 2026 WykesWatts · <a href="/">Return to app</a>
+    </footer>
+  </div>
+</body>
+</html>
