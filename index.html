@@ -1142,7 +1142,7 @@ function WorkoutPlayer({ftp,plan,todayIdx,currentDay}){
             const isActive=iv===currentDisplayInterval;
             const col=zoneColor(pct);
             return(
-              <div key={i} style={{width:w,height:h,background:isActive?col:col+"66",borderRadius:"2px 2px 0 0",transition:"background 0.3s",flexShrink:0}}/>
+              <div key={i} style={{width:w,height:h,background:col,borderRadius:"2px 2px 0 0",transition:"background 0.3s",flexShrink:0,filter:isActive?"none":"brightness(0.45)"}}/>
             );
           })}
         </div>
