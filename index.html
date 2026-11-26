@@ -1134,7 +1134,7 @@ function WorkoutPlayer({ftp,plan,todayIdx,currentDay}){
             const isActive=iv===currentDisplayInterval;
             const col=zoneColor(pct);
             return(
-              <div key={i} style={{width:w,height:h,background:col,borderRadius:"2px 2px 0 0",transition:"background 0.3s",flexShrink:0,opacity:isActive?1:0.5,outline:isActive?"2px solid #fff":"none",outlineOffset:-1}}/>
+              <div key={i} style={{width:w,height:h,background:col,borderRadius:"2px 2px 0 0",transition:"background 0.3s",flexShrink:0,outline:isActive?"2px solid #fff":"none",outlineOffset:-1}}/>
             );
           })}
         </div>
