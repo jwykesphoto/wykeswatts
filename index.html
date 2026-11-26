@@ -1113,13 +1113,13 @@ function WorkoutPlayer({ftp,plan,todayIdx,currentDay}){
 
   // ─── Zone colour for current interval ───
   const zoneColor=(pct)=>{
-    if(!pct)return"var(--text-muted)";
-    if(pct<56)return"#60a5fa";
-    if(pct<76)return"#22c55e";
-    if(pct<88)return"#f59e0b";
-    if(pct<95)return"#f97316";
-    if(pct<106)return"#ef4444";
-    return"#c026d3";
+    if(!pct)return"#94a3b8";   // Z1 — grey
+    if(pct<56)return"#94a3b8"; // Z1 — grey
+    if(pct<76)return"#22c55e"; // Z2 — green
+    if(pct<88)return"#3b82f6"; // Z3 — blue
+    if(pct<95)return"#eab308"; // Z4 — yellow
+    if(pct<106)return"#f97316";// Z5 — orange
+    return"#ef4444";           // Z6 — red
   };
 
   // ─── Interval graph with progress needle ───
