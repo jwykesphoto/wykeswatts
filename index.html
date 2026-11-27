@@ -1644,13 +1644,19 @@ function App(){
                 )}
               </div>
 
-              {/* Yesterday's ride */}
-              {stravaTokens&&(
-                <div style={{marginBottom:16}}>
-                  <div style={{fontSize:11,fontWeight:600,color:"var(--text-faint)",textTransform:"uppercase",letterSpacing:.5,marginBottom:8}}>Yesterday's ride</div>
-                  <YesterdayAnalysis data={yesterdayData} plannedId={entry.workoutId} ftp={ftp} loading={yesterdayLoading}/>
-                </div>
-              )}
+              {/* Yesterday's ride — only show on cycling days */}
+              {stravaTokens&&(()=>{
+                const yEntry=plan[currentDay-1];
+                const yId=yEntry?.workoutId||"REST";
+                const yIsCycling=yId&&WORKOUTS[yId]&&WORKOUTS[yId].intervals&&WORKOUTS[yId].intervals.length>0;
+                if(!yIsCycling)return null;
+                return(
+                  <div style={{marginBottom:16}}>
+                    <div style={{fontSize:11,fontWeight:600,color:"var(--text-faint)",textTransform:"uppercase",letterSpacing:.5,marginBottom:8}}>Yesterday's ride</div>
+                    <YesterdayAnalysis data={yesterdayData} plannedId={yId} ftp={ftp} loading={yesterdayLoading}/>
+                  </div>
+                );
+              })()}
 
               {/* Fitness metrics */}
               {stravaError&&<div style={{padding:"8px 12px",background:"#fef2f2",border:"1px solid #fecaca",borderRadius:8,fontSize:13,color:"#dc2626",marginBottom:10}}>{stravaError}</div>}
