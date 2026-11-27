@@ -860,16 +860,7 @@ const WS={
 };
 
 // ─── WORKOUT PLAYER (v2) ──────────────────────────────────────────────────────
-function WorkoutPlayer({ftp,plan,todayIdx,currentDay}){
-  const workout=useMemo(()=>{
-    // plan is a flat array of {workoutId, weekNum, dayOfWeek}
-    // find today's entry with a cycling workout (has intervals)
-    const entry=plan[currentDay]||plan[todayIdx];
-    if(!entry)return null;
-    const wId=entry.workoutId;
-    if(wId&&WORKOUTS[wId]&&WORKOUTS[wId].intervals)return WORKOUTS[wId];
-    return null;
-  },[plan,currentDay,todayIdx]);
+function WorkoutPlayer({ftp,workout}){
 
   // Player state
   const [phase,setPhase]=useState("idle"); // idle | countdown | riding | paused | done
@@ -1982,7 +1973,7 @@ function App(){
 
         {/* ── RIDE TAB ─────────────────────────────────────────────────────── */}
         {tab==="ride"&&(
-          <WorkoutPlayer ftp={ftp} plan={plan} todayIdx={todayIdx} currentDay={currentDay}/>
+          <WorkoutPlayer ftp={ftp} workout={workout}/>
         )}
 
         {/* ── PROGRESS TAB ─────────────────────────────────────────────────── */}
